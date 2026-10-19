@@ -57,6 +57,10 @@ export function calculateLeanBulkTargets({ weightKg, heightCm, age = 26, gender 
     tdee,
     surplus,
     targetCalories,
+    calories: targetCalories,
+    protein: proteinGrams,
+    carbs: carbsGrams,
+    fat: fatGrams,
     macros: {
       proteinGrams,
       fatGrams,
@@ -111,6 +115,10 @@ export function calculateProfileTargets({
     bmr,
     tdee,
     targetCalories,
+    calories: targetCalories,
+    protein: proteinGrams,
+    carbs: carbsGrams,
+    fat: fatGrams,
     label,
     macros: {
       proteinGrams,
@@ -133,8 +141,8 @@ export function calculateNutritionalScore({
   const totalCarbs = loggedFoods.reduce((acc, curr) => acc + (Number(curr.carbs) || 0), 0);
   const totalFat = loggedFoods.reduce((acc, curr) => acc + (Number(curr.fat) || 0), 0);
 
-  const targetCals = targets.calories || 2000;
-  const targetProt = targets.protein || 140;
+  const targetCals = targets.targetCalories || targets.calories || profile?.targetCalories || 2000;
+  const targetProt = targets.macros?.proteinGrams || targets.protein || profile?.macros?.proteinGrams || 140;
 
   // Day starting state when no foods are logged yet
   if (loggedFoods.length === 0) {
@@ -3875,8 +3883,8 @@ export function calculateSystemicPillars({
   weeklyLogs = {}
 }) {
   const profileId = profile?.id || 'andres';
-  const targetCals = targets.calories || 2150;
-  const targetProt = targets.protein || 195;
+  const targetCals = targets.targetCalories || targets.calories || profile?.targetCalories || 2150;
+  const targetProt = targets.macros?.proteinGrams || targets.protein || profile?.macros?.proteinGrams || 195;
   const targetWater = profile?.waterDailyMl || 3000;
 
   // 1. Pillar 1: Nutrition & Cellular Fuel (0 to 25 pts)

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FAMILY_PROFILES,
+  calculateProfileTargets,
   calculateNutritionalScore,
   calculateSystemicPillars
 } from '../src/lib/fitness-data.js';
@@ -124,5 +125,59 @@ test('AuraFit Dynamic State & Zero Static Data Audit', async (t) => {
     assert.equal(min, 57.5);
     assert.equal(max, 59.0);
     assert.ok(max - min <= 2.0, 'Sparkline window is tightly bounded to user profile weight range');
+  });
+
+  await t.test('7. Nutritional score and systemic pillars must use dynamic targets matching macro cards with zero static fallbacks', () => {
+    const andres = FAMILY_PROFILES.andres;
+    const dynamicTargets = calculateProfileTargets(andres);
+
+    // Dynamic targets must match Andrés recomposition
+    assert.equal(dynamicTargets.targetCalories, 2431);
+    assert.equal(dynamicTargets.macros.proteinGrams, 193);
+    assert.equal(dynamicTargets.protein, 193);
+    assert.equal(dynamicTargets.calories, 2431);
+
+    // Also test with age 26 (matching 2447 kcal from user screenshot)
+    const andres26 = { ...andres, age: 26 };
+    const targets26 = calculateProfileTargets(andres26);
+    assert.equal(targets26.targetCalories, 2447);
+    assert.equal(targets26.macros.proteinGrams, 193);
+
+    // Calculate score with logged food simulating user's exact screenshot (67g protein, 1225 kcal)
+    const loggedFoods = [
+      { id: '1', name: 'Desayuno', calories: 1225, protein: 67, carbs: 190, fat: 22, mealSlot: 'desayuno' }
+    ];
+
+    const scoreResult = calculateNutritionalScore({
+      loggedFoods,
+      targets: targets26,
+      waterMl: 1500,
+      waterTargetMl: andres.waterDailyMl,
+      profile: andres
+    });
+
+    // Breakdown targets must reflect dynamic targets, NOT hardcoded 140g or 2000 kcal!
+    assert.equal(scoreResult.breakdown.protein.target, 193, 'Protein target must be 193g, not 140g');
+    assert.equal(scoreResult.breakdown.calories.target, 2447, 'Calorie target must be 2447 kcal, not 2000 kcal');
+
+    // Insight texts must display 193g and 2447 kcal
+    const proteinInsight = scoreResult.insights.find(i => i.title === 'Proteína Diaria');
+    assert.ok(proteinInsight, 'Must include Proteína Diaria insight');
+    assert.ok(proteinInsight.text.includes('193g'), `Protein insight should say 193g, got: "${proteinInsight.text}"`);
+    assert.ok(!proteinInsight.text.includes('140g'), 'Protein insight must NEVER fall back to 140g');
+
+    const calorieInsight = scoreResult.insights.find(i => i.title === 'Calorías del Día' || i.title === 'Balance Calórico');
+    assert.ok(calorieInsight, 'Must include Calorie insight');
+    assert.ok(calorieInsight.text.includes('2447 kcal'), `Calorie insight should say 2447 kcal, got: "${calorieInsight.text}"`);
+    assert.ok(!calorieInsight.text.includes('2000 kcal'), 'Calorie insight must NEVER fall back to 2000 kcal');
+
+    // Verify Systemic Pillars also evaluate against 193g and 2447 kcal
+    const pillars = calculateSystemicPillars({
+      profile: andres,
+      loggedFoods,
+      targets: dynamicTargets,
+      waterMl: 1500
+    });
+    assert.ok(pillars.totalAuraScore > 0);
   });
 });

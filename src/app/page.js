@@ -1266,8 +1266,8 @@ export default function HomePage() {
 
   // Macro Gap for didactic food recommendation
   const macroGap = useMemo(() => {
-    const targetP = targets.protein || 150;
-    const targetC = targets.calories || 2000;
+    const targetP = targets.macros?.proteinGrams || targets.protein || currentProfile.macros?.proteinGrams || 150;
+    const targetC = targets.targetCalories || targets.calories || currentProfile.targetCalories || 2000;
     const pDiff = Math.max(0, targetP - (consumedTotals.protein || 0));
     const calDiff = Math.max(0, targetC - (consumedTotals.calories || 0));
     return {
@@ -1275,7 +1275,7 @@ export default function HomePage() {
       calories: Math.round(calDiff),
       isMet: pDiff <= 5 && calDiff <= 100
     };
-  }, [targets, consumedTotals]);
+  }, [targets, consumedTotals, currentProfile]);
 
   // Food Search API Debounce
   useEffect(() => {

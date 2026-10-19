@@ -1397,10 +1397,10 @@ export function parseNaturalLanguageFood(text = '') {
  * prescribing clean protein pivots to achieve daily recomposition targets.
  */
 export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
-  const targetKcal = targets?.targetCalories || 2004;
-  const targetProtein = targets?.macros?.proteinGrams || 165;
-  const targetCarbs = targets?.macros?.carbsGrams || 194;
-  const targetFat = targets?.macros?.fatGrams || 62;
+  const targetKcal = targets?.targetCalories || targets?.calories || 2004;
+  const targetProtein = targets?.macros?.proteinGrams || targets?.protein || 165;
+  const targetCarbs = targets?.macros?.carbsGrams || targets?.carbs || 194;
+  const targetFat = targets?.macros?.fatGrams || targets?.fat || 62;
 
   // Calculate consumed totals
   const consumed = loggedFoods.reduce(
