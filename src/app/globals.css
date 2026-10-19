@@ -2424,6 +2424,63 @@ button:active, .touchable:active {
   line-height: 1.3;
 }
 
+/* Custom Habit Management Styles */
+.btn-add-habit-trigger {
+  background: var(--fitia-blue-soft);
+  color: var(--fitia-blue);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-add-habit-trigger:hover {
+  background: var(--fitia-blue);
+  color: #FFFFFF;
+}
+
+.btn-delete-habit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+  padding: 4px;
+}
+
+.btn-delete-habit:hover {
+  opacity: 1;
+}
+
+.quick-template-chip {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.quick-template-chip:hover {
+  border-color: var(--fitia-green);
+  color: var(--fitia-green);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+
 
 
 

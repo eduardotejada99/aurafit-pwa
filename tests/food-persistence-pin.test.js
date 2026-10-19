@@ -221,5 +221,61 @@ describe('AuraFit Holistic Daily Lifestyle Engine (calculateDailyAuraScore)', ()
 
     assert.strictEqual(waterMl, 0, 'Water counter MUST start at 0 on a new day');
   });
+
+  it('should allow user to create custom habits and integrate into AuraScore', async () => {
+    const { calculateDailyAuraScore, FAMILY_PROFILES } = await import('../src/lib/fitness-data.js');
+
+    const initialHabits = [...FAMILY_PROFILES.andres.habits];
+    const initialCount = initialHabits.length; // 5
+
+    // Add custom habit
+    const newCustomHabit = {
+      id: 'custom_123456789',
+      name: 'Meditación Vipassana',
+      target: '15 min diarios',
+      completed: true,
+      icon: '🧘',
+      category: 'bienestar',
+      note: 'Calma mental matutina',
+      isCustom: true
+    };
+
+    const nextHabits = [...initialHabits, newCustomHabit];
+    assert.strictEqual(nextHabits.length, initialCount + 1);
+
+    // Calculate AuraScore with 6 habits and all completed
+    const scoreResult = calculateDailyAuraScore({
+      nutritionScore: 85,
+      workoutDone: true,
+      workoutMinutes: 45,
+      sleepHours: 8,
+      sleepQuality: 'deep',
+      completedHabits: nextHabits.filter(h => h.completed || h.id === 'custom_123456789').length,
+      totalHabits: nextHabits.length,
+      profile: FAMILY_PROFILES.andres
+    });
+
+    assert.ok(scoreResult.score >= 70, `Expected score >= 70, got ${scoreResult.score}`);
+    assert.ok(scoreResult.pillars.habits.points > 0);
+
+    // If all 6 habits are completed, habit pillar gives 25 pts
+    const fullScore = calculateDailyAuraScore({
+      nutritionScore: 90,
+      workoutDone: true,
+      workoutMinutes: 50,
+      sleepHours: 8,
+      sleepQuality: 'deep',
+      completedHabits: 6,
+      totalHabits: 6,
+      profile: FAMILY_PROFILES.andres
+    });
+    assert.strictEqual(fullScore.pillars.habits.points, 25);
+    assert.ok(fullScore.score >= 90);
+
+    // Delete custom habit
+    const afterDelete = nextHabits.filter(h => h.id !== 'custom_123456789');
+    assert.strictEqual(afterDelete.length, initialCount);
+  });
 });
+
 

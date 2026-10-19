@@ -245,6 +245,16 @@ export default function HomePage() {
   const [newWeightInput, setNewWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
 
+  // Custom Habits Modal State
+  const [showAddHabitModal, setShowAddHabitModal] = useState(false);
+  const [newHabitForm, setNewHabitForm] = useState({
+    name: '',
+    target: '',
+    icon: '🧘',
+    category: 'bienestar',
+    note: ''
+  });
+
   const weightAnalytics = calculateWeightAnalytics(weightLogs);
 
   // Load local storage if available on mount
@@ -882,6 +892,44 @@ export default function HomePage() {
       } catch (e) {}
       return next;
     });
+  };
+
+  const handleAddCustomHabit = (form) => {
+    if (!form.name || !form.name.trim()) return;
+    const habitToAdd = {
+      id: `custom_${Date.now()}`,
+      name: form.name.trim(),
+      target: form.target.trim() || '1 vez al día',
+      completed: false,
+      icon: form.icon.trim() || '⭐',
+      category: form.category || 'personal',
+      note: form.note ? form.note.trim() : 'Hábito personalizado diario',
+      isCustom: true
+    };
+
+    setHabits((prev) => {
+      const next = [...prev, habitToAdd];
+      try {
+        localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
+        localStorage.setItem('aurafit_habits', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    showToast(`✨ Hábito "${habitToAdd.name}" agregado con éxito.`);
+    setShowAddHabitModal(false);
+    setNewHabitForm({ name: '', target: '', icon: '🧘', category: 'bienestar', note: '' });
+  };
+
+  const handleDeleteHabit = (habitId) => {
+    setHabits((prev) => {
+      const next = prev.filter((h) => h.id !== habitId);
+      try {
+        localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
+        localStorage.setItem('aurafit_habits', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    showToast('🗑️ Hábito eliminado de tu rutina.');
   };
 
   const addWater = (ml) => {
@@ -2556,9 +2604,22 @@ export default function HomePage() {
                 <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                   Hábitos Diarios ({currentProfile.name})
                 </span>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-green)' }}>
-                  {completedHabitsCount} / {habits.length}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-green)' }}>
+                    {completedHabitsCount} / {habits.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-add-habit-trigger"
+                    onClick={() => {
+                      setNewHabitForm({ name: '', target: '', icon: '🧘', category: 'bienestar', note: '' });
+                      setShowAddHabitModal(true);
+                    }}
+                  >
+                    <span>+</span>
+                    <span>Agregar Hábito</span>
+                  </button>
+                </div>
               </div>
               {habits.map((habit) => (
                 <div
@@ -2595,6 +2656,11 @@ export default function HomePage() {
                             ▶ Asistente Guiado
                           </span>
                         )}
+                        {habit.isCustom && (
+                          <span style={{ fontSize: '9.5px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', padding: '1px 5px', borderRadius: '6px', fontWeight: 800 }}>
+                            Personal
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                         {habit.target} {habit.completed && `· Completado a las ${habit.time || 'hoy'}`}
@@ -2606,27 +2672,44 @@ export default function HomePage() {
                       )}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      width: '30px',
-                      height: '30px',
-                      borderRadius: '50%',
-                      border: habit.completed ? 'none' : '2px solid var(--border-subtle)',
-                      background: habit.completed ? 'var(--fitia-green)' : 'transparent',
-                      color: habit.completed ? '#FFFFFF' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '15px',
-                      fontWeight: 900,
-                      cursor: 'pointer'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleHabit(habit.id);
-                    }}
-                  >
-                    ✓
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {habit.isCustom && (
+                      <button
+                        type="button"
+                        title="Eliminar este hábito"
+                        className="btn-delete-habit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`¿Eliminar el hábito "${habit.name}"?`)) {
+                            handleDeleteHabit(habit.id);
+                          }
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    )}
+                    <div
+                      style={{
+                        width: '30px',
+                        height: '30px',
+                        borderRadius: '50%',
+                        border: habit.completed ? 'none' : '2px solid var(--border-subtle)',
+                        background: habit.completed ? 'var(--fitia-green)' : 'transparent',
+                        color: habit.completed ? '#FFFFFF' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '15px',
+                        fontWeight: 900,
+                        cursor: 'pointer'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleHabit(habit.id);
+                      }}
+                    >
+                      ✓
+                    </div>
                   </div>
                 </div>
               ))}
@@ -3572,6 +3655,231 @@ export default function HomePage() {
                 Cerrar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Crear Nuevo Hábito Personalizado */}
+      {showAddHabitModal && (
+        <div className="grocery-modal-backdrop" onClick={() => setShowAddHabitModal(false)}>
+          <div className="grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '24px' }}>✨</span>
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    Nuevo Hábito Personalizado
+                  </h3>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Para {currentProfile.name} · Se integrará a tu AuraScore diario
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '22px', cursor: 'pointer' }}
+                onClick={() => setShowAddHabitModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Templates (1-click inspiration) */}
+            <div style={{ marginBottom: '16px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'block', marginBottom: '8px' }}>
+                💡 Ideas Rápidas (Toca para autocompletar):
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {[
+                  { name: '10 min Sol Matutino', target: '10 min al despertar', icon: '☀️', category: 'biohacking', note: 'Sincroniza ritmo circadiano y producción de melatonina' },
+                  { name: 'Caminata Post-Comida', target: '15 min suave', icon: '🚶‍♂️', category: 'nutricion', note: 'Activa GLUT-4 y reduce picos de insulina' },
+                  { name: 'Estiramiento Psoas & Lumbar', target: '10 min diarios', icon: '🧘‍♀️', category: 'recuperacion', note: 'Descompresión espinal y alivio lumbar' },
+                  { name: 'Lectura sin Pantallas', target: '15 min antes de dormir', icon: '📖', category: 'salud_mental', note: 'Calma el sistema nervioso para sueño profundo' },
+                  { name: 'Infusión Digestiva Caliente', target: '1 taza post-cena', icon: '🍵', category: 'bienestar', note: 'Previene reflujo y digestión pesada' },
+                  { name: 'Ducha Fría de 2 Minutos', target: '2 min al finalizar', icon: '❄️', category: 'biohacking', note: 'Termogénesis activa y resiliencia mental' }
+                ].map((tpl, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="quick-template-chip"
+                    onClick={() => setNewHabitForm({
+                      name: tpl.name,
+                      target: tpl.target,
+                      icon: tpl.icon,
+                      category: tpl.category,
+                      note: tpl.note
+                    })}
+                  >
+                    <span>{tpl.icon}</span>
+                    <span>{tpl.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newHabitForm.name.trim()) {
+                  alert('Por favor ingresa un nombre para tu hábito.');
+                  return;
+                }
+                handleAddCustomHabit(newHabitForm);
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+            >
+              {/* Name input */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                  Nombre del Hábito *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Meditación Vipassana, Tomar té matcha..."
+                  value={newHabitForm.name}
+                  onChange={(e) => setNewHabitForm((prev) => ({ ...prev, name: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    color: 'var(--text-main)',
+                    fontSize: '14px',
+                    fontWeight: 700
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              {/* Icon selector & Target */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                    Emoji / Icono
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      value={newHabitForm.icon}
+                      onChange={(e) => setNewHabitForm((prev) => ({ ...prev, icon: e.target.value }))}
+                      style={{
+                        width: '54px',
+                        textAlign: 'center',
+                        fontSize: '22px',
+                        background: 'var(--bg-card-subtle)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '12px',
+                        padding: '8px'
+                      }}
+                    />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '80px' }}>
+                      {['☀️', '🧘', '📖', '🍵', '💧', '🚶‍♂️', '❄️', '🧠'].map((em) => (
+                        <button
+                          key={em}
+                          type="button"
+                          style={{
+                            background: newHabitForm.icon === em ? 'var(--fitia-blue-soft)' : 'var(--bg-card-subtle)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            padding: '2px 4px'
+                          }}
+                          onClick={() => setNewHabitForm((prev) => ({ ...prev, icon: em }))}
+                        >
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                    Meta / Frecuencia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 15 min diarios, 1 taza..."
+                    value={newHabitForm.target}
+                    onChange={(e) => setNewHabitForm((prev) => ({ ...prev, target: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg-card-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      color: 'var(--text-main)',
+                      fontSize: '13px',
+                      fontWeight: 700
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Note / Purpose */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                  Nota o Beneficio Fisiológico (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Reduce cortisol matutino y activa el foco mental"
+                  value={newHabitForm.note}
+                  onChange={(e) => setNewHabitForm((prev) => ({ ...prev, note: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    color: 'var(--text-main)',
+                    fontSize: '13px',
+                    fontWeight: 500
+                  }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-muted)',
+                    padding: '12px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setShowAddHabitModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1.5,
+                    background: 'var(--fitia-green)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '12px',
+                    borderRadius: '14px',
+                    fontWeight: 900,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  ✨ Guardar Hábito
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
