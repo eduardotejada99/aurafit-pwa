@@ -624,7 +624,7 @@ export default function HomePage() {
             {compensator.isImbalanced && (
               <section className="compensator-card">
                 <div className="compensator-badge">
-                  <span>⚡</span> Compensador Inteligente Activo
+                  <span>⚡</span> {compensator.diagnosticTitle || 'Compensador Inteligente Activo'}
                 </div>
 
                 <div>
@@ -632,7 +632,9 @@ export default function HomePage() {
                     ¿Qué comer después para llegar a tus requerimientos?
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
-                    {compensator.snacksLogged.length > 0 ? (
+                    {compensator.diagnosticDetail ? (
+                      compensator.diagnosticDetail
+                    ) : compensator.snacksLogged.length > 0 ? (
                       <>
                         Detectamos el registro de <strong>{compensator.snacksLogged.map((s) => s.name).join(' y ')}</strong>. Aportaron carbohidratos y grasas rápidas con baja densidad proteica.
                       </>
@@ -1633,41 +1635,87 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                {/* Grams Selector */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>Gramos:</span>
-                  {[30, 50, 100, 150].map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        border: customGrams === g ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
-                        background: customGrams === g ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
-                        color: customGrams === g ? 'var(--fitia-green)' : 'var(--text-muted)',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setCustomGrams(g)}
-                    >
-                      {g}g
-                    </button>
-                  ))}
-                  <input
-                    type="number"
-                    value={customGrams}
-                    onChange={(e) => setCustomGrams(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    style={{
-                      width: '60px',
-                      padding: '4px 6px !important',
-                      fontSize: '12px !important',
-                      textAlign: 'center',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </div>
+                {/* Dynamic Unit & Grams Selector */}
+                {(() => {
+                  const nameLower = (selectedFoodToLog.name || '').toLowerCase();
+                  let portionButtons = [
+                    { label: '30g', g: 30 },
+                    { label: '50g', g: 50 },
+                    { label: '100g', g: 100 },
+                    { label: '150g', g: 150 }
+                  ];
+
+                  if (nameLower.includes('huevo') && !nameLower.includes('clara')) {
+                    portionButtons = [
+                      { label: '1 huevo', g: 50 },
+                      { label: '2 huevos', g: 100 },
+                      { label: '3 huevos', g: 150 },
+                      { label: '4 huevos', g: 200 },
+                      { label: '6 huevos', g: 300 }
+                    ];
+                  } else if (nameLower.includes('clara')) {
+                    portionButtons = [
+                      { label: '2 claras', g: 65 },
+                      { label: '3 claras', g: 100 },
+                      { label: '4 claras', g: 130 },
+                      { label: '5 claras', g: 165 },
+                      { label: '6 claras', g: 200 }
+                    ];
+                  } else if (nameLower.includes('mantequilla') || nameLower.includes('aceite')) {
+                    portionButtons = [
+                      { label: '1 cdita (5g)', g: 5 },
+                      { label: '1 cda (14g)', g: 14 },
+                      { label: '2 cdas (28g)', g: 28 },
+                      { label: '3 cdas (42g)', g: 42 }
+                    ];
+                  } else if (nameLower.includes('pan')) {
+                    portionButtons = [
+                      { label: '1 pan (40g)', g: 40 },
+                      { label: '2 panes (80g)', g: 80 },
+                      { label: '3 panes (120g)', g: 120 }
+                    ];
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>Porción:</span>
+                      {portionButtons.map((btn) => (
+                        <button
+                          key={btn.g}
+                          type="button"
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            border: customGrams === btn.g ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                            background: customGrams === btn.g ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                            color: customGrams === btn.g ? 'var(--fitia-green)' : 'var(--text-muted)',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => setCustomGrams(btn.g)}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
+                        <input
+                          type="number"
+                          value={customGrams}
+                          onChange={(e) => setCustomGrams(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                          style={{
+                            width: '50px',
+                            padding: '4px 4px !important',
+                            fontSize: '12px !important',
+                            textAlign: 'center',
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 800 }}>g</span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Meal Slot Selector */}
                 <div style={{ display: 'flex', gap: '6px' }}>

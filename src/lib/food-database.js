@@ -202,7 +202,7 @@ export const CURATED_PERUVIAN_FOODS = [
   },
   {
     id: 'fit-huevo-entero',
-    name: 'Huevo Entero de Gallina (Sancochado/Frito)',
+    name: 'Huevo Entero de Gallina (Cocido / Sancochado)',
     brand: 'Natural',
     servingDesc: '2 unidades (100g)',
     grams: 100,
@@ -215,6 +215,70 @@ export const CURATED_PERUVIAN_FOODS = [
     isSnack: false,
     isUltraProcessed: false,
     icon: '🥚'
+  },
+  {
+    id: 'fit-huevo-frito',
+    name: 'Huevo Entero Frito en Sartén',
+    brand: 'Natural / Casero',
+    servingDesc: '1 unidad (50g)',
+    grams: 50,
+    calories: 73,
+    protein: 6.5,
+    carbs: 0.6,
+    fat: 5.0,
+    fiber: 0.0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍳'
+  },
+  {
+    id: 'fit-mantequilla-14g',
+    name: 'Mantequilla con Sal / Sin Sal (Laive / Gloria)',
+    brand: 'Laive / Gloria',
+    servingDesc: '1 cucharada (14g)',
+    grams: 14,
+    calories: 102,
+    protein: 0.1,
+    carbs: 0.1,
+    fat: 11.5,
+    fiber: 0.0,
+    category: 'grasa',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🧈'
+  },
+  {
+    id: 'fit-aceite-oliva-14g',
+    name: 'Aceite de Oliva Extra Virgen',
+    brand: 'El Olivar / Carbonell',
+    servingDesc: '1 cucharada (14g)',
+    grams: 14,
+    calories: 120,
+    protein: 0.0,
+    carbs: 0.0,
+    fat: 14.0,
+    fiber: 0.0,
+    category: 'grasa_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🫒'
+  },
+  {
+    id: 'fit-pan-frances',
+    name: 'Pan Francés / Ciabatta Tradicional',
+    brand: 'Panadería Tradicional',
+    servingDesc: '1 unidad (40g)',
+    grams: 40,
+    calories: 110,
+    protein: 3.5,
+    carbs: 22.0,
+    fat: 1.0,
+    fiber: 1.2,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥖'
   },
   {
     id: 'fit-atun-agua',
@@ -476,99 +540,257 @@ export const CURATED_PERUVIAN_FOODS = [
   }
 ];
 
+const SPANISH_NUMBERS = {
+  un: 1,
+  uno: 1,
+  una: 1,
+  jna: 1, // typo habitual en teclado móvil
+  dos: 2,
+  tres: 3,
+  cuatro: 4,
+  cinco: 5,
+  seis: 6,
+  siete: 7,
+  ocho: 8,
+  nueve: 9,
+  diez: 10,
+  media: 0.5,
+  medio: 0.5
+};
+
+function extractLeadingCount(subStr, defaultCount = 1) {
+  const match = subStr.match(/(\d+(?:\.\d+)?|un|uno|una|jna|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|media|medio)/i);
+  if (!match) return defaultCount;
+  const token = match[1].toLowerCase();
+  if (SPANISH_NUMBERS[token] !== undefined) return SPANISH_NUMBERS[token];
+  const parsed = parseFloat(token);
+  return isNaN(parsed) ? defaultCount : parsed;
+}
+
 /**
  * Natural Language Food Parser
- * Recognizes terms like:
- * - "chifles"
- * - "kekito" o "keke"
- * - "2 huevos y avena"
- * - "pechuga de pollo y arroz"
+ * Recognizes multi-ingredient sentences, unit counts, and typos:
+ * - "3 huevos fritos con jna cucharada de mantequilla"
+ * - "4 huevos"
+ * - "6 huevos cocidos con 2 panes"
+ * - "chifles con un kekito"
  */
 export function parseNaturalLanguageFood(text = '') {
   if (!text || typeof text !== 'string') return [];
 
   const lower = text.toLowerCase().trim();
   const detectedItems = [];
+  const processedKeys = new Set();
 
-  // Patterns
-  const patterns = [
+  // 1. Huevos Enteros
+  if (lower.includes('huevo') && !lower.includes('claras de huevo') && !lower.includes('solo claras')) {
+    const eggRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s*(?:de\s*)?)?huevos?/i;
+    const match = lower.match(eggRegex);
+    const count = match && match[1] ? extractLeadingCount(match[1], 2) : (extractLeadingCount(lower, 2) || 2);
+    const isFried = lower.includes('frito') || lower.includes('fritos') || lower.includes('sarten');
+    const isScrambled = lower.includes('revuelto') || lower.includes('revueltos');
+    const prep = isFried ? 'Fritos' : isScrambled ? 'Revueltos' : 'Cocidos';
+
+    detectedItems.push({
+      id: `parsed-huevo-${Date.now()}`,
+      name: `${count} Huevo${count > 1 ? 's' : ''} Entero${count > 1 ? 's' : ''} ${prep}`,
+      brand: 'Natural / Casero',
+      servingDesc: `${count} unidad${count > 1 ? 'es' : ''} (${Math.round(count * 50)}g)`,
+      grams: Math.round(count * 50),
+      calories: Math.round(count * 72.5),
+      protein: parseFloat((count * 6.5).toFixed(1)),
+      carbs: parseFloat((count * 0.55).toFixed(1)),
+      fat: parseFloat((count * 5.0).toFixed(1)),
+      fiber: 0,
+      icon: isFried || isScrambled ? '🍳' : '🥚',
+      category: 'proteina',
+      isSnack: false,
+      isUltraProcessed: false
+    });
+    processedKeys.add('huevo');
+  }
+
+  // 2. Claras de Huevo
+  if (lower.includes('clara') || lower.includes('claras')) {
+    const claraRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro|cinco|seis|siete|ocho)\s*(?:de\s*)?)?claras?/i;
+    const match = lower.match(claraRegex);
+    const count = match && match[1] ? extractLeadingCount(match[1], 4) : 4;
+
+    detectedItems.push({
+      id: `parsed-claras-${Date.now()}`,
+      name: `${count} Claras de Huevo`,
+      brand: 'Natural',
+      servingDesc: `${count} claras (${Math.round(count * 33)}g)`,
+      grams: Math.round(count * 33),
+      calories: Math.round(count * 17),
+      protein: parseFloat((count * 3.6).toFixed(1)),
+      carbs: parseFloat((count * 0.2).toFixed(1)),
+      fat: parseFloat((count * 0.05).toFixed(1)),
+      fiber: 0,
+      icon: '🍳',
+      category: 'proteina',
+      isSnack: false,
+      isUltraProcessed: false
+    });
+    processedKeys.add('clara');
+  }
+
+  // 3. Mantequilla / Ghee
+  if (lower.includes('mantequilla') || lower.includes('ghee')) {
+    const butterRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro)\s*(?:cucharadas?|cdas?|porciones?|cucharaditas?|cditas?)?\s*(?:de\s*)?)?mantequilla/i;
+    const match = lower.match(butterRegex);
+    const isTeaspoon = lower.includes('cucharadita') || lower.includes('cdita');
+    const spoons = match && match[1] ? extractLeadingCount(match[1], 1) : 1;
+    const grams = isTeaspoon ? Math.round(spoons * 5) : Math.round(spoons * 14);
+
+    detectedItems.push({
+      id: `parsed-mantequilla-${Date.now()}`,
+      name: `${spoons} ${isTeaspoon ? 'Cucharadita' : 'Cucharada'}${spoons > 1 ? 's' : ''} de Mantequilla`,
+      brand: 'Laive / Gloria',
+      servingDesc: `${grams}g`,
+      grams: grams,
+      calories: Math.round(spoons * (isTeaspoon ? 36 : 102)),
+      protein: parseFloat((spoons * 0.1).toFixed(1)),
+      carbs: parseFloat((spoons * 0.1).toFixed(1)),
+      fat: parseFloat((spoons * (isTeaspoon ? 4.1 : 11.5)).toFixed(1)),
+      fiber: 0,
+      icon: '🧈',
+      category: 'grasa',
+      isSnack: false,
+      isUltraProcessed: false
+    });
+    processedKeys.add('mantequilla');
+  }
+
+  // 4. Aceite / Aceite de Oliva
+  if (lower.includes('aceite')) {
+    const oilRegex = /(?:(\d+|un|uno|una|jna|dos|tres)\s*(?:cucharadas?|cdas?|chorrito)?\s*(?:de\s*)?)?aceite/i;
+    const match = lower.match(oilRegex);
+    const spoons = match && match[1] ? extractLeadingCount(match[1], 1) : 1;
+    const isOlive = lower.includes('oliva');
+
+    detectedItems.push({
+      id: `parsed-aceite-${Date.now()}`,
+      name: `${spoons} Cucharada${spoons > 1 ? 's' : ''} de Aceite ${isOlive ? 'de Oliva' : 'Vegetal'}`,
+      brand: isOlive ? 'El Olivar' : 'Cocinero',
+      servingDesc: `${spoons * 14}g`,
+      grams: spoons * 14,
+      calories: Math.round(spoons * 120),
+      protein: 0,
+      carbs: 0,
+      fat: parseFloat((spoons * 13.5).toFixed(1)),
+      fiber: 0,
+      icon: isOlive ? '🫒' : '🧴',
+      category: 'grasa',
+      isSnack: false,
+      isUltraProcessed: false
+    });
+    processedKeys.add('aceite');
+  }
+
+  // 5. Panes
+  if (lower.includes('pan') && !lower.includes('pancake') && !lower.includes('panqueque')) {
+    const breadRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro)\s*)?pan(?:es)?/i;
+    const match = lower.match(breadRegex);
+    const count = match && match[1] ? extractLeadingCount(match[1], 1) : 1;
+
+    detectedItems.push({
+      id: `parsed-pan-${Date.now()}`,
+      name: `${count} Pan${count > 1 ? 'es' : ''} Francés / Integral`,
+      brand: 'Panadería',
+      servingDesc: `${count} unidad${count > 1 ? 'es' : ''} (${count * 40}g)`,
+      grams: count * 40,
+      calories: Math.round(count * 110),
+      protein: parseFloat((count * 3.5).toFixed(1)),
+      carbs: parseFloat((count * 22.0).toFixed(1)),
+      fat: parseFloat((count * 1.0).toFixed(1)),
+      fiber: parseFloat((count * 1.2).toFixed(1)),
+      icon: '🥖',
+      category: 'carbohidrato',
+      isSnack: false,
+      isUltraProcessed: false
+    });
+    processedKeys.add('pan');
+  }
+
+  // 6. Curated items matches (Chifles, Kekitos, Pechuga, Arroz, etc.)
+  const additionalPatterns = [
     {
-      keywords: ['chifle', 'chifles', 'chifles piuranos'],
+      key: 'chifle',
+      keywords: ['chifle', 'chifles'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'snack-chifles-50g')
     },
     {
+      key: 'keke',
       keywords: ['kekito', 'keke', 'quequito', 'queque'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'snack-kekito-naranja')
     },
     {
-      keywords: ['huevo', 'huevos', 'huevos revueltos', 'huevos pasados'],
-      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-huevo-entero')
-    },
-    {
-      keywords: ['clara', 'claras', 'claras de huevo'],
-      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-claras-huevo')
-    },
-    {
+      key: 'pechuga',
       keywords: ['pechuga', 'pollo a la plancha', 'pechuga de pollo'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-pechuga-pollo')
     },
     {
-      keywords: ['atun', 'atún', 'lata de atun'],
+      key: 'atun',
+      keywords: ['atun', 'atún'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-atun-agua')
     },
     {
-      keywords: ['avena', 'avena con leche', 'quaker'],
+      key: 'avena',
+      keywords: ['avena', 'quaker'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-avena-hojuelas')
     },
     {
+      key: 'arroz',
       keywords: ['arroz', 'arroz blanco'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-arroz-blanco')
     },
     {
-      keywords: ['yogur', 'yogurt', 'yogur griego'],
+      key: 'yogur',
+      keywords: ['yogur', 'yogurt'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-yogur-griego')
     },
     {
-      keywords: ['platano', 'plátano', 'banana'],
-      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-platano-seda')
-    },
-    {
+      key: 'palta',
       keywords: ['palta', 'aguacate'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-palta-fuerte')
     },
     {
-      keywords: ['galleta', 'galletas', 'casino'],
+      key: 'galleta',
+      keywords: ['casino', 'morochas', 'galletas'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'snack-galletas-casino')
     },
     {
+      key: 'chocolate',
       keywords: ['sublime', 'chocolate'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'snack-chocolate-sublime')
     },
     {
+      key: 'canchita',
       keywords: ['canchita', 'popcorn'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'snack-canchita-popcorn')
     },
     {
-      keywords: ['empanada'],
-      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'snack-empanada-carne')
-    },
-    {
+      key: 'lomo',
       keywords: ['lomo saltado'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'plato-lomo-saltado')
     },
     {
+      key: 'pollo-brasa',
       keywords: ['pollo a la brasa', 'pollo brasa'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'plato-pollo-brasa')
     },
     {
+      key: 'ceviche',
       keywords: ['ceviche'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'plato-ceviche-mixto')
     }
   ];
 
-  for (const p of patterns) {
-    if (p.keywords.some((kw) => lower.includes(kw))) {
-      detectedItems.push(p.item);
+  for (const p of additionalPatterns) {
+    if (!processedKeys.has(p.key) && p.keywords.some((kw) => lower.includes(kw))) {
+      if (p.item) detectedItems.push(p.item);
+      processedKeys.add(p.key);
     }
   }
 
@@ -577,8 +799,9 @@ export function parseNaturalLanguageFood(text = '') {
 
 /**
  * Smart Compensator Engine ("¿Qué comer después?")
- * Calculates exact macro and calorie shifts post-snack/treat,
- * and generates 3 targeted protein-forward, low-fat compensatory meal strategies.
+ * Calculates exact macro and calorie shifts post-meal or post-snack,
+ * detecting lipid overloads (e.g. 3 eggs + butter, or 6 eggs) and dynamically
+ * prescribing clean protein pivots to achieve daily recomposition targets.
  */
 export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
   const targetKcal = targets?.targetCalories || 2004;
@@ -597,9 +820,14 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
-  // Check if snacks/treats were logged
+  // Check if snacks/treats or high-fat meals were logged
   const snacksLogged = loggedFoods.filter(
-    (f) => f.isSnack || f.isUltraProcessed || f.id?.includes('snack') || f.name?.toLowerCase().includes('chifle') || f.name?.toLowerCase().includes('keke')
+    (f) =>
+      f.isSnack ||
+      f.isUltraProcessed ||
+      f.id?.includes('snack') ||
+      f.name?.toLowerCase().includes('chifle') ||
+      f.name?.toLowerCase().includes('keke')
   );
 
   const remainingKcal = Math.max(0, targetKcal - consumed.calories);
@@ -607,25 +835,48 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
   const remainingCarbs = Math.max(0, targetCarbs - consumed.carbs);
   const remainingFat = Math.max(0, targetFat - consumed.fat);
 
-  // Detect imbalance: high carbs/fat consumed, but protein lagging behind
-  const isImbalanced = snacksLogged.length > 0 || (consumed.fat > targetFat * 0.7 && consumed.protein < targetProtein * 0.5);
+  // Diagnostic metrics
+  const fatPercentConsumed = Math.round((consumed.fat / targetFat) * 100);
+  const proteinPercentConsumed = Math.round((consumed.protein / targetProtein) * 100);
+  const isFatHeavy = consumed.fat >= targetFat * 0.40; // 40%+ of fat used in one meal or early in the day
+  const isImbalanced = snacksLogged.length > 0 || (isFatHeavy && proteinPercentConsumed < 40);
+
+  // Specialized Diagnostic Message
+  let diagnosticTitle = 'Balance Nutricional Óptimo';
+  let diagnosticDetail = 'Tus macronutrientes van en rango perfecto para hipertrofia limpia.';
+
+  if (consumed.fat >= 25 && proteinPercentConsumed < 25) {
+    diagnosticTitle = '⚠️ Carga Lipídica Elevada en Desayuno';
+    diagnosticDetail = `Has consumido ${consumed.fat.toFixed(1)}g de grasa (${fatPercentConsumed}% de tu tope diario de ${targetFat}g). Te quedan solo ${remainingFat.toFixed(1)}g de grasa para el resto del día. Tu Almuerzo y Cena deben ser estrictamente magros (0 grasa agregada).`;
+  } else if (consumed.protein >= 35 && consumed.fat >= 25) {
+    diagnosticTitle = '⚡ Pico Anabólico con Grasa Moderada';
+    diagnosticDetail = `¡Gran aporte proteico de inicio (${consumed.protein.toFixed(1)}g)! Las yemas/mantequilla consumieron ${consumed.fat.toFixed(1)}g de lípidos. Tu siguiente comida debe basarse en carbohidratos limpios (arroz/papa) y proteína ultra-magra.`;
+  } else if (snacksLogged.length > 0) {
+    diagnosticTitle = '⚡ Protocolo de Compensación por Snack Activado';
+    diagnosticDetail = 'Has registrado un antojo dulce/salado. El sistema ha ajustado las grasas y azúcares de tu siguiente plato sin tocar tus metas proteicas.';
+  }
 
   // 3 Scientific Compensatory Options ("Pivote Proteico")
   const options = [
     {
-      id: 'pivot-pollo-ensalada',
-      title: 'Opción 1: Pechuga a la Plancha + Ensalada Verde Gigante (Pivote Proteico Máximo)',
-      mealSlot: 'Cena o Almuerzo',
+      id: 'pivot-pollo-arroz-limpio',
+      title: isFatHeavy
+        ? 'Opción 1: Pechuga a la Plancha + Arroz Blanco al Vapor (Cero Grasa Añadida)'
+        : 'Opción 1: Pechuga a la Plancha + Ensalada Verde Gigante (Pivote Proteico Máximo)',
+      mealSlot: 'Almuerzo o Cena',
       prepTime: '12 min',
       icon: '🍗',
-      description: '200g de pechuga a la plancha con gotas de limón, orégano y un tazón grande de espinacas, lechuga y pepino con vinagre de manzana (sin aceite).',
+      description: isFatHeavy
+        ? '200g de pechuga a la plancha dorada con limón y ajo (sin aceite) + 150g de arroz blanco al vapor con brócoli. Maximiza glucógeno y aminoácidos con solo 3g de grasa.'
+        : '200g de pechuga a la plancha con gotas de limón, orégano y un tazón grande de espinacas, lechuga y pepino con vinagre de manzana.',
       macrosProvided: {
-        calories: 235,
-        protein: 48,
-        carbs: 4,
+        calories: isFatHeavy ? 395 : 235,
+        protein: isFatHeavy ? 49 : 48,
+        carbs: isFatHeavy ? 43 : 4,
         fat: 3.5
       },
-      scienceWhy: 'Aporta casi 50g de proteína pura para asegurar la síntesis proteica de tu Lean Bulk sin agregar prácticamente nada de grasas ni carbohidratos.',
+      scienceWhy:
+        'Aporta casi 50g de proteína de máxima biodisponibilidad para asegurar la síntesis proteica de tu Lean Bulk protegiendo tu límite de grasas diario.',
       foodItemsToAdd: [
         {
           name: 'Pechuga de Pollo a la Plancha (200g)',
@@ -636,12 +887,12 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
           servingDesc: '200g pesados en crudo'
         },
         {
-          name: 'Ensalada Verde Fibrosa con Limón y Vinagre',
-          calories: 20,
-          protein: 2,
-          carbs: 4,
+          name: isFatHeavy ? 'Arroz Blanco al Vapor (150g)' : 'Ensalada Verde Fibrosa con Limón',
+          calories: isFatHeavy ? 180 : 20,
+          protein: isFatHeavy ? 3 : 2,
+          carbs: isFatHeavy ? 43 : 4,
           fat: 0.5,
-          servingDesc: '1 tazón grande'
+          servingDesc: isFatHeavy ? '1 taza colmada' : '1 tazón grande'
         }
       ]
     },
@@ -651,14 +902,16 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
       mealSlot: 'Cena Ligera',
       prepTime: '8 min',
       icon: '🍳',
-      description: 'Bate 5 claras de huevo con 1 lata de atún al agua escurrida, cebolla blanca picada y tomate. Cuaja en sartén antiadherente a fuego bajo.',
+      description:
+        'Bate 5 claras de huevo con 1 lata de atún al agua escurrida, cebolla blanca picada y tomate. Cuaja en sartén antiadherente a fuego bajo.',
       macrosProvided: {
         calories: 210,
         protein: 44,
         carbs: 3,
         fat: 1.5
       },
-      scienceWhy: 'El atún al agua y las claras ofrecen el ratio Proteína/Caloría más eficiente del reino animal. Sacia por completo gracias al volumen de la clara sin alterar tu balance calórico.',
+      scienceWhy:
+        'El atún al agua y las claras ofrecen el ratio Proteína/Caloría más eficiente del reino animal. Sacia por completo gracias al volumen de la albúmina sin alterar tu balance calórico.',
       foodItemsToAdd: [
         {
           name: 'Claras de Huevo (5 unidades)',
@@ -684,14 +937,16 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
       mealSlot: 'Snack de Cierre o Post-Entreno',
       prepTime: '3 min',
       icon: '🥣',
-      description: '150g de yogur griego 0% grasa batido con 1 scoop (30g) de proteína Whey Isolate sabor vainilla o chocolate y canela molida.',
+      description:
+        '150g de yogur griego 0% grasa batido con 1 scoop (30g) de proteína Whey Isolate sabor vainilla o chocolate y canela molida.',
       macrosProvided: {
         calories: 205,
         protein: 40,
         carbs: 6,
         fat: 1.0
       },
-      scienceWhy: 'Cero fricción de cocina. Combina caseína de digestión lenta del yogur griego con la rápida absorción del suero de leche, protegiendo tus músculos durante la noche.',
+      scienceWhy:
+        'Cero fricción de cocina. Combina caseína micelar de digestión lenta del yogur griego con la rápida absorción del suero de leche, protegiendo tus músculos durante la noche.',
       foodItemsToAdd: [
         {
           name: 'Proteína Whey Isolate (1 scoop 30g)',
@@ -715,6 +970,11 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
 
   return {
     isImbalanced,
+    isFatHeavy,
+    fatPercentConsumed,
+    proteinPercentConsumed,
+    diagnosticTitle,
+    diagnosticDetail,
     snacksLogged,
     consumed,
     remaining: {
@@ -724,6 +984,6 @@ export function calculateCompensatoryRebalance({ loggedFoods = [], targets }) {
       fat: remainingFat
     },
     options,
-    damageControlActive: snacksLogged.length > 0
+    damageControlActive: isImbalanced || isFatHeavy || snacksLogged.length > 0
   };
 }
