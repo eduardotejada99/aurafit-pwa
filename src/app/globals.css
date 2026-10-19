@@ -89,6 +89,17 @@ body {
   width: 100%;
 }
 
+/* Mobile-Native Body Scroll Lock when ANY Modal/Sheet is Open */
+html.modal-open,
+body.modal-open,
+.modal-open .mobile-shell {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+  height: 100% !important;
+  max-height: 100dvh !important;
+}
+
 /* Prevent auto-zoom on iOS (only apply to text inputs to avoid breaking compact button typography) */
 input, textarea, select {
   font-family: inherit;
@@ -2766,6 +2777,232 @@ button:active, .touchable:active {
   border-color: #F59E0B;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
+
+/* ==========================================================================
+   Mobile-Native Unified Modal Containment & Reader System (Emil Kowalski)
+   ========================================================================== */
+
+/* Universal Modal Backdrop */
+.modal-backdrop,
+.food-modal-backdrop,
+.grocery-modal-backdrop,
+.reader-modal-backdrop,
+.pin-lock-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  overscroll-behavior: contain !important;
+  touch-action: none !important;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-backdrop.centered,
+.reader-modal-backdrop.centered {
+  align-items: center !important;
+  padding: 16px !important;
+}
+
+@media (min-width: 440px) {
+  .modal-backdrop,
+  .food-modal-backdrop,
+  .grocery-modal-backdrop,
+  .reader-modal-backdrop {
+    align-items: center !important;
+    padding: 20px !important;
+  }
+}
+
+/* Universal Modal Sheet / Card - Contained Touch Scrolling */
+.modal-sheet,
+.food-modal-sheet,
+.grocery-modal-sheet,
+.reader-modal-sheet,
+.pin-lock-card {
+  background: var(--bg-card) !important;
+  border-top-left-radius: 28px !important;
+  border-top-right-radius: 28px !important;
+  width: 100% !important;
+  max-width: 440px !important;
+  max-height: 88dvh !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35) !important;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-sheet.centered,
+.reader-modal-sheet.centered {
+  border-radius: 24px !important;
+}
+
+@media (min-width: 440px) {
+  .modal-sheet,
+  .food-modal-sheet,
+  .grocery-modal-sheet,
+  .reader-modal-sheet {
+    border-radius: 28px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+  }
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Reader Modal - Optimized for Long Texts, Technique Guides & Recipes */
+.reader-modal-sheet {
+  padding: 22px 20px calc(24px + var(--safe-bottom)) !important;
+  max-height: 88dvh !important;
+}
+
+.reader-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
+}
+
+.reader-modal-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.reader-modal-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.reader-modal-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.reader-modal-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.reader-section-card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.reader-section-heading {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.reader-section-body {
+  font-size: 13px;
+  color: var(--text-main);
+  line-height: 1.55;
+}
+
+.reader-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.reader-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.reader-step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--fitia-green);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.reader-step-content {
+  font-size: 12.5px;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+.reader-alert-box {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #DC2626;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.reader-tip-box {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--fitia-green);
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
 
 
 

@@ -383,6 +383,46 @@ export default function HomePage() {
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
+  // Reader Modal State for Deep Text / Technique Guides / Step-by-Step Protocols
+  const [detailReaderModal, setDetailReaderModal] = useState(null);
+
+  // Unified Mobile-Native Body Scroll Lock when ANY Modal or Sheet is Open
+  const isAnyModalOpen = Boolean(
+    showProfileModal ||
+    showAddMemberModal ||
+    showAdminPinModal ||
+    showWimHofModal ||
+    showTextLogModal ||
+    showFoodSearchModal ||
+    showCoupleGroceryModal ||
+    showWeightModal ||
+    showAddHabitModal ||
+    showDamageControl ||
+    showNotificationModal ||
+    selectedRecipeDetail ||
+    detailReaderModal ||
+    isLocked
+  );
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const body = document.body;
+
+    if (isAnyModalOpen) {
+      body.classList.add('modal-open');
+      root.classList.add('modal-open');
+    } else {
+      body.classList.remove('modal-open');
+      root.classList.remove('modal-open');
+    }
+
+    return () => {
+      body.classList.remove('modal-open');
+      root.classList.remove('modal-open');
+    };
+  }, [isAnyModalOpen]);
+
   // Load local storage if available on mount & initiate bidirectional cloud sync
   useEffect(() => {
     let activeKey = 'andres';
@@ -2192,6 +2232,51 @@ export default function HomePage() {
                     ? 'Día de Espalda & Dominadas lastradas: Consume 30g de proteína de rápida asimilación post-entreno y mantén electrolitos para el agarre.'
                     : 'Mantén hidratación constante (+500ml con agua pura o limón) y 30-35g de proteína en tu comida post-workout.'}
                 </p>
+                <button
+                  type="button"
+                  style={{
+                    marginTop: '8px',
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '8px',
+                    padding: '4px 8px',
+                    fontSize: '10.5px',
+                    fontWeight: 800,
+                    color: 'var(--fitia-green)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setDetailReaderModal({
+                    title: `Sinergia Nutricional: ${isMissedDay ? 'Core Express & Control Glucémico' : (HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[selectedSplit || (activeProfileId === 'andres' ? 'legs' : 'glutes_legs')]?.shortName || 'Entrenamiento del Día')}`,
+                    subtitle: 'Optimización de Glucógeno, Síntesis Proteica y Recuperación Muscular',
+                    icon: isMissedDay ? '⚡' : selectedSplit === 'legs' ? '🦵' : selectedSplit === 'push' ? '🛡️' : selectedSplit === 'pull' ? '🦅' : '🦁',
+                    badge: 'TIMING NUTRICIONAL',
+                    badgeBg: 'rgba(16, 185, 129, 0.12)',
+                    badgeColor: 'var(--fitia-green)',
+                    sections: [
+                      {
+                        heading: 'Ventana Pre-Entrenamiento (2 horas antes)',
+                        icon: '🍌',
+                        text: selectedSplit === 'legs'
+                          ? 'Las demandas glucolíticas de sentadillas y prensa son elevadas. 40-50g de carbohidratos con bajo índice glucémico (avena con plátano o arroz) saturan los depósitos de glucógeno muscular en cuádriceps y glúteos.'
+                          : 'Carbohidratos moderados de fácil digestión con una porción ligera de proteína. Evita excesos de grasas densas justo antes para no desviar flujo sanguíneo a la digestión estomacal.',
+                        tip: 'Toma 400-500ml de agua 45 minutos antes para asegurar hidratación de los discos intervertebrales y articulaciones.'
+                      },
+                      {
+                        heading: 'Ventana Post-Entrenamiento (1 a 2 horas después)',
+                        icon: '🥩',
+                        text: 'Ingesta de 30-35g de proteína rica en leucina (pollo, atún, huevos, queso o batido) para encender la vía mTORC1 y detener el catabolismo inducido por el esfuerzo muscular.',
+                        alert: 'Si fue un día pesado de piernas o espalda en altitud (Cajabamba), acompaña con electrolitos (una pizca de sal marina en agua de limón) para prevenir calambres nocturnos.'
+                      }
+                    ],
+                    actionText: '✓ Entendido / Cerrar Guía'
+                  })}
+                >
+                  <span>📖</span>
+                  <span>Ver Timing & Guía Nutricional</span>
+                </button>
               </div>
             </section>
 
@@ -2230,6 +2315,58 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  style={{
+                    marginTop: '10px',
+                    width: '100%',
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: 'var(--fitia-green)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setDetailReaderModal({
+                    title: 'Secuenciación Bioquímica de Alimentos',
+                    subtitle: 'Control Glucémico & Sensibilidad a la Insulina sin Restricción Calórica',
+                    icon: '🥗',
+                    badge: 'FISIOLOGÍA CLÍNICA',
+                    badgeBg: 'var(--fitia-green-soft)',
+                    badgeColor: 'var(--fitia-green)',
+                    sections: [
+                      {
+                        heading: '1. El Efecto Malla de la Fibra',
+                        icon: '🥦',
+                        text: 'Al ingerir verduras crudas o cocidas (con limón o vinagre de manzana) al inicio del plato, la fibra soluble e insoluble tapiza las vellosidades del duodeno e íleon formando una red microscópica viscosa. Esto ralentiza la tasa de vaciado gástrico.',
+                        tip: 'Añadir 1 cucharadita de aceite de oliva extra virgen y limón a tu ensalada amplifica este beneficio amortiguador.'
+                      },
+                      {
+                        heading: '2. Estímulo Hormonal de Saciedad (GLP-1 y PYY)',
+                        icon: '🥩',
+                        text: 'Las proteínas (huevo, pollo, pescado, queso fresco) y las grasas monoinsaturadas activan las células L enteroendocrinas en el tracto digestivo, liberando neuropéptidos saciantes (GLP-1 y péptido YY) antes de que lleguen los almidones.',
+                        tip: 'Come masticando pausadamente para darle 15-20 minutos al cerebro de recibir las señales de plenitud gástrica.'
+                      },
+                      {
+                        heading: '3. Aplanamiento del Pico Glucémico',
+                        icon: '🍚',
+                        text: 'Cuando los carbohidratos (papa, arroz o camote) entran finalmente en el torrente digestivo, la glucosa se absorbe de forma gradual en vez de en tromba. Esto previene el "pico y caída" (crash de energía) y el deseo incontrolable de picar dulce 2 horas después.',
+                        alert: 'No necesitas eliminar los carbohidratos de tu dieta peruana; cambiar el orden en que entran a tu estómago transforma su impacto hormonal por completo.'
+                      }
+                    ],
+                    actionText: '✓ Entendido / Cerrar Guía'
+                  })}
+                >
+                  <span>📖</span>
+                  <span>Ver Fisiología Completa del Orden de Ingesta</span>
+                </button>
               </section>
             )}
 
@@ -3588,8 +3725,66 @@ export default function HomePage() {
                         {habit.target} {habit.completed && `· Completado a las ${habit.time || 'hoy'}`}
                       </div>
                       {habit.note && (
-                        <div style={{ fontSize: '11px', color: 'var(--text-sub)', marginTop: '3px', fontStyle: 'italic', lineHeight: 1.3 }}>
-                          {habit.note}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-sub)', fontStyle: 'italic', lineHeight: 1.3, flex: 1, minWidth: '160px' }}>
+                            {habit.note.length > 60 ? `${habit.note.slice(0, 58)}...` : habit.note}
+                          </div>
+                          <button
+                            type="button"
+                            style={{
+                              background: 'var(--bg-card-subtle)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '6px',
+                              padding: '2px 7px',
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              color: 'var(--fitia-blue)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailReaderModal({
+                                title: habit.name,
+                                subtitle: habit.target || 'Hábito Diario de Bienestar & Biohacking',
+                                icon: habit.icon || '✨',
+                                badge: (habit.category || 'bienestar').toUpperCase(),
+                                badgeBg: 'var(--fitia-blue-soft)',
+                                badgeColor: 'var(--fitia-blue)',
+                                sections: [
+                                  {
+                                    heading: 'Mecanismo Fisiológico & Beneficio',
+                                    icon: '🔬',
+                                    text: habit.note
+                                  },
+                                  {
+                                    heading: 'Protocolo de Ejecución & Consistencia',
+                                    icon: '🎯',
+                                    text: `Meta objetivo: ${habit.target}. La regularidad en el mismo horario cada día refuerza las sinapsis neuronales y maximiza los beneficios sistémicos.`,
+                                    tip: habit.name.toLowerCase().includes('creatina')
+                                      ? 'Toma 5g con un vaso de agua o carbohidratos para optimizar la absorción muscular vía transportadores SLC6A8.'
+                                      : habit.name.toLowerCase().includes('sol')
+                                      ? 'Exponer los ojos y piel sin gafas de sol durante 10-15 min antes de las 9am para calibrar el reloj circadiano central.'
+                                      : habit.name.toLowerCase().includes('caminata')
+                                      ? 'Caminar a paso suave durante 10 a 15 minutos después de comer activa transportadores GLUT-4 musculares sin demandar insulina.'
+                                      : 'Completa este hábito diariamente para sumar puntos directos a tu AuraScore de Estilo de Vida.'
+                                  }
+                                ],
+                                actionText: habit.completed ? '✓ Mantener Hábito Completado' : '✓ Marcar Hábito como Completado',
+                                onAction: () => {
+                                  if (!habit.completed) {
+                                    toggleHabit(habit.id);
+                                  }
+                                }
+                              });
+                            }}
+                          >
+                            <span>📖</span>
+                            <span>Guía</span>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -4044,16 +4239,47 @@ export default function HomePage() {
                 {/* Dynamic Cross-Pillar Synergies */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {(systemicPillars.synergies || []).map((syn, sIdx) => (
-                    <div key={syn.id || sIdx} style={{
-                      background: 'var(--bg-card-subtle)',
-                      borderLeft: '3px solid var(--fitia-green)',
-                      padding: '8px 10px',
-                      borderRadius: '0 8px 8px 0',
-                      fontSize: '11.5px',
-                      lineHeight: 1.35
-                    }}>
-                      <div style={{ fontWeight: 800, color: 'var(--text-main)', marginBottom: '2px' }}>
-                        {syn.icon} {syn.title}
+                    <div
+                      key={syn.id || sIdx}
+                      style={{
+                        background: 'var(--bg-card-subtle)',
+                        borderLeft: '3px solid var(--fitia-green)',
+                        padding: '10px 12px',
+                        borderRadius: '0 10px 10px 0',
+                        fontSize: '11.5px',
+                        lineHeight: 1.35,
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease'
+                      }}
+                      onClick={() => setDetailReaderModal({
+                        title: syn.title,
+                        subtitle: 'Sinergia Sistémica de Rendimiento & Recuperación Celular',
+                        icon: syn.icon || '⚡',
+                        badge: 'Sinergia AuraScore',
+                        badgeBg: 'rgba(16, 185, 129, 0.15)',
+                        badgeColor: 'var(--fitia-green)',
+                        sections: [
+                          {
+                            heading: 'Mecanismo Biológico y Fisiológico',
+                            icon: '🧬',
+                            text: syn.text
+                          },
+                          {
+                            heading: 'Impacto en tu Día',
+                            icon: '💡',
+                            tip: 'Al sincronizar estos dos pilares sistémicos, optimizas tu curva de glucosa, disponibilidad mitocondrial de ATP y estabilidad del sistema nervioso central.'
+                          }
+                        ],
+                        actionText: '✓ Entendido / Cerrar Guía'
+                      })}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>
+                          {syn.icon} {syn.title}
+                        </div>
+                        <span style={{ fontSize: '10px', color: 'var(--fitia-green)', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                          📖 Ver Guía
+                        </span>
                       </div>
                       <div style={{ color: 'var(--text-muted)' }}>
                         {syn.text}
@@ -4452,6 +4678,55 @@ export default function HomePage() {
                               </button>
                             )}
 
+                            {ex.note && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'var(--bg-card)',
+                                  border: '1px solid var(--border-subtle)',
+                                  padding: '5px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  color: 'var(--fitia-green)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => setDetailReaderModal({
+                                  title: ex.name,
+                                  subtitle: `${block.name} · ${ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || 'Ejecución controlada'}`,
+                                  icon: block.icon || '🏋️‍♂️',
+                                  badge: block.name,
+                                  badgeBg: 'var(--fitia-green-soft)',
+                                  badgeColor: 'var(--fitia-green)',
+                                  sections: [
+                                    {
+                                      heading: 'Prescripción de Series & Descanso',
+                                      icon: '🎯',
+                                      text: `Realiza ${ex.sets || 1} serie(s) de ${ex.reps || ex.target || 'repeticiones controladas'}${ex.restSeconds > 0 ? ` con ${ex.restSeconds} segundos de descanso.` : '.'}`
+                                    },
+                                    {
+                                      heading: 'Instrucciones de Técnica & Bio-mecánica',
+                                      icon: '💡',
+                                      text: ex.note
+                                    },
+                                    ...(ex.substitute ? [{
+                                      heading: 'Sustituto Libre en Gimnasio o en Casa',
+                                      icon: '🔄',
+                                      text: ex.substitute,
+                                      tip: 'Ideal para realizar con mancuernas, barras libres o sin máquinas si el gimnasio está lleno.'
+                                    }] : [])
+                                  ],
+                                  actionText: '✓ Entendido / Cerrar Guía'
+                                })}
+                              >
+                                <span>📖</span>
+                                <span>Ver Técnica</span>
+                              </button>
+                            )}
+
                             {ex.substitute && (
                               <button
                                 type="button"
@@ -4617,27 +4892,82 @@ export default function HomePage() {
                                   </div>
                                 )}
 
-                                <button
-                                  type="button"
-                                  style={{
-                                    alignSelf: 'flex-start',
-                                    padding: '6px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '11px',
-                                    fontWeight: 800,
-                                    background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
-                                    color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
-                                    border: '1px solid var(--border-subtle)',
-                                    cursor: 'pointer',
-                                    marginTop: '4px'
-                                  }}
-                                  onClick={() => setActiveSkillLevels({
-                                    ...activeSkillLevels,
-                                    [effectiveSkillTab]: lvl.level
-                                  })}
-                                >
-                                  {isCurrentLevel ? '✓ Mi Nivel Actual' : 'Practicar este Nivel'}
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '8px',
+                                      fontSize: '11px',
+                                      fontWeight: 800,
+                                      background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
+                                      color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
+                                      border: '1px solid var(--border-subtle)',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => setActiveSkillLevels({
+                                      ...activeSkillLevels,
+                                      [effectiveSkillTab]: lvl.level
+                                    })}
+                                  >
+                                    {isCurrentLevel ? '✓ Mi Nivel Actual' : 'Practicar este Nivel'}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '8px',
+                                      fontSize: '11px',
+                                      fontWeight: 800,
+                                      background: 'rgba(59, 130, 246, 0.1)',
+                                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                                      color: '#2563EB',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                    onClick={() => setDetailReaderModal({
+                                      title: lvl.title,
+                                      subtitle: `${currentSkill.name} · ${lvl.difficulty}`,
+                                      icon: currentSkill.icon,
+                                      badge: lvl.difficulty,
+                                      badgeBg: badgeBg,
+                                      badgeColor: '#FFFFFF',
+                                      sections: [
+                                        {
+                                          heading: 'Objetivo y Parámetros del Nivel',
+                                          icon: '🎯',
+                                          text: `${lvl.target} ${lvl.restSeconds > 0 ? `· Descanso sugerido: ${lvl.restSeconds} segundos.` : ''}`
+                                        },
+                                        {
+                                          heading: 'Instrucciones de Técnica y Postura',
+                                          icon: '💡',
+                                          text: lvl.cues
+                                        },
+                                        ...(lvl.commonMistake ? [{
+                                          heading: 'Errores Comunes y Prevención de Fatiga / Molestia',
+                                          icon: '⚠️',
+                                          alert: lvl.commonMistake
+                                        }] : []),
+                                        ...(currentProfile.id === 'hermana' ? [{
+                                          heading: 'Enfoque Amable & Adaptativo',
+                                          icon: '🌸',
+                                          tip: 'Respira con calma por la nariz, realiza los movimientos con total suavidad y disfruta de la reconexión energética sin exigencias extremas.'
+                                        }] : [])
+                                      ],
+                                      actionText: isCurrentLevel ? 'Cerrar Guía' : 'Fijar como Mi Nivel Actual',
+                                      onAction: isCurrentLevel ? null : () => setActiveSkillLevels({
+                                        ...activeSkillLevels,
+                                        [effectiveSkillTab]: lvl.level
+                                      })
+                                    })}
+                                  >
+                                    <span>📖</span>
+                                    <span>Ver Guía Completa</span>
+                                  </button>
+                                </div>
                               </div>
                             );
                           })}
@@ -4821,9 +5151,15 @@ export default function HomePage() {
 
       {/* Modal: Registro Inteligente por Texto (Lenguaje Natural) */}
       {showTextLogModal && (
-        <div className="food-modal-backdrop" onClick={() => setShowTextLogModal(false)}>
+        <div
+          className="modal-backdrop food-modal-backdrop"
+          onClick={() => setShowTextLogModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
           <div
-            className="food-modal-sheet"
+            className="modal-sheet food-modal-sheet"
             onClick={(e) => e.stopPropagation()}
             style={{ maxHeight: '85dvh', padding: '24px 20px calc(24px + var(--safe-bottom))' }}
           >
@@ -4949,8 +5285,14 @@ export default function HomePage() {
 
       {/* Modal: Buscador de Alimentos (+2 Millones de Alimentos - Base Global & Perú) */}
       {showFoodSearchModal && (
-        <div className="food-modal-backdrop" onClick={() => setShowFoodSearchModal(false)}>
-          <div className="food-modal-sheet" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-backdrop food-modal-backdrop"
+          onClick={() => setShowFoodSearchModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div className="modal-sheet food-modal-sheet" onClick={(e) => e.stopPropagation()}>
             {/* Header con Buscador */}
             <div className="food-modal-header">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -5313,8 +5655,18 @@ export default function HomePage() {
 
       {/* Weight Modal */}
       {showWeightModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '340px', boxShadow: 'var(--card-shadow)' }}>
+        <div
+          className="modal-backdrop centered"
+          onClick={() => setShowWeightModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet centered"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '340px', padding: '24px' }}
+          >
             <h3 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px' }}>Registrar Peso Diario</h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
               Pésate en ayunas al despertar para el cálculo de Lean Bulk.
@@ -5362,8 +5714,14 @@ export default function HomePage() {
 
       {/* Modal: Lista de Compras Compartida (Andrés & Pareja) */}
       {showCoupleGroceryModal && (
-        <div className="grocery-modal-backdrop" onClick={() => setShowCoupleGroceryModal(false)}>
-          <div className="grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-backdrop grocery-modal-backdrop"
+          onClick={() => setShowCoupleGroceryModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div className="modal-sheet grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '26px' }}>🛒</span>
@@ -5476,8 +5834,14 @@ export default function HomePage() {
 
       {/* Modal: Crear Nuevo Hábito Personalizado */}
       {showAddHabitModal && (
-        <div className="grocery-modal-backdrop" onClick={() => setShowAddHabitModal(false)}>
-          <div className="grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-backdrop grocery-modal-backdrop"
+          onClick={() => setShowAddHabitModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div className="modal-sheet grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '24px' }}>✨</span>
@@ -5701,8 +6065,18 @@ export default function HomePage() {
 
       {/* Damage Control Modal */}
       {showDamageControl && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '430px', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowDamageControl(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ padding: '24px 20px calc(24px + var(--safe-bottom))' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '26px' }}>🛡️</span>
@@ -5746,8 +6120,18 @@ export default function HomePage() {
           MODAL: CALIBRACIÓN & ONBOARDING DE PERFILES
           =================================================================== */}
       {showProfileModal && editingProfile && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 110, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '440px', maxHeight: '88vh', overflowY: 'auto' }}>
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowProfileModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ padding: '24px 20px calc(24px + var(--safe-bottom))' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Calibración de Perfil</h3>
@@ -6248,8 +6632,18 @@ export default function HomePage() {
           MODAL: AGREGAR NUEVO FAMILIAR / ENLAZAR PERSONA
           =================================================================== */}
       {showAddMemberModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 115, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '24px 20px', width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid var(--border-subtle)' }}>
+        <div
+          className="modal-backdrop centered"
+          onClick={() => setShowAddMemberModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet centered"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '420px', padding: '24px 20px' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-main)', margin: 0 }}>
@@ -6384,8 +6778,24 @@ export default function HomePage() {
           MODAL: ASISTENTE INTERACTIVO DE RESPIRACIÓN WIM HOF
           =================================================================== */}
       {showWimHofModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '28px', padding: '26px 22px', width: '100%', maxWidth: '380px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', position: 'relative' }}>
+        <div
+          className="modal-backdrop centered"
+          style={{ zIndex: 120 }}
+          onClick={() => {
+            setShowWimHofModal(false);
+            setWimHofPhase('breathing');
+            setWimHofBreathCount(0);
+            setWimHofHoldSeconds(0);
+          }}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet centered"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '380px', padding: '26px 22px', textAlign: 'center', position: 'relative' }}
+          >
             <button
               type="button"
               style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}
@@ -6565,8 +6975,13 @@ export default function HomePage() {
           MODAL / OVERLAY: BLOQUEO POR PIN & PRIVACIDAD FAMILIAR
           =================================================================== */}
       {isLocked && (
-        <div className="pin-lock-overlay">
-          <div className="pin-lock-card">
+        <div
+          className="pin-lock-overlay modal-backdrop centered"
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div className="pin-lock-card modal-sheet centered">
             {(() => {
               const targetProf = familyProfiles[pinTargetProfileId] || FAMILY_PROFILES[pinTargetProfileId] || familyProfiles.andres;
 
@@ -6718,8 +7133,18 @@ export default function HomePage() {
           MODAL: DETALLES DE RECETA & PREPARACIÓN (CHEF FITIA)
           =================================================================== */}
       {selectedRecipeDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 110, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '440px', maxHeight: '88vh', overflowY: 'auto' }}>
+        <div
+          className="modal-backdrop"
+          onClick={() => setSelectedRecipeDetail(null)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ padding: '24px 20px calc(24px + var(--safe-bottom))' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '32px' }}>{selectedRecipeDetail.icon || '🍲'}</span>
@@ -6965,8 +7390,18 @@ export default function HomePage() {
           MODAL: ADMINISTRADOR MAESTRO DE PINS FAMILIARES (ANDRÉS)
           =================================================================== */}
       {showAdminPinModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '24px 20px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid var(--border-subtle)' }}>
+        <div
+          className="modal-backdrop centered"
+          onClick={() => setShowAdminPinModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet centered"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '420px', padding: '24px 20px' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '24px' }}>🛡️</span>
@@ -7089,35 +7524,17 @@ export default function HomePage() {
           =================================================================== */}
       {showNotificationModal && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.72)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '16px'
-          }}
+          className="modal-backdrop centered"
+          style={{ zIndex: 10000 }}
           onClick={() => setShowNotificationModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
         >
           <div
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '430px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '18px'
-            }}
+            className="modal-sheet centered"
             onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '430px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}
           >
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -7410,6 +7827,127 @@ export default function HomePage() {
             >
               ✓ Guardar y Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL DE LECTURA DETALLADA (READER MODAL: TÉCNICA, GUÍAS, RECETAS)
+          =================================================================== */}
+      {detailReaderModal && (
+        <div
+          className="modal-backdrop reader-modal-backdrop"
+          onClick={() => setDetailReaderModal(null)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet reader-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="reader-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {detailReaderModal.icon && (
+                  <div className="reader-modal-icon-wrap">
+                    {detailReaderModal.icon}
+                  </div>
+                )}
+                <div>
+                  {detailReaderModal.badge && (
+                    <span
+                      className="reader-modal-badge"
+                      style={{
+                        background: detailReaderModal.badgeBg || 'var(--fitia-green-soft)',
+                        color: detailReaderModal.badgeColor || 'var(--fitia-green)'
+                      }}
+                    >
+                      {detailReaderModal.badge}
+                    </span>
+                  )}
+                  <h3 className="reader-modal-title">{detailReaderModal.title}</h3>
+                  {detailReaderModal.subtitle && (
+                    <p className="reader-modal-subtitle">{detailReaderModal.subtitle}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                style={{
+                  background: 'var(--bg-card-subtle)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '15px',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setDetailReaderModal(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content Sections */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(detailReaderModal.sections || []).map((sec, idx) => (
+                <div key={idx} className="reader-section-card">
+                  {sec.heading && (
+                    <div className="reader-section-heading">
+                      {sec.icon && <span>{sec.icon}</span>}
+                      <span>{sec.heading}</span>
+                    </div>
+                  )}
+                  {sec.text && (
+                    <div className="reader-section-body">
+                      {sec.text}
+                    </div>
+                  )}
+                  {sec.steps && sec.steps.length > 0 && (
+                    <div className="reader-step-list">
+                      {sec.steps.map((st, sIdx) => (
+                        <div key={sIdx} className="reader-step-item">
+                          <span className="reader-step-number">{sIdx + 1}</span>
+                          <span className="reader-step-content">{st}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {sec.alert && (
+                    <div className="reader-alert-box">
+                      <strong>⚠️ A tener en cuenta:</strong> {sec.alert}
+                    </div>
+                  )}
+                  {sec.tip && (
+                    <div className="reader-tip-box">
+                      <strong>💡 Consejo práctico:</strong> {sec.tip}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Action / Dismiss Button */}
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: '100%', padding: '14px', fontSize: '13.5px' }}
+                onClick={() => {
+                  if (detailReaderModal.onAction) {
+                    detailReaderModal.onAction();
+                  }
+                  setDetailReaderModal(null);
+                }}
+              >
+                {detailReaderModal.actionText || '✓ Entendido / Cerrar Guía'}
+              </button>
+            </div>
           </div>
         </div>
       )}
