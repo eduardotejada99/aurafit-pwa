@@ -1407,9 +1407,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 2. Fitia Week Calendar Strip (Screenshot 6) */}
       {/* 2. Fitia Week Calendar Strip (Screenshot 6) - 100% Dinámico */}
-      <section className="fitia-week-strip">
+      <section className="fitia-week-strip" suppressHydrationWarning>
         {weekDays.map((item) => {
           const isSelected = selectedDay === item.num;
           return (
@@ -1547,7 +1546,7 @@ export default function HomePage() {
                     Pilar 1 + 2
                   </span>
                 </div>
-                <h4 style={{ fontSize: '13px', fontWeight: 900, margin: '2px 0 3px', color: 'var(--text-main)' }}>
+                <h4 suppressHydrationWarning style={{ fontSize: '13px', fontWeight: 900, margin: '2px 0 3px', color: 'var(--text-main)' }}>
                   {isMissedDay 
                     ? 'Día Ocupado: Sensibilidad a la Insulina & Core Express' 
                     : `Combustible para: ${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[selectedSplit || (activeProfileId === 'andres' ? 'legs' : 'glutes_legs')]?.shortName || 'Entrenamiento del Día'}`}
