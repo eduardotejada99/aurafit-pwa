@@ -5,6 +5,8 @@ import BottomNav from './BottomNav';
 import {
   DEFAULT_HABITS,
   DEFAULT_USER_PROFILE,
+  FAMILY_PROFILES,
+  calculateProfileTargets,
   calculateLeanBulkTargets,
   generateMealsFromPantry,
   DAMAGE_CONTROL_PROTOCOL,
@@ -21,8 +23,31 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('nutrition'); // Fitia default
   const [isDarkMode, setIsDarkMode] = useState(false); // Fitia Signature Light Mode as default
   const [selectedDay, setSelectedDay] = useState(12); // Wednesday (M)
-  const [habits, setHabits] = useState(DEFAULT_HABITS);
-  const [waterMl, setWaterMl] = useState(2250);
+  
+  // Multi-Profile State (Andrés, Pareja, Hermana)
+  const [activeProfileId, setActiveProfileId] = useState('andres');
+  const [familyProfiles, setFamilyProfiles] = useState(FAMILY_PROFILES);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(null);
+
+  // Wim Hof Interactive Breathwork State (Andrés Biohacking)
+  const [showWimHofModal, setShowWimHofModal] = useState(false);
+  const [wimHofRound, setWimHofRound] = useState(1);
+  const [wimHofBreathCount, setWimHofBreathCount] = useState(0);
+  const [wimHofPhase, setWimHofPhase] = useState('breathing'); // 'breathing', 'holding', 'recovery'
+  const [wimHofHoldSeconds, setWimHofHoldSeconds] = useState(0);
+
+  // Current active profile & dynamic targets
+  const currentProfile = useMemo(() => {
+    return familyProfiles[activeProfileId] || FAMILY_PROFILES.andres;
+  }, [familyProfiles, activeProfileId]);
+
+  const targets = useMemo(() => {
+    return calculateProfileTargets(currentProfile);
+  }, [currentProfile]);
+
+  const [habits, setHabits] = useState(FAMILY_PROFILES.andres.habits);
+  const [waterMl, setWaterMl] = useState(2400);
   const [streakDays, setStreakDays] = useState(213);
   const [showDamageControl, setShowDamageControl] = useState(false);
   const [showTextLogModal, setShowTextLogModal] = useState(false);
@@ -45,15 +70,15 @@ export default function HomePage() {
     },
     {
       id: 'init-com-1',
-      name: 'Pollo a la plancha, brócoli y arroz',
+      name: 'Pechuga de pollo a la plancha con arroz y brócoli',
       brand: 'Casero',
       mealSlot: 'comida',
       servingDesc: '1 plato balanceado',
       grams: 350,
-      calories: 732,
-      protein: 86,
-      carbs: 71,
-      fat: 10,
+      calories: 615,
+      protein: 58,
+      carbs: 65,
+      fat: 9,
       icon: '🍗'
     }
   ]);
@@ -72,7 +97,7 @@ export default function HomePage() {
   const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'pollo', 'arroz']);
   const [newIngredient, setNewIngredient] = useState('');
   const [meals, setMeals] = useState([]);
-  const [quickTextEntry, setQuickTextEntry] = useState('chifles y un kekito');
+  const [quickTextEntry, setQuickTextEntry] = useState('3 huevos fritos con jna cucharada de mantequilla');
   
   // Workout state
   const [workoutMode, setWorkoutMode] = useState('gym');
@@ -81,53 +106,123 @@ export default function HomePage() {
 
   // Weight tracking state
   const [weightLogs, setWeightLogs] = useState([
-    { log_date: '10 Oct', weight_kg: 72.1 },
-    { log_date: '11 Oct', weight_kg: 72.3 },
-    { log_date: '12 Oct', weight_kg: 72.2 },
-    { log_date: '13 Oct', weight_kg: 72.4 },
-    { log_date: '14 Oct', weight_kg: 72.6 },
-    { log_date: '15 Oct', weight_kg: 72.5 },
-    { log_date: '16 Oct', weight_kg: 72.7 },
-    { log_date: '17 Oct', weight_kg: 72.8 }
+    { log_date: '10 Oct', weight_kg: 92.4 },
+    { log_date: '11 Oct', weight_kg: 92.2 },
+    { log_date: '12 Oct', weight_kg: 92.0 },
+    { log_date: '13 Oct', weight_kg: 91.8 },
+    { log_date: '14 Oct', weight_kg: 92.1 },
+    { log_date: '15 Oct', weight_kg: 91.7 },
+    { log_date: '16 Oct', weight_kg: 91.9 },
+    { log_date: '17 Oct', weight_kg: 91.6 }
   ]);
   const [newWeightInput, setNewWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
 
-  // Lean bulk calculations
-  const targets = calculateLeanBulkTargets({
-    weightKg: DEFAULT_USER_PROFILE.weightKg,
-    heightCm: DEFAULT_USER_PROFILE.heightCm,
-    age: DEFAULT_USER_PROFILE.age,
-    activityLevel: DEFAULT_USER_PROFILE.activityLevel,
-    surplus: 300
-  });
-
   const weightAnalytics = calculateWeightAnalytics(weightLogs);
 
-  // Load local storage if available
+  // Load local storage if available on mount
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('aurafit_theme');
       if (savedTheme === 'dark') setIsDarkMode(true);
 
-      const savedHabits = localStorage.getItem('aurafit_habits');
-      if (savedHabits) setHabits(JSON.parse(savedHabits));
+      const savedProfiles = localStorage.getItem('aurafit_family_profiles');
+      if (savedProfiles) {
+        setFamilyProfiles(JSON.parse(savedProfiles));
+      }
 
-      const savedWater = localStorage.getItem('aurafit_water');
-      if (savedWater) setWaterMl(parseInt(savedWater, 10));
+      const savedActiveProfile = localStorage.getItem('aurafit_active_profile');
+      if (savedActiveProfile && FAMILY_PROFILES[savedActiveProfile]) {
+        setActiveProfileId(savedActiveProfile);
+        loadProfileData(savedActiveProfile);
+      } else {
+        loadProfileData('andres');
+      }
 
       const savedIngredients = localStorage.getItem('aurafit_ingredients');
       if (savedIngredients) setSelectedIngredients(JSON.parse(savedIngredients));
-
-      const savedWeights = localStorage.getItem('aurafit_weights');
-      if (savedWeights) setWeightLogs(JSON.parse(savedWeights));
-
-      const savedLoggedFoods = localStorage.getItem('aurafit_logged_foods');
-      if (savedLoggedFoods) setLoggedFoods(JSON.parse(savedLoggedFoods));
     } catch (err) {
       console.warn('Storage sync err:', err);
     }
   }, []);
+
+  const loadProfileData = (profileKey) => {
+    try {
+      const prof = FAMILY_PROFILES[profileKey];
+      if (!prof) return;
+
+      const savedFoods = localStorage.getItem(`aurafit_foods_${profileKey}`);
+      if (savedFoods) {
+        setLoggedFoods(JSON.parse(savedFoods));
+      } else {
+        // Defaults per profile
+        if (profileKey === 'andres') {
+          setLoggedFoods([
+            { id: 'andres-des-1', name: '4 Huevos revueltos + Avena con Canela', brand: 'Casero', mealSlot: 'desayuno', servingDesc: 'Porción anabólica', grams: 250, calories: 480, protein: 32, carbs: 45, fat: 18, icon: '🍳' }
+          ]);
+        } else if (profileKey === 'pareja') {
+          setLoggedFoods([
+            { id: 'pareja-des-1', name: 'Yogur Griego con Granola, Plátano y Miel', brand: 'Casero', mealSlot: 'desayuno', servingDesc: 'Superávit limpio', grams: 260, calories: 430, protein: 24, carbs: 62, fat: 8, icon: '🥣' }
+          ]);
+        } else if (profileKey === 'hermana') {
+          setLoggedFoods([
+            { id: 'hermana-des-1', name: 'Tortilla de 3 Claras con Espinacas y Palta', brand: 'Glucosa Estable', mealSlot: 'desayuno', servingDesc: 'Bajo índice glucémico', grams: 200, calories: 240, protein: 18, carbs: 6, fat: 14, icon: '🥑' }
+          ]);
+        }
+      }
+
+      const savedHabits = localStorage.getItem(`aurafit_habits_${profileKey}`);
+      if (savedHabits) {
+        setHabits(JSON.parse(savedHabits));
+      } else {
+        setHabits(prof.habits || []);
+      }
+
+      const savedWater = localStorage.getItem(`aurafit_water_${profileKey}`);
+      if (savedWater) {
+        setWaterMl(parseInt(savedWater, 10));
+      } else {
+        setWaterMl(Math.round((prof.waterDailyMl || 2500) * 0.6));
+      }
+
+      const savedWeights = localStorage.getItem(`aurafit_weights_${profileKey}`);
+      if (savedWeights) {
+        setWeightLogs(JSON.parse(savedWeights));
+      } else {
+        setWeightLogs([
+          { log_date: '10 Oct', weight_kg: prof.weightKg + 0.6 },
+          { log_date: '12 Oct', weight_kg: prof.weightKg + 0.3 },
+          { log_date: '15 Oct', weight_kg: prof.weightKg + 0.1 },
+          { log_date: '17 Oct', weight_kg: prof.weightKg }
+        ]);
+      }
+    } catch (e) {
+      console.warn('Error loading profile data:', e);
+    }
+  };
+
+  const handleSwitchProfile = (newId) => {
+    if (!familyProfiles[newId]) return;
+    setActiveProfileId(newId);
+    try {
+      localStorage.setItem('aurafit_active_profile', newId);
+    } catch (e) {}
+    loadProfileData(newId);
+    const prof = familyProfiles[newId];
+    showToast(`¡Perfil cambiado a ${prof.name}! (${prof.role})`);
+  };
+
+  const handleSaveProfileChanges = (updatedProfile) => {
+    setFamilyProfiles((prev) => {
+      const next = { ...prev, [updatedProfile.id]: updatedProfile };
+      try {
+        localStorage.setItem('aurafit_family_profiles', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    setShowProfileModal(false);
+    showToast(`Perfil de ${updatedProfile.name} actualizado con nuevos requerimientos.`);
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -348,6 +443,17 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [timerRunning, activeTimerSeconds]);
 
+  // Wim Hof Breathwork hold timer
+  useEffect(() => {
+    let interval = null;
+    if (showWimHofModal && wimHofPhase === 'holding') {
+      interval = setInterval(() => {
+        setWimHofHoldSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showWimHofModal, wimHofPhase]);
+
   const toggleHabit = (id) => {
     setHabits((prev) => {
       const next = prev.map((h) => {
@@ -362,6 +468,7 @@ export default function HomePage() {
         return h;
       });
       try {
+        localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
       } catch (e) {}
       return next;
@@ -370,8 +477,10 @@ export default function HomePage() {
 
   const addWater = (ml) => {
     setWaterMl((prev) => {
-      const updated = Math.min(prev + ml, 4000);
+      const maxWater = (currentProfile.waterDailyMl || 3000) + 1000;
+      const updated = Math.min(prev + ml, maxWater);
       try {
+        localStorage.setItem(`aurafit_water_${activeProfileId}`, updated.toString());
         localStorage.setItem('aurafit_water', updated.toString());
       } catch (e) {}
       return updated;
@@ -426,10 +535,13 @@ export default function HomePage() {
 
   return (
     <div className={`mobile-shell ${isDarkMode ? 'dark-theme' : ''}`}>
-      {/* 1. Fitia Top Header (Screenshot 6) */}
+      {/* 1. Fitia Top Header */}
       <header className="fitia-header">
-        <div className="fitia-header-left" onClick={() => alert('Seleccionando plan: Aumento de Masa Magra (+300 kcal)')}>
-          <span className="fitia-header-title">Hoy</span>
+        <div className="fitia-header-left" onClick={() => {
+          setEditingProfile({ ...currentProfile });
+          setShowProfileModal(true);
+        }}>
+          <span className="fitia-header-title">{currentProfile.name}</span>
           <span className="fitia-header-arrow">▾</span>
         </div>
         <div className="fitia-header-right">
@@ -445,11 +557,85 @@ export default function HomePage() {
           >
             {isDarkMode ? '☀️' : '🌙'}
           </button>
-          <div className="fitia-avatar" title={DEFAULT_USER_PROFILE.fullName}>
-            <span>🥑</span>
+          <div
+            className="fitia-avatar"
+            onClick={() => {
+              setEditingProfile({ ...currentProfile });
+              setShowProfileModal(true);
+            }}
+            title={`Perfil de ${currentProfile.name}`}
+          >
+            <span>{currentProfile.avatar}</span>
           </div>
         </div>
       </header>
+
+      {/* Multi-Profile Selector Dock */}
+      <div className="profile-switcher-dock">
+        {Object.values(familyProfiles).map((prof) => {
+          const isActive = prof.id === activeProfileId;
+          return (
+            <button
+              key={prof.id}
+              type="button"
+              className={`profile-chip ${isActive ? 'active' : ''}`}
+              onClick={() => handleSwitchProfile(prof.id)}
+            >
+              <span className="profile-chip-avatar">{prof.avatar}</span>
+              <div className="profile-chip-info">
+                <span className="profile-chip-name">{prof.name}</span>
+                <span className="profile-chip-role">{prof.role.split('&')[0]}</span>
+              </div>
+              {isActive && <span className="profile-active-dot">●</span>}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          className="profile-config-btn"
+          onClick={() => {
+            setEditingProfile({ ...currentProfile });
+            setShowProfileModal(true);
+          }}
+          title="Calibrar perfil activo"
+        >
+          ⚙️
+        </button>
+      </div>
+
+      {/* Profile Context Banner */}
+      <div className="profile-context-banner">
+        <span className="profile-context-pill">
+          {currentProfile.badgeText}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setEditingProfile({ ...currentProfile });
+            setShowProfileModal(true);
+          }}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--fitia-green)',
+            fontSize: '11px',
+            fontWeight: 800,
+            cursor: 'pointer'
+          }}
+        >
+          Calibrar ✎
+        </button>
+      </div>
+
+      {/* Medical Alert Banner if applicable (e.g. Sister's ear surgery) */}
+      {currentProfile.medicalAlert && (
+        <div className="medical-alert-banner">
+          <span style={{ fontSize: '18px' }}>🚨</span>
+          <div>
+            <strong>Cuidado Médico Activo:</strong> {currentProfile.medicalAlert}
+          </div>
+        </div>
+      )}
 
       {/* 2. Fitia Week Calendar Strip (Screenshot 6) */}
       <section className="fitia-week-strip">
@@ -509,8 +695,8 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="fitia-gauge-labels">
-                  <span>{targets.targetCalories - 250}</span>
-                  <span>Meta Lean Bulk (+300)</span>
+                  <span>{Math.max(0, targets.targetCalories - 250)}</span>
+                  <span>{targets.label}</span>
                   <span>{targets.targetCalories + 250}</span>
                 </div>
               </div>
@@ -565,6 +751,44 @@ export default function HomePage() {
                 </div>
               </div>
             </section>
+
+            {/* Si es Hermana: Protocolo Clínico Glucosa Estable */}
+            {activeProfileId === 'hermana' && (
+              <section className="glucose-order-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '20px' }}>🥗</span>
+                  <h3 style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    Regla de Oro: Orden de Ingesta para Glucosa Estable
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: 1.4 }}>
+                  Reduce el pico de insulina hasta en un <strong>40%</strong> comiendo tus platos en este orden secuencial:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card-subtle)', padding: '10px 12px', borderRadius: '12px' }}>
+                    <span style={{ background: '#10B981', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900 }}>1</span>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800 }}>Fibra Primero (Ensalada / Verduras con limón)</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Crea una malla gelatinosa en el intestino que retrasa la absorción de azúcares.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card-subtle)', padding: '10px 12px', borderRadius: '12px' }}>
+                    <span style={{ background: '#3B82F6', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900 }}>2</span>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800 }}>Proteínas & Grasas Saludables</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Pollo, pescado, claras, huevos, palta o queso fresco. Disparan GLP-1 y saciedad.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card-subtle)', padding: '10px 12px', borderRadius: '12px' }}>
+                    <span style={{ background: '#F59E0B', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900 }}>3</span>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800 }}>Carbohidratos Complejos al Final</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Arroz, papa sancochada, quinua o camote. El impacto glucémico se reduce a la mitad.</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* Quick Actions Row: Fitia Text Log / Search Foods (Screenshot 3 & 4) */}
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -1054,7 +1278,7 @@ export default function HomePage() {
             {/* Habits Checklist (Screenshot 11) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                Hábitos Diarios
+                Hábitos Diarios ({currentProfile.name})
               </span>
               {habits.map((habit) => (
                 <div
@@ -1069,17 +1293,37 @@ export default function HomePage() {
                     borderRadius: '18px',
                     boxShadow: 'var(--card-shadow)'
                   }}
-                  onClick={() => toggleHabit(habit.id)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer' }}
+                    onClick={() => {
+                      if (habit.id === 'wimhof') {
+                        setShowWimHofModal(true);
+                      } else {
+                        toggleHabit(habit.id);
+                      }
+                    }}
+                  >
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-card-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
                       {habit.icon}
                     </div>
                     <div>
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>{habit.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>{habit.name}</span>
+                        {habit.id === 'wimhof' && (
+                          <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', padding: '2px 6px', borderRadius: '6px', fontWeight: 800 }}>
+                            ▶ Asistente Guiado
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                         {habit.target} {habit.completed && `· Completado a las ${habit.time || 'hoy'}`}
                       </div>
+                      {habit.note && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-sub)', marginTop: '3px', fontStyle: 'italic', lineHeight: 1.3 }}>
+                          {habit.note}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div
@@ -1094,7 +1338,12 @@ export default function HomePage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '15px',
-                      fontWeight: 900
+                      fontWeight: 900,
+                      cursor: 'pointer'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleHabit(habit.id);
                     }}
                   >
                     ✓
@@ -1152,137 +1401,127 @@ export default function HomePage() {
             =================================================================== */}
         {activeTab === 'workout' && (
           <>
-            {/* Mode Switcher */}
-            <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
-              <button
-                type="button"
-                style={{
-                  flex: 1,
-                  background: workoutMode === 'gym' ? 'var(--bg-card)' : 'transparent',
-                  color: workoutMode === 'gym' ? 'var(--text-main)' : 'var(--text-muted)',
-                  border: 'none',
-                  padding: '10px',
-                  borderRadius: '10px',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  boxShadow: workoutMode === 'gym' ? 'var(--card-shadow)' : 'none'
-                }}
-                onClick={() => setWorkoutMode('gym')}
-              >
-                🏋️ Gimnasio (Hipertrofia)
-              </button>
-              <button
-                type="button"
-                style={{
-                  flex: 1,
-                  background: workoutMode === 'home_emom' ? 'var(--bg-card)' : 'transparent',
-                  color: workoutMode === 'home_emom' ? 'var(--text-main)' : 'var(--text-muted)',
-                  border: 'none',
-                  padding: '10px',
-                  borderRadius: '10px',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  boxShadow: workoutMode === 'home_emom' ? 'var(--card-shadow)' : 'none'
-                }}
-                onClick={() => setWorkoutMode('home_emom')}
-              >
-                🏠 Sin Gym (EMOM Casa)
-              </button>
-            </div>
+            {/* Mode Switcher per Profile */}
+            {(() => {
+              const profileWorkouts = currentProfile.workouts || WORKOUT_ROUTINES;
+              const workoutKeys = Object.keys(profileWorkouts);
+              const currentKey = workoutKeys.includes(workoutMode) ? workoutMode : workoutKeys[0];
+              const routine = profileWorkouts[currentKey];
 
-            {/* Active Routine Details */}
-            {workoutMode === 'gym' ? (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--card-shadow)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ fontSize: '17px', fontWeight: 900 }}>{WORKOUT_ROUTINES.gym.title}</h3>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{WORKOUT_ROUTINES.gym.focus}</p>
+              return (
+                <>
+                  <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px', marginBottom: '14px' }}>
+                    {workoutKeys.map((key) => {
+                      const isSel = currentKey === key;
+                      const icon = key === 'gym' ? '🏋️' : key === 'dance' ? '💃' : key === 'gentle_yoga' ? '🧘‍♀️' : '🏔️';
+                      const label = key === 'gym' ? 'Gimnasio' : key === 'dance' ? 'Baile Suave (GLUT-4)' : key === 'gentle_yoga' ? 'Movilidad de Pie' : 'Cajabamba / Viaje';
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          style={{
+                            flex: 1,
+                            background: isSel ? 'var(--bg-card)' : 'transparent',
+                            color: isSel ? 'var(--text-main)' : 'var(--text-muted)',
+                            border: 'none',
+                            padding: '10px 8px',
+                            borderRadius: '10px',
+                            fontWeight: 800,
+                            fontSize: '12px',
+                            boxShadow: isSel ? 'var(--card-shadow)' : 'none',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => setWorkoutMode(key)}
+                        >
+                          {icon} {label}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <span style={{ background: 'var(--fitia-green-soft)', color: 'var(--fitia-green)', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800 }}>
-                    {WORKOUT_ROUTINES.gym.targetTime}
-                  </span>
-                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {WORKOUT_ROUTINES.gym.exercises.map((ex, idx) => (
-                    <div key={idx} style={{ background: 'var(--bg-card-subtle)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 800 }}>{ex.name}</span>
-                        <span style={{ fontSize: '13px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
-                          {ex.sets} sets × {ex.reps}
+                  {/* Active Routine Details */}
+                  {routine && (
+                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--card-shadow)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                        <div>
+                          <h3 style={{ fontSize: '17px', fontWeight: 900 }}>{routine.title}</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{routine.focus}</p>
+                        </div>
+                        <span style={{ background: 'var(--fitia-green-soft)', color: 'var(--fitia-green)', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                          ⏱️ {routine.durationMinutes || 30} min
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Descanso: {ex.rest} · {ex.notes}
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {(routine.exercises || []).map((ex, idx) => (
+                          <div key={idx} style={{ background: 'var(--bg-card-subtle)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '14px', fontWeight: 800 }}>
+                                {ex.icon ? `${ex.icon} ` : ''}{ex.name}
+                              </span>
+                              <span style={{ fontSize: '13px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
+                                {ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || ex.duration || 'Completar'}
+                              </span>
+                            </div>
+                            {(ex.note || ex.restSeconds || ex.notes) && (
+                              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                {ex.restSeconds ? `Descanso: ${ex.restSeconds}s · ` : ''}{ex.note || ex.notes || ''}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Timer for EMOM or Dance */}
+                      <div style={{ background: 'var(--bg-card-subtle)', padding: '16px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)', marginTop: '6px' }}>
+                        <div style={{ fontSize: '36px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
+                          {activeTimerSeconds ? `${Math.floor(activeTimerSeconds / 60).toString().padStart(2, '0')}:${(activeTimerSeconds % 60).toString().padStart(2, '0')}` : `${routine.durationMinutes || 20}:00`}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            style={{
+                              background: timerRunning ? '#EF4444' : 'var(--fitia-green)',
+                              color: '#FFFFFF',
+                              fontWeight: 900,
+                              border: 'none',
+                              padding: '10px 22px',
+                              borderRadius: '12px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              if (!activeTimerSeconds) setActiveTimerSeconds((routine.durationMinutes || 20) * 60);
+                              setTimerRunning(!timerRunning);
+                            }}
+                          >
+                            {timerRunning ? 'Pausar' : 'Iniciar Sesión'}
+                          </button>
+                          <button
+                            type="button"
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'var(--text-muted)',
+                              fontWeight: 800,
+                              padding: '10px 16px',
+                              borderRadius: '12px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              setTimerRunning(false);
+                              setActiveTimerSeconds((routine.durationMinutes || 20) * 60);
+                            }}
+                          >
+                            Reiniciar
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--card-shadow)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ fontSize: '17px', fontWeight: 900 }}>{WORKOUT_ROUTINES.home_emom.title}</h3>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{WORKOUT_ROUTINES.home_emom.focus}</p>
-                  </div>
-                  <span style={{ background: 'var(--fitia-orange-soft)', color: 'var(--fitia-orange)', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800 }}>
-                    {WORKOUT_ROUTINES.home_emom.targetTime}
-                  </span>
-                </div>
+                  )}
+                </>
+              );
+            })()}
 
-                {/* EMOM Active Timer */}
-                <div style={{ background: 'var(--bg-card-subtle)', padding: '20px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '40px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
-                    {activeTimerSeconds ? `${Math.floor(activeTimerSeconds / 60).toString().padStart(2, '0')}:${(activeTimerSeconds % 60).toString().padStart(2, '0')}` : '20:00'}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '14px' }}>
-                    <button
-                      type="button"
-                      style={{
-                        background: timerRunning ? '#EF4444' : 'var(--fitia-green)',
-                        color: '#FFFFFF',
-                        fontWeight: 900,
-                        border: 'none',
-                        padding: '10px 26px',
-                        borderRadius: '12px'
-                      }}
-                      onClick={() => {
-                        if (!activeTimerSeconds) setActiveTimerSeconds(1200);
-                        setTimerRunning(!timerRunning);
-                      }}
-                    >
-                      {timerRunning ? 'Pausar' : 'Iniciar EMOM'}
-                    </button>
-                    <button
-                      type="button"
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--border-subtle)',
-                        color: 'var(--text-muted)',
-                        padding: '10px 16px',
-                        borderRadius: '12px'
-                      }}
-                      onClick={() => {
-                        setTimerRunning(false);
-                        setActiveTimerSeconds(1200);
-                      }}
-                    >
-                      Reset
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {WORKOUT_ROUTINES.home_emom.structure.map((item, idx) => (
-                    <div key={idx} style={{ background: 'var(--bg-card-subtle)', padding: '11px 14px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--fitia-green)' }}>{item.minute}</span>
-                      <span style={{ fontSize: '13px', color: 'var(--text-main)', fontWeight: 600 }}>{item.work}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Weight Progression Card */}
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', boxShadow: 'var(--card-shadow)' }}>
@@ -1844,6 +2083,400 @@ export default function HomePage() {
             >
               Comprendido, activar protocolo
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL: CALIBRACIÓN & ONBOARDING DE PERFILES
+          =================================================================== */}
+      {showProfileModal && editingProfile && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 110, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '440px', maxHeight: '88vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Calibración de Perfil</h3>
+                <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 700 }}>
+                  Adaptación Biométrica & Estilo de Vida
+                </span>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '22px', cursor: 'pointer' }}
+                onClick={() => setShowProfileModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Profile Switcher Tabs inside Modal */}
+            <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', marginBottom: '16px' }}>
+              {Object.values(familyProfiles).map((prof) => (
+                <button
+                  key={prof.id}
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: '8px 4px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: editingProfile.id === prof.id ? 'var(--bg-card)' : 'transparent',
+                    color: editingProfile.id === prof.id ? 'var(--fitia-green)' : 'var(--text-muted)',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    boxShadow: editingProfile.id === prof.id ? 'var(--card-shadow)' : 'none'
+                  }}
+                  onClick={() => setEditingProfile({ ...prof })}
+                >
+                  {prof.avatar} {prof.name.split(' ')[0]}
+                </button>
+              ))}
+            </div>
+
+            {/* Form Fields */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Nombre</label>
+                <input
+                  type="text"
+                  value={editingProfile.name || ''}
+                  onChange={(e) => setEditingProfile({ ...editingProfile, name: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '14px', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Meta Biológica Principal</label>
+                <select
+                  value={editingProfile.goal || 'recomposition'}
+                  onChange={(e) => setEditingProfile({ ...editingProfile, goal: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '13px', marginTop: '4px' }}
+                >
+                  <option value="recomposition">Recomposición (Bajar Grasa + Mantener Músculo)</option>
+                  <option value="lean_bulk">Superávit Limpio (Ganancia Muscular Magra)</option>
+                  <option value="insulin_sensitivity">Sensibilidad a la Insulina & Glucosa Estable</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Peso Actual (kg)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={editingProfile.weightKg || ''}
+                    onChange={(e) => setEditingProfile({ ...editingProfile, weightKg: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 800, fontSize: '14px', marginTop: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Peso Objetivo (kg)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={editingProfile.targetWeightKg || ''}
+                    onChange={(e) => setEditingProfile({ ...editingProfile, targetWeightKg: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 800, fontSize: '14px', marginTop: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Estatura (cm)</label>
+                  <input
+                    type="number"
+                    value={editingProfile.heightCm || ''}
+                    onChange={(e) => setEditingProfile({ ...editingProfile, heightCm: parseInt(e.target.value, 10) || 0 })}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 800, fontSize: '14px', marginTop: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Edad</label>
+                  <input
+                    type="number"
+                    value={editingProfile.age || ''}
+                    onChange={(e) => setEditingProfile({ ...editingProfile, age: parseInt(e.target.value, 10) || 0 })}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 800, fontSize: '14px', marginTop: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Nivel de Actividad & Contexto</label>
+                <select
+                  value={editingProfile.activityLevel || 'moderate'}
+                  onChange={(e) => setEditingProfile({ ...editingProfile, activityLevel: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '13px', marginTop: '4px' }}
+                >
+                  <option value="sedentary">Sedentario / Recuperación Médica</option>
+                  <option value="light">Ligero (1-2 días caminatas o baile suave)</option>
+                  <option value="moderate">Moderado (3-4 días gym / yoga / biohacking)</option>
+                  <option value="high">Alto (5-6 días fuerza intensa / altitud Cajabamba)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ruta / Ubicación Frecuente</label>
+                <input
+                  type="text"
+                  value={editingProfile.location || ''}
+                  onChange={(e) => setEditingProfile({ ...editingProfile, location: e.target.value })}
+                  placeholder="Ej. Cajabamba / Trujillo"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '13px', marginTop: '4px' }}
+                />
+              </div>
+
+              {editingProfile.medicalAlert !== undefined && (
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>Restricción Médica / Quirúrgica</label>
+                  <textarea
+                    rows={2}
+                    value={editingProfile.medicalAlert || ''}
+                    onChange={(e) => setEditingProfile({ ...editingProfile, medicalAlert: e.target.value })}
+                    placeholder="Ej. Sin maniobras de Valsalva, sin saltos..."
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.04)', color: 'var(--text-main)', fontWeight: 600, fontSize: '12px', marginTop: '4px' }}
+                  />
+                </div>
+              )}
+
+              {/* Dynamic Target Preview */}
+              {(() => {
+                const preview = calculateProfileTargets(editingProfile);
+                return (
+                  <div style={{ background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '14px', padding: '14px', marginTop: '4px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--fitia-green)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                      ⚡ Recálculo Metabólico en Vivo (Mifflin-St Jeor)
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
+                      <div style={{ background: 'var(--bg-card)', padding: '8px 4px', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--fitia-green)' }}>{preview.calories}</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>KCAL</div>
+                      </div>
+                      <div style={{ background: 'var(--bg-card)', padding: '8px 4px', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--fitia-orange)' }}>{preview.protein}g</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>PROT</div>
+                      </div>
+                      <div style={{ background: 'var(--bg-card)', padding: '8px 4px', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--fitia-blue)' }}>{preview.carbs}g</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>CARB</div>
+                      </div>
+                      <div style={{ background: 'var(--bg-card)', padding: '8px 4px', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--fitia-purple)' }}>{preview.fat}g</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>GRASA</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>
+                      💧 Hidratación sugerida: <strong>{preview.waterDailyMl || 2500} ml</strong> ({preview.waterNote})
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  style={{ flex: 1, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', padding: '12px', borderRadius: '12px', fontWeight: 700 }}
+                  onClick={() => setShowProfileModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  style={{ flex: 2, background: 'var(--fitia-green)', color: '#FFFFFF', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 900, cursor: 'pointer' }}
+                  onClick={() => {
+                    handleSaveProfileChanges(editingProfile);
+                    if (editingProfile.id !== activeProfileId) {
+                      handleSwitchProfile(editingProfile.id);
+                    }
+                  }}
+                >
+                  Guardar y Activar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL: ASISTENTE INTERACTIVO DE RESPIRACIÓN WIM HOF
+          =================================================================== */}
+      {showWimHofModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '28px', padding: '26px 22px', width: '100%', maxWidth: '380px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', position: 'relative' }}>
+            <button
+              type="button"
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}
+              onClick={() => {
+                setShowWimHofModal(false);
+                setWimHofPhase('breathing');
+                setWimHofBreathCount(0);
+                setWimHofHoldSeconds(0);
+              }}
+            >
+              ✕
+            </button>
+
+            <span style={{ fontSize: '10px', fontWeight: 900, background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              ❄️ Biohacking · Ronda {wimHofRound} de 3
+            </span>
+
+            {/* Phase 1: Breathing */}
+            {wimHofPhase === 'breathing' && (
+              <div style={{ marginTop: '16px' }}>
+                <h3 style={{ fontSize: '19px', fontWeight: 900, marginBottom: '6px' }}>Hiperoxigenación Celular</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.4 }}>
+                  Inhala profundo al abdomen y pecho. Suelta relajado sin forzar.
+                </p>
+
+                {/* Breathing Bubble */}
+                <div
+                  style={{
+                    width: '140px',
+                    height: '140px',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(16, 185, 129, 0.15) 70%)',
+                    border: '3px solid #3B82F6',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px',
+                    cursor: 'pointer',
+                    transition: 'transform 0.25s ease'
+                  }}
+                  onClick={() => {
+                    const next = wimHofBreathCount + 1;
+                    setWimHofBreathCount(next);
+                    if (next >= 30) {
+                      setWimHofPhase('holding');
+                      setWimHofHoldSeconds(0);
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--text-main)' }}>{wimHofBreathCount}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>de 30 respiraciones</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                  <button
+                    type="button"
+                    style={{ flex: 1, background: '#3B82F6', color: '#FFFFFF', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}
+                    onClick={() => {
+                      const next = wimHofBreathCount + 1;
+                      setWimHofBreathCount(next);
+                      if (next >= 30) {
+                        setWimHofPhase('holding');
+                        setWimHofHoldSeconds(0);
+                      }
+                    }}
+                  >
+                    +1 Respiración
+                  </button>
+                  <button
+                    type="button"
+                    style={{ flex: 1, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)', padding: '12px', borderRadius: '12px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}
+                    onClick={() => {
+                      const next = Math.min(30, wimHofBreathCount + 10);
+                      setWimHofBreathCount(next);
+                      if (next >= 30) {
+                        setWimHofPhase('holding');
+                        setWimHofHoldSeconds(0);
+                      }
+                    }}
+                  >
+                    +10 Rápido
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  style={{ width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: '8px' }}
+                  onClick={() => {
+                    setWimHofPhase('holding');
+                    setWimHofHoldSeconds(0);
+                  }}
+                >
+                  Exhalar y comenzar retención ahora ➔
+                </button>
+              </div>
+            )}
+
+            {/* Phase 2: Retention / Hold */}
+            {wimHofPhase === 'holding' && (
+              <div style={{ marginTop: '16px' }}>
+                <h3 style={{ fontSize: '19px', fontWeight: 900, marginBottom: '6px', color: '#3B82F6' }}>Retención en Vacío</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.4 }}>
+                  Pulmones sin aire. Relaja hombros, cuello y mandíbula. Siente la calma alcalina.
+                </p>
+
+                <div style={{ background: 'var(--bg-card-subtle)', border: '2px solid rgba(59, 130, 246, 0.4)', borderRadius: '20px', padding: '24px 10px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '48px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
+                    {Math.floor(wimHofHoldSeconds / 60)}:{(wimHofHoldSeconds % 60).toString().padStart(2, '0')}
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#3B82F6', fontWeight: 800 }}>TIEMPO DE APNEA</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '14px', fontSize: '14px', background: 'var(--fitia-green)' }}
+                  onClick={() => setWimHofPhase('recovery')}
+                >
+                  🌬️ Tomar Inhalación de Recuperación
+                </button>
+              </div>
+            )}
+
+            {/* Phase 3: Recovery Breath */}
+            {wimHofPhase === 'recovery' && (
+              <div style={{ marginTop: '16px' }}>
+                <h3 style={{ fontSize: '19px', fontWeight: 900, marginBottom: '6px', color: 'var(--fitia-green)' }}>Inhalación de Recuperación</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.4 }}>
+                  Inhala al 100% llenando el pecho. Retén durante 15 segundos llevando la energía a tu cabeza.
+                </p>
+
+                <div style={{ background: 'var(--bg-card-subtle)', border: '2px solid rgba(16, 185, 129, 0.4)', borderRadius: '20px', padding: '20px 10px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--fitia-green)' }}>15 Segundos</div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Retención con pulmones llenos</span>
+                </div>
+
+                {wimHofRound < 3 ? (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ width: '100%', padding: '14px', fontSize: '14px', background: '#3B82F6' }}
+                    onClick={() => {
+                      setWimHofRound(wimHofRound + 1);
+                      setWimHofPhase('breathing');
+                      setWimHofBreathCount(0);
+                      setWimHofHoldSeconds(0);
+                    }}
+                  >
+                    Pasar a Ronda {wimHofRound + 1} ➔
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ width: '100%', padding: '14px', fontSize: '14px', background: 'var(--fitia-green)' }}
+                    onClick={() => {
+                      toggleHabit('wimhof');
+                      setShowWimHofModal(false);
+                      setWimHofRound(1);
+                      setWimHofPhase('breathing');
+                      setWimHofBreathCount(0);
+                      setWimHofHoldSeconds(0);
+                      showToast('🔥 ¡3 Rondas de Wim Hof completadas! Biohacking activado.');
+                    }}
+                  >
+                    ✨ Finalizar Sesión & Registrar Hábito
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

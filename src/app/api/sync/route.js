@@ -13,7 +13,9 @@ const ALLOWED_LOG_FIELDS = [
   'workoutCompleted'
 ];
 
-export async function GET() {
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const profileId = searchParams.get('profileId') || 'andres';
   const sql = await getDb();
   if (!sql) {
     return NextResponse.json({
@@ -25,18 +27,20 @@ export async function GET() {
 
   try {
     const rows = await sql`
-      SELECT log_date, creatine_done, mindvalley_done, mindvalley_lesson,
+      SELECT profile_id, log_date, creatine_done, mindvalley_done, mindvalley_lesson,
              water_ml, sleep_hours, sleep_quality, body_weight_kg,
              workout_mode, workout_completed
       FROM aurafit_daily_logs
+      WHERE profile_id = ${profileId}
       ORDER BY log_date DESC
       LIMIT 14
     `;
-    return NextResponse.json({ ok: true, mode: 'neon-postgres', logs: rows });
+    return NextResponse.json({ ok: true, mode: 'neon-postgres', profileId, logs: rows });
   } catch (error) {
     return NextResponse.json({
       ok: true,
       mode: 'localStorage',
+      profileId,
       warning: 'Tabla aún no inicializada o sin red; usando fallback local.'
     });
   }
@@ -56,6 +60,7 @@ export async function POST(request) {
     const body = await request.json();
     const rawLog = body?.dayLog || {};
     const profile = body?.profile || {};
+    const profileId = String(body?.profileId || profile?.id || 'andres').toLowerCase().slice(0, 30);
 
     const clean = {};
     for (const key of ALLOWED_LOG_FIELDS) {
@@ -72,12 +77,13 @@ export async function POST(request) {
     const sleepHours = Math.max(0, Math.min(24, Number(clean.sleepHours) || 7.5));
     const sleepQuality = String(clean.sleepQuality || 'Optimo').slice(0, 20);
     const bodyWeightKg = Math.max(30, Math.min(250, Number(profile.weightKg) || 74.5));
-    const workoutMode = clean.workoutMode === 'home' ? 'home' : 'gym';
+    const workoutMode = String(clean.workoutMode || 'gym').slice(0, 15);
     const workoutCompleted = Boolean(clean.workoutCompleted);
 
     await sql`
       CREATE TABLE IF NOT EXISTS aurafit_daily_logs (
-        log_date DATE PRIMARY KEY,
+        profile_id VARCHAR(30) NOT NULL DEFAULT 'andres',
+        log_date DATE NOT NULL,
         creatine_done BOOLEAN NOT NULL DEFAULT FALSE,
         mindvalley_done BOOLEAN NOT NULL DEFAULT FALSE,
         mindvalley_lesson VARCHAR(500) DEFAULT '',
@@ -87,21 +93,29 @@ export async function POST(request) {
         body_weight_kg NUMERIC(5,2),
         workout_mode VARCHAR(15) DEFAULT 'gym',
         workout_completed BOOLEAN NOT NULL DEFAULT FALSE,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (profile_id, log_date)
       )
     `;
 
+    // Ensure profile_id column exists if table was created in older schema
+    try {
+      await sql`ALTER TABLE aurafit_daily_logs ADD COLUMN IF NOT EXISTS profile_id VARCHAR(30) DEFAULT 'andres'`;
+    } catch (e) {
+      // ignore
+    }
+
     await sql`
       INSERT INTO aurafit_daily_logs (
-        log_date, creatine_done, mindvalley_done, mindvalley_lesson,
+        profile_id, log_date, creatine_done, mindvalley_done, mindvalley_lesson,
         water_ml, sleep_hours, sleep_quality, body_weight_kg,
         workout_mode, workout_completed, updated_at
       ) VALUES (
-        ${logDate}, ${creatineDone}, ${mindvalleyDone}, ${mindvalleyLesson},
+        ${profileId}, ${logDate}, ${creatineDone}, ${mindvalleyDone}, ${mindvalleyLesson},
         ${waterMl}, ${sleepHours}, ${sleepQuality}, ${bodyWeightKg},
         ${workoutMode}, ${workoutCompleted}, NOW()
       )
-      ON CONFLICT (log_date) DO UPDATE SET
+      ON CONFLICT (profile_id, log_date) DO UPDATE SET
         creatine_done = EXCLUDED.creatine_done,
         mindvalley_done = EXCLUDED.mindvalley_done,
         mindvalley_lesson = EXCLUDED.mindvalley_lesson,
@@ -117,6 +131,7 @@ export async function POST(request) {
     return NextResponse.json({
       ok: true,
       mode: 'neon-postgres',
+      profileId,
       synced: true,
       timestamp: new Date().toISOString()
     });
