@@ -1407,7 +1407,7 @@ export function calculateWeightAnalytics(weightLogs = []) {
  * Aligns meals between Andrés (92kg Recomposición) and Pareja (58kg Hipertrofia Limpia)
  * using the SAME ingredients and single-pan batch cooking with scaled portions.
  */
-export function calculateCouplePortions(meal, partnerName = 'Tania') {
+export function calculateCouplePortions(meal, partnerOrProfile1 = 'Tania', optionalProfile2 = null) {
   if (!meal) return null;
 
   const baseCal = Number(meal.calories || 450);
@@ -1415,68 +1415,109 @@ export function calculateCouplePortions(meal, partnerName = 'Tania') {
   const baseCarb = Number(meal.carbs || meal.carbsG || 40);
   const baseFat = Number(meal.fat || meal.fatG || 12);
 
-  // Andrés: 92kg, target 2150 kcal, 195g protein -> Higher protein density & ~1.25x volume
-  const andresMult = 1.25;
-  const andresCal = Math.round(baseCal * andresMult);
-  const andresProt = Math.round(baseProt * 1.3);
-  const andresCarb = Math.round(baseCarb * 1.2);
-  const andresFat = Math.round(baseFat * 1.15);
+  let p1 = null;
+  let p2 = null;
 
-  // Pareja: 58kg, target 1850 kcal, 120g protein -> Gentle portion, high nutrient density, ~0.85x volume
-  const parejaMult = 0.85;
-  const parejaCal = Math.round(baseCal * parejaMult);
-  const parejaProt = Math.round(baseProt * 0.85);
-  const parejaCarb = Math.round(baseCarb * 0.9);
-  const parejaFat = Math.round(baseFat * 0.85);
+  if (typeof partnerOrProfile1 === 'object' && partnerOrProfile1 !== null) {
+    p1 = partnerOrProfile1;
+    p2 = optionalProfile2 || { name: 'Pareja', avatar: '🌸', weightKg: 58, targetCalories: 1850 };
+  } else if (typeof partnerOrProfile1 === 'string') {
+    p1 = { name: 'Andrés', avatar: '🦁', weightKg: 92, targetCalories: 2150, role: 'Recomposición (92kg)' };
+    p2 = { name: partnerOrProfile1 || 'Tania', avatar: '🌸', weightKg: 58, targetCalories: 1850, role: `Hipertrofia Limpia (${partnerOrProfile1 || 'Tania'})` };
+  } else {
+    p1 = { name: 'Andrés', avatar: '🦁', weightKg: 92, targetCalories: 2150, role: 'Recomposición (92kg)' };
+    p2 = { name: 'Tania', avatar: '🌸', weightKg: 58, targetCalories: 1850, role: 'Hipertrofia Limpia (Tania)' };
+  }
 
-  const cleanPartnerName = partnerName || 'Tania';
+  const name1 = (p1.name || 'Usuario 1').replace(/\s*\(Pareja\)/i, '').trim();
+  const name2 = (p2.name || 'Usuario 2').replace(/\s*\(Pareja\)/i, '').trim();
+  const avatar1 = p1.avatar || '🦁';
+  const avatar2 = p2.avatar || '🌸';
+
+  // Dynamic ratio based on caloric targets or weight
+  const cals1 = Number(p1.targetCalories || p1.calories || (p1.weightKg ? p1.weightKg * 25 : 2150));
+  const cals2 = Number(p2.targetCalories || p2.calories || (p2.weightKg ? p2.weightKg * 25 : 1850));
+  const totalCals = Math.max(1000, cals1 + cals2);
+
+  // If default Andrés (2150) and Tania (1850), preserve exact 60% / 40% for existing unit tests
+  let ratio1Num = 60;
+  let ratio2Num = 40;
+  let mult1 = 1.25;
+  let mult2 = 0.85;
+
+  const isLegacyDefault = (name1.toLowerCase() === 'andrés' || name1.toLowerCase() === 'andres') &&
+                          (name2.toLowerCase() === 'tania' || name2.toLowerCase() === 'pareja');
+
+  if (!isLegacyDefault && (p1.id || p2.id)) {
+    ratio1Num = Math.round((cals1 / totalCals) * 100);
+    ratio2Num = 100 - ratio1Num;
+    mult1 = Number(((ratio1Num / 50) * 1.0).toFixed(2));
+    mult2 = Number(((ratio2Num / 50) * 1.0).toFixed(2));
+  }
+
+  const cal1 = Math.round(baseCal * mult1);
+  const prot1 = Math.round(baseProt * (mult1 > 1 ? mult1 * 1.04 : mult1));
+  const carb1 = Math.round(baseCarb * (mult1 > 1 ? mult1 * 0.96 : mult1 * 1.05));
+  const fat1 = Math.round(baseFat * mult1);
+
+  const cal2 = Math.round(baseCal * mult2);
+  const prot2 = Math.round(baseProt * mult2);
+  const carb2 = Math.round(baseCarb * (mult2 < 1 ? mult2 * 1.05 : mult2));
+  const fat2 = Math.round(baseFat * mult2);
+
+  const user1Data = {
+    profileName: name1,
+    avatar: avatar1,
+    role: p1.role || `${name1} (${p1.weightKg ? p1.weightKg + 'kg' : ''})`,
+    multiplier: mult1,
+    calories: cal1,
+    protein: prot1,
+    carbs: carb1,
+    fat: fat1,
+    servingRatio: `${ratio1Num}%`,
+    portionDidactic: `Porción de ${name1} (~${Math.round(mult1 * 100)}%): ${Math.round(prot1)}g proteína, más saciedad y volumen.`
+  };
+
+  const user2Data = {
+    profileName: name2,
+    avatar: avatar2,
+    role: p2.role || `${name2} (${p2.weightKg ? p2.weightKg + 'kg' : ''})`,
+    multiplier: mult2,
+    calories: cal2,
+    protein: prot2,
+    carbs: carb2,
+    fat: fat2,
+    servingRatio: `${ratio2Num}%`,
+    portionDidactic: `Porción de ${name2} (~${Math.round(mult2 * 100)}%): ${Math.round(prot2)}g proteína, fácil asimilación digestiva.`
+  };
 
   return {
     mealId: meal.id,
     mealTitle: meal.title || meal.name,
     icon: meal.icon || '🍲',
-    batchCookingTip: `🍳 Tip 1 Sola Sartén: Cocinen la preparación combinada en 1 sola olla/sartén. Al servir, divide ~60% al plato de Andrés y ~40% al de ${cleanPartnerName}. ¡Mismo tiempo, macros exactos!`,
-    andres: {
-      profileName: 'Andrés',
-      avatar: '🦁',
-      role: 'Recomposición (92kg)',
-      multiplier: andresMult,
-      calories: andresCal,
-      protein: andresProt,
-      carbs: andresCarb,
-      fat: andresFat,
-      servingRatio: '60%',
-      portionDidactic: `Porción Generosa (~125%): ${Math.round(andresProt)}g proteína, más saciedad y volumen.`
-    },
-    pareja: {
-      profileName: cleanPartnerName,
-      avatar: '🌸',
-      role: `Hipertrofia Limpia (${cleanPartnerName})`,
-      multiplier: parejaMult,
-      calories: parejaCal,
-      protein: parejaProt,
-      carbs: parejaCarb,
-      fat: parejaFat,
-      servingRatio: '40%',
-      portionDidactic: `Porción Compacta de ${cleanPartnerName} (~85%): ${Math.round(parejaProt)}g proteína, fácil asimilación digestiva.`
-    }
+    batchCookingTip: `🍳 Tip 1 Sola Sartén: Cocinen la preparación combinada en 1 sola olla/sartén. Al servir, divide ~${ratio1Num}% al plato de ${name1} y ~${ratio2Num}% al de ${name2}. ¡Mismo tiempo, macros exactos!`,
+    user1: user1Data,
+    user2: user2Data,
+    andres: user1Data,
+    pareja: user2Data
   };
 }
 
 /**
- * 9. Unified Couple Grocery List Generator (Andrés + Pareja)
+ * 9. Unified Couple Grocery List Generator (Dynamic Profiles)
  * Computes consolidated shopping list for 7 days or Cajabamba travel
  */
-export function generateCoupleGroceryList(days = 7, partnerName = 'Tania') {
+export function generateCoupleGroceryList(days = 7, partnerName = 'Tania', primaryName = 'Andrés') {
   const pName = partnerName || 'Tania';
+  const mName = primaryName || 'Andrés';
   return [
     {
       category: 'Proteínas Magras (Avícola & Pescadería)',
       icon: '🍗',
       items: [
-        { id: 'eggs', name: 'Huevos de Granja / Camperos', qty: `${days * 6} unidades (aprox. 3–4 docenas)`, purpose: `Andrés (4/día) + ${pName} (2/día). Proteína de alto valor biológico y colina.` },
-        { id: 'chicken', name: 'Pechuga de Pollo Fresca', qty: `${(days * 0.38).toFixed(1)} kg`, purpose: `Andrés (~220g/día) + ${pName} (~140g/día). Base anabólica sin grasa saturada.` },
-        { id: 'tuna', name: 'Latas de Atún en Agua', qty: '8–10 latas', purpose: 'Cenas express y comidas de viaje a Cajabamba con alto Omega-3.' },
+        { id: 'eggs', name: 'Huevos de Granja / Camperos', qty: `${days * 6} unidades (aprox. 3–4 docenas)`, purpose: `${mName} (4/día) + ${pName} (2/día). Proteína de alto valor biológico y colina.` },
+        { id: 'chicken', name: 'Pechuga de Pollo Fresca', qty: `${(days * 0.38).toFixed(1)} kg`, purpose: `${mName} (~220g/día) + ${pName} (~140g/día). Base anabólica sin grasa saturada.` },
+        { id: 'tuna', name: 'Latas de Atún en Agua', qty: '8–10 latas', purpose: 'Cenas express y comidas de viaje con alto Omega-3.' },
         { id: 'cheese', name: 'Queso Fresco Pasteurizado', qty: '500g', purpose: 'Acompañamiento rápido en omelettes y ensaladas.' }
       ]
     },

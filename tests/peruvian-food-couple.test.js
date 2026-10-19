@@ -96,6 +96,37 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(eggItem.purpose.includes('Tania'));
   });
 
+  it('should decouple from Andres and allow pairing any two arbitrary profiles with dynamic serving ratios', () => {
+    const meal = {
+      id: 'meal-test-pollo',
+      name: 'Pechuga a la Plancha con Quinua',
+      calories: 400,
+      protein: 40,
+      carbs: 40,
+      fat: 10
+    };
+
+    const profile1 = { id: 'prof_tania', name: 'Tania', weightKg: 58, targetCalories: 1800, avatar: '🌸' };
+    const profile2 = { id: 'prof_anicka', name: 'Anicka', weightKg: 62, targetCalories: 1600, avatar: '🌿' };
+
+    const couple = calculateCouplePortions(meal, profile1, profile2);
+    assert.ok(couple);
+    assert.equal(couple.user1.profileName, 'Tania');
+    assert.equal(couple.user2.profileName, 'Anicka');
+    assert.ok(couple.user1.servingRatio);
+    assert.ok(couple.user2.servingRatio);
+    assert.ok(couple.batchCookingTip.includes('Tania'));
+    assert.ok(couple.batchCookingTip.includes('Anicka'));
+    assert.ok(!couple.batchCookingTip.includes('Andrés'));
+
+    // Dynamic grocery list between Tania and Anicka
+    const grocery = generateCoupleGroceryList(7, 'Anicka', 'Tania');
+    const eggItem = grocery[0].items.find((i) => i.id === 'eggs');
+    assert.ok(eggItem.purpose.includes('Tania'));
+    assert.ok(eggItem.purpose.includes('Anicka'));
+    assert.ok(!eggItem.purpose.includes('Andrés'));
+  });
+
   it('should verify Anicka (Hermana) profile identity, metabolic settings, and 7-day wellness cycle', () => {
     const anicka = FAMILY_PROFILES.hermana;
     assert.ok(anicka.name.includes('Anicka'));

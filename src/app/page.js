@@ -127,13 +127,57 @@ export default function HomePage() {
     pin: '1234',
     weightKg: 60,
     goal: 'recomposition',
-    isPartnerOfAndres: false
+    partnerOfProfileId: ''
   });
 
+  // Dynamic Partner Linking: Any user can select who their partner is (not hardcoded to Andrés)
+  const [partnerLinks, setPartnerLinks] = useState({ andres: 'pareja', pareja: 'andres' });
+
+  // Current active partner profile based on activeProfileId
+  const activePartnerId = useMemo(() => {
+    if (partnerLinks[activeProfileId]) return partnerLinks[activeProfileId];
+    if (activeProfileId === 'andres') return 'pareja';
+    if (activeProfileId === 'pareja') return 'andres';
+    return null;
+  }, [partnerLinks, activeProfileId]);
+
+  const activePartnerProfile = useMemo(() => {
+    return activePartnerId && familyProfiles[activePartnerId] ? familyProfiles[activePartnerId] : null;
+  }, [activePartnerId, familyProfiles]);
+
   const partnerName = useMemo(() => {
+    if (activePartnerProfile?.name) {
+      return activePartnerProfile.name.replace(/\s*\(Pareja\)/i, '').trim();
+    }
     const raw = familyProfiles.pareja?.name || 'Tania';
     return raw.replace(/\s*\(Pareja\)/i, '').trim() || 'Tania';
-  }, [familyProfiles.pareja?.name]);
+  }, [activePartnerProfile, familyProfiles.pareja?.name]);
+
+  const handleSetPartnerForProfile = (sourceId, newPartnerId) => {
+    if (!sourceId) return;
+    const updated = { ...partnerLinks };
+    const oldPartner = updated[sourceId];
+    if (oldPartner && updated[oldPartner] === sourceId) {
+      delete updated[oldPartner];
+    }
+    if (newPartnerId && newPartnerId !== 'none' && newPartnerId !== '') {
+      updated[sourceId] = newPartnerId;
+      updated[newPartnerId] = sourceId;
+    } else {
+      delete updated[sourceId];
+    }
+    setPartnerLinks(updated);
+    try {
+      localStorage.setItem('aurafit_partner_links', JSON.stringify(updated));
+      queueCloudSync('aurafit_partner_links', updated, activeProfileId);
+    } catch (e) {}
+    const pName = newPartnerId && familyProfiles[newPartnerId] ? familyProfiles[newPartnerId].name : 'Ninguno';
+    showToast(`👫 Pareja vinculada actualizada: ${pName}`);
+  };
+
+  const handleSetPartnerForActiveProfile = (newPartnerId) => {
+    handleSetPartnerForProfile(activeProfileId, newPartnerId);
+  };
 
   // PIN Privacy & Biometric Security
   const [isLocked, setIsLocked] = useState(false);
@@ -298,14 +342,19 @@ export default function HomePage() {
   const [showCoupleGroceryModal, setShowCoupleGroceryModal] = useState(false);
   const [checkedGroceryItems, setCheckedGroceryItems] = useState({});
   const [couplePortionsExpanded, setCouplePortionsExpanded] = useState({});
-  const coupleGroceryList = useMemo(() => generateCoupleGroceryList(7, partnerName), [partnerName]);
+  const coupleGroceryList = useMemo(() => {
+    const primaryName = currentProfile.name || 'Andrés';
+    return generateCoupleGroceryList(7, partnerName, primaryName);
+  }, [partnerName, currentProfile.name]);
 
   const handleToggleGroceryItem = (id) => {
     setCheckedGroceryItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleCopyGroceryList = () => {
-    let text = `🛒 *LISTA DE COMPRAS COMPARTIDA: ${(familyProfiles.andres?.name || 'ANDRÉS').toUpperCase()} & ${partnerName.toUpperCase()}*\n(Sincronizada para la semana / Viaje a Cajabamba)\n\n`;
+    const p1Name = (currentProfile.name || 'Usuario 1').toUpperCase();
+    const p2Name = partnerName.toUpperCase();
+    let text = `🛒 *LISTA DE COMPRAS COMPARTIDA: ${p1Name} & ${p2Name}*\n(Sincronizada para la semana / Lote Compartido)\n\n`;
     coupleGroceryList.forEach((cat) => {
       text += `*${cat.icon} ${cat.category.toUpperCase()}*\n`;
       cat.items.forEach((item) => {
@@ -314,7 +363,7 @@ export default function HomePage() {
       });
       text += '\n';
     });
-    text += `💡 *Tip de Cocina en 1 Sola Sartén:*\nCocinan los mismos ingredientes juntos. Al servir: 60% para ${familyProfiles.andres?.name || 'Andrés'} (recomposición) y 40% para ${partnerName} (hipertrofia sin sobrecarga).`;
+    text += `💡 *Tip de Cocina en 1 Sola Sartén:*\nCocinan los mismos ingredientes juntos. Al servir se modula según las metas de cada uno (${currentProfile.name} y ${partnerName}).`;
 
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text);
@@ -504,6 +553,11 @@ export default function HomePage() {
       const savedCouple = localStorage.getItem('aurafit_couple_mode_enabled');
       if (savedCouple !== null) {
         setCoupleModeEnabled(savedCouple === 'true');
+      }
+
+      const savedPartnerLinks = localStorage.getItem('aurafit_partner_links');
+      if (savedPartnerLinks) {
+        try { setPartnerLinks(JSON.parse(savedPartnerLinks)); } catch (e) {}
       }
 
       const savedNotifs = localStorage.getItem('aurafit_notifications_config');
@@ -1191,14 +1245,16 @@ export default function HomePage() {
       return;
     }
     const cleanName = newMemberForm.name.trim();
-    const isPartner = Boolean(newMemberForm.isPartnerOfAndres);
-    const memberId = isPartner ? 'pareja' : 'member_' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now().toString().slice(-4);
+    const partnerTargetId = newMemberForm.partnerOfProfileId || (newMemberForm.isPartnerOfAndres ? 'andres' : null);
+    const memberId = 'member_' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now().toString().slice(-4);
+
+    const partnerTargetName = partnerTargetId && familyProfiles[partnerTargetId] ? familyProfiles[partnerTargetId].name : null;
 
     const newProfile = {
       id: memberId,
       name: cleanName,
-      role: newMemberForm.role || (isPartner ? 'Hipertrofia Limpia & Protección Lumbar' : 'Bienestar & Nutrición'),
-      avatar: newMemberForm.avatar || (isPartner ? '🌸' : '👤'),
+      role: newMemberForm.role || (partnerTargetId ? `Pareja de ${partnerTargetName}` : 'Bienestar & Nutrición'),
+      avatar: newMemberForm.avatar || (partnerTargetId ? '🌸' : '👤'),
       pin: (newMemberForm.pin || '1234').replace(/\D/g, '').slice(0, 4) || '1234',
       gender: 'female',
       age: 24,
@@ -1210,7 +1266,7 @@ export default function HomePage() {
       targetCalories: 1900,
       macros: { proteinGrams: 125, fatGrams: 55, carbsGrams: 215 },
       waterDailyMl: 2500,
-      badgeText: isPartner ? `🌸 ${cleanName} (Pareja) · Modo 1 Sartén Enlazado` : `🌸 ${cleanName} · Bienestar & Nutrición`,
+      badgeText: partnerTargetId ? `🌸 ${cleanName} · Pareja de ${partnerTargetName}` : `🌸 ${cleanName} · Bienestar & Nutrición`,
       habits: [
         { id: 'water', name: 'Hidratación Diaria', target: '2,500 ml', completed: false, icon: '💧', category: 'biohacking' },
         { id: 'sleep', name: 'Descanso Reparador', target: '7-8h', completed: false, icon: '🌙', category: 'recuperacion' }
@@ -1226,6 +1282,14 @@ export default function HomePage() {
       return next;
     });
 
+    if (partnerTargetId) {
+      const updatedLinks = { ...partnerLinks, [memberId]: partnerTargetId, [partnerTargetId]: memberId };
+      setPartnerLinks(updatedLinks);
+      try {
+        localStorage.setItem('aurafit_partner_links', JSON.stringify(updatedLinks));
+      } catch (err) {}
+    }
+
     setAdminPins((prev) => ({ ...prev, [memberId]: newProfile.pin }));
     setShowAddMemberModal(false);
     setNewMemberForm({
@@ -1235,7 +1299,7 @@ export default function HomePage() {
       pin: '1234',
       weightKg: 60,
       goal: 'recomposition',
-      isPartnerOfAndres: false
+      partnerOfProfileId: ''
     });
     showToast(`✨ ¡${cleanName} agregado con éxito a la familia!`);
   };
@@ -3295,28 +3359,60 @@ export default function HomePage() {
               </div>
 
               {/* Sincronización de Cocina en Pareja & Despensa Compartida */}
-              {coupleModeEnabled && (activeProfileId === 'andres' || activeProfileId === 'pareja') && (
+              {coupleModeEnabled && (
                 <div className="couple-kitchen-banner">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '18px' }}>👫</span>
                       <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>
-                        Cocina en Pareja ({familyProfiles.andres?.name || 'Andrés'} & {partnerName})
+                        Cocina en Pareja ({currentProfile.name} & {activePartnerProfile ? activePartnerProfile.name : 'Sin pareja'})
                       </strong>
                     </div>
-                    <span className="couple-badge-synced">100% Ingredientes Compartidos</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <label htmlFor="selectPartnerHeader" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                        Tu Pareja:
+                      </label>
+                      <select
+                        id="selectPartnerHeader"
+                        value={activePartnerId || ''}
+                        onChange={(e) => handleSetPartnerForActiveProfile(e.target.value)}
+                        style={{
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '8px',
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: 'var(--text-main)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="">(Sin pareja vinculada)</option>
+                        {Object.values(familyProfiles).filter((p) => p.id !== activeProfileId).map((p) => (
+                          <option key={p.id} value={p.id}>{p.avatar} {p.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
-                    Compran y cocinan los mismos alimentos para ahorrar tiempo. Las porciones se modulan según el objetivo: <strong>{familyProfiles.andres?.name || 'Andrés'} (~125% / 60% de la olla)</strong> y <strong>{partnerName} (~85% / 40% de la olla)</strong>.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn-open-grocery-list"
-                    onClick={() => setShowCoupleGroceryModal(true)}
-                  >
-                    <span>🛒</span>
-                    <span>Lista de Compras Compartida ({familyProfiles.andres?.name || 'Andrés'} & {partnerName})</span>
-                  </button>
+                  {activePartnerProfile ? (
+                    <>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                        Cocinan los mismos alimentos en 1 sola sartén. Las porciones se adaptan a cada uno: <strong>{currentProfile.name}</strong> y <strong>{activePartnerProfile.name}</strong> según sus metas individuales.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn-open-grocery-list"
+                        onClick={() => setShowCoupleGroceryModal(true)}
+                      >
+                        <span>🛒</span>
+                        <span>Lista de Compras Compartida ({currentProfile.name} & {activePartnerProfile.name})</span>
+                      </button>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+                      💡 Selecciona a tu pareja en el menú desplegable para sincronizar porciones automáticas y lista de compras en 1 sola sartén.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -3661,8 +3757,8 @@ export default function HomePage() {
                             )}
 
                             {/* Cocina en Pareja: Mismo Plato, 2 Porciones (Batch Cooking 1 Sartén) */}
-                            {coupleModeEnabled && (activeProfileId === 'andres' || activeProfileId === 'pareja') && (() => {
-                              const couple = calculateCouplePortions(meal, partnerName);
+                            {coupleModeEnabled && activePartnerProfile && (() => {
+                              const couple = calculateCouplePortions(meal, currentProfile, activePartnerProfile);
                               if (!couple) return null;
                               const isExp = couplePortionsExpanded[meal.id];
                               return (
@@ -3674,7 +3770,7 @@ export default function HomePage() {
                                   >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <span>👫</span>
-                                      <strong>Modo Pareja ({familyProfiles.andres?.name || 'Andrés'} & {partnerName}): 1 Sartén, 2 Porciones</strong>
+                                      <strong>Modo Pareja ({couple.user1.profileName} & {couple.user2.profileName}): 1 Sartén, 2 Porciones</strong>
                                     </span>
                                     <span style={{ fontSize: '11px', color: 'var(--fitia-blue)', fontWeight: 800 }}>
                                       {isExp ? '▲ Ocultar' : '▼ Ver desglose'}
@@ -3687,59 +3783,61 @@ export default function HomePage() {
                                         {couple.batchCookingTip}
                                       </div>
                                       <div className="couple-portion-grid">
-                                        {/* Columna Andrés */}
+                                        {/* Columna Usuario Activo */}
                                         <div className="couple-portion-card andres">
                                           <div className="couple-portion-header">
-                                            <span>🦁 {couple.andres.profileName}</span>
-                                            <span className="couple-ratio-badge">{couple.andres.servingRatio}</span>
+                                            <span>{couple.user1.avatar} {couple.user1.profileName}</span>
+                                            <span className="couple-ratio-badge">{couple.user1.servingRatio}</span>
                                           </div>
                                           <div className="couple-portion-macros">
-                                            <strong>{couple.andres.calories} kcal</strong> · {couple.andres.protein}g P · {couple.andres.carbs}g C
+                                            <strong>{couple.user1.calories} kcal</strong> · {couple.user1.protein}g P · {couple.user1.carbs}g C
                                           </div>
                                           <div className="couple-portion-desc">
-                                            {couple.andres.portionDidactic}
+                                            {couple.user1.portionDidactic}
                                           </div>
                                           <button
                                             type="button"
                                             className="btn-quick-log-couple andres"
                                             onClick={() => handleAddFood({
-                                              name: `${meal.title || meal.name} (Porción ${couple.andres.profileName} 1.25x)`,
-                                              calories: couple.andres.calories,
-                                              protein: couple.andres.protein,
-                                              carbs: couple.andres.carbs,
-                                              fat: couple.andres.fat,
-                                              mealSlot: slot
+                                              name: `${meal.title || meal.name} (Porción ${couple.user1.profileName} ${couple.user1.servingRatio})`,
+                                              calories: couple.user1.calories,
+                                              protein: couple.user1.protein,
+                                              carbs: couple.user1.carbs,
+                                              fat: couple.user1.fat,
+                                              mealSlot: slot,
+                                              profileId: activeProfileId
                                             })}
                                           >
-                                            + Servir a {couple.andres.profileName}
+                                            + Servir a {couple.user1.profileName}
                                           </button>
                                         </div>
 
-                                        {/* Columna Pareja */}
+                                        {/* Columna Pareja Vinculada */}
                                         <div className="couple-portion-card pareja">
                                           <div className="couple-portion-header">
-                                            <span>🌸 {couple.pareja.profileName}</span>
-                                            <span className="couple-ratio-badge">{couple.pareja.servingRatio}</span>
+                                            <span>{couple.user2.avatar} {couple.user2.profileName}</span>
+                                            <span className="couple-ratio-badge">{couple.user2.servingRatio}</span>
                                           </div>
                                           <div className="couple-portion-macros">
-                                            <strong>{couple.pareja.calories} kcal</strong> · {couple.pareja.protein}g P · {couple.pareja.carbs}g C
+                                            <strong>{couple.user2.calories} kcal</strong> · {couple.user2.protein}g P · {couple.user2.carbs}g C
                                           </div>
                                           <div className="couple-portion-desc">
-                                            {couple.pareja.portionDidactic}
+                                            {couple.user2.portionDidactic}
                                           </div>
                                           <button
                                             type="button"
                                             className="btn-quick-log-couple pareja"
                                             onClick={() => handleAddFood({
-                                              name: `${meal.title || meal.name} (Porción ${couple.pareja.profileName} 0.85x)`,
-                                              calories: couple.pareja.calories,
-                                              protein: couple.pareja.protein,
-                                              carbs: couple.pareja.carbs,
-                                              fat: couple.pareja.fat,
-                                              mealSlot: slot
+                                              name: `${meal.title || meal.name} (Porción ${couple.user2.profileName} ${couple.user2.servingRatio})`,
+                                              calories: couple.user2.calories,
+                                              protein: couple.user2.protein,
+                                              carbs: couple.user2.carbs,
+                                              fat: couple.user2.fat,
+                                              mealSlot: slot,
+                                              profileId: activePartnerId
                                             })}
                                           >
-                                            + Servir a {couple.pareja.profileName}
+                                            + Servir a {couple.user2.profileName}
                                           </button>
                                         </div>
                                       </div>
@@ -6883,7 +6981,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Modal: Lista de Compras Compartida (Andrés & Pareja) */}
+      {/* Modal: Lista de Compras Compartida Dinámica */}
       {showCoupleGroceryModal && (
         <div
           className="modal-backdrop grocery-modal-backdrop"
@@ -6901,7 +6999,7 @@ export default function HomePage() {
                     Lista de Compras Compartida
                   </h3>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {familyProfiles.andres?.name || 'Andrés'} ({familyProfiles.andres?.weightKg || 92}kg) & {partnerName} ({familyProfiles.pareja?.weightKg || 58}kg) · Semana / Viaje Cajabamba
+                    {currentProfile.name || 'Usuario 1'} ({currentProfile.weightKg || 70}kg) & {activePartnerProfile ? activePartnerProfile.name : partnerName} ({activePartnerProfile ? activePartnerProfile.weightKg || 60 : 58}kg) · Lote Semanal Compartido
                   </div>
                 </div>
               </div>
@@ -6917,10 +7015,10 @@ export default function HomePage() {
             {/* Banner de Sincronización y Batch Cooking */}
             <div style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.1), rgba(59,130,246,0.1))', padding: '12px 14px', borderRadius: '16px', border: '1px solid rgba(236,72,153,0.25)', marginBottom: '16px' }}>
               <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '3px' }}>
-                👫 ¿Por qué compran lo mismo {familyProfiles.andres?.name || 'Andrés'} y {partnerName}?
+                👫 ¿Por qué compran juntos {currentProfile.name || 'Usuario 1'} y {activePartnerProfile ? activePartnerProfile.name : partnerName}?
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                Ahorran tiempo cocinando en <strong>1 sola sartén u olla</strong>. La diferencia no está en comprar comida separada, sino en <strong>la porción al servir</strong>: {familyProfiles.andres?.name || 'Andrés'} recibe el 60% (~125%) y {partnerName} el 40% (~85%).
+                Ahorran tiempo y dinero cocinando en <strong>1 sola sartén u olla</strong>. La diferencia no está en comprar ingredientes separados, sino en <strong>la porción al servir</strong> ajustada a los macros y metas individuales de cada uno.
               </div>
             </div>
 
@@ -7744,7 +7842,7 @@ export default function HomePage() {
                         Modo Cocina en Pareja
                       </div>
                       <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
-                        1 Sartén, 2 Porciones ({familyProfiles.andres?.name || 'Andrés'} 60% / {partnerName} 40%) en recetas y compras
+                        1 Sartén, 2 Porciones personalizadas en recetas y lista de compras compartida
                       </div>
                     </div>
                   </div>
@@ -7768,47 +7866,35 @@ export default function HomePage() {
                   </button>
                 </div>
 
-                {/* Enlace explícito de Pareja de Andrés */}
+                {/* Enlace dinámico de Pareja para cualquier perfil */}
                 <div style={{ background: 'rgba(236,72,153,0.06)', borderRadius: '10px', padding: '10px', border: '1px dashed rgba(236,72,153,0.3)' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 800, color: '#EC4899', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                    💍 Nombre de la Pareja enlazada a Andrés:
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: '#EC4899', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                    💍 Pareja de cocina vinculada a {editingProfile.name || 'este perfil'}:
                   </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      value={familyProfiles.pareja?.name || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFamilyProfiles((prev) => {
-                          const updated = {
-                            ...prev,
-                            pareja: { ...prev.pareja, name: val }
-                          };
-                          try {
-                            localStorage.setItem('aurafit_family_profiles', JSON.stringify(updated));
-                            queueCloudSync('aurafit_family_profiles', updated, activeProfileId);
-                          } catch (err) {}
-                          return updated;
-                        });
-                        if (editingProfile && editingProfile.id === 'pareja') {
-                          setEditingProfile((prev) => ({ ...prev, name: val }));
-                        }
-                      }}
-                      placeholder="Ej. Tania"
-                      style={{
-                        flex: 1,
-                        padding: '8px 10px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'var(--bg-card)',
-                        color: 'var(--text-main)',
-                        fontWeight: 700,
-                        fontSize: '13px'
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                    Enlaza a Andrés y su pareja para que las porciones y la lista de compras se sincronicen con este nombre, aunque agregues más familiares.
+                  <select
+                    value={partnerLinks[editingProfile.id] || ''}
+                    onChange={(e) => handleSetPartnerForProfile(editingProfile.id, e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(236,72,153,0.4)',
+                      background: 'var(--bg-card)',
+                      color: 'var(--text-main)',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">(Sin pareja vinculada / Cocina individual)</option>
+                    {Object.values(familyProfiles).filter((p) => p.id !== editingProfile.id).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.avatar} {p.name} ({p.weightKg ? p.weightKg + 'kg' : 'Perfil'})
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', display: 'block', lineHeight: 1.3 }}>
+                    Cualquier usuario puede escoger libremente quién es su pareja. Las recetas calcularán porciones simultáneas y la lista de compras se sincronizará entre ambos.
                   </span>
                 </div>
               </div>
@@ -8109,18 +8195,36 @@ export default function HomePage() {
                 />
               </div>
 
-              {/* Opción para enlazar como Pareja de Andrés */}
-              <div style={{ background: 'rgba(236, 72, 153, 0.08)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input
-                  type="checkbox"
-                  id="chkIsPartner"
-                  checked={newMemberForm.isPartnerOfAndres}
-                  onChange={(e) => setNewMemberForm({ ...newMemberForm, isPartnerOfAndres: e.target.checked })}
-                  style={{ width: '18px', height: '18px', accentColor: '#EC4899', cursor: 'pointer' }}
-                />
-                <label htmlFor="chkIsPartner" style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-main)', cursor: 'pointer', lineHeight: 1.3 }}>
-                  💍 <strong>Enlazar como la Pareja de Andrés</strong> (para cocina 1 sartén 60/40 y compras compartidas)
+              {/* Opción para enlazar Pareja Dinámica */}
+              <div style={{ background: 'rgba(236, 72, 153, 0.08)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: '12px', padding: '10px 12px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: '#EC4899', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                  💍 Pareja para Cocina Compartida (1 Sartén & Compras):
                 </label>
+                <select
+                  value={newMemberForm.partnerOfProfileId || ''}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, partnerOfProfileId: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(236, 72, 153, 0.4)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-main)',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">(Sin pareja vinculada / Cocina individual)</option>
+                  {Object.values(familyProfiles).map((prof) => (
+                    <option key={prof.id} value={prof.id}>
+                      {prof.avatar} {prof.name} ({prof.weightKg ? prof.weightKg + 'kg' : 'Perfil'})
+                    </option>
+                  ))}
+                </select>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', display: 'block', lineHeight: 1.3 }}>
+                  El nuevo familiar se sincronizará automáticamente para calcular porciones de 1 sola sartén con la persona que elijas.
+                </span>
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
