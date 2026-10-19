@@ -177,4 +177,38 @@ describe('AuraFit Adaptive Workout Engine', () => {
     assert.equal(anickaMissed.selectedSplit, 'calm_break');
     assert.ok(anickaMissed.routineTitle.toLowerCase().includes('calma') || anickaMissed.routineTitle.toLowerCase().includes('descompresión'));
   });
+
+  it('should prescribe intermediate weighted calisthenics for Andres in home_bars context', () => {
+    const andresBars = getHybridWorkoutPrescription({
+      profile: FAMILY_PROFILES.andres,
+      context: 'home_bars'
+    });
+
+    assert.ok(andresBars.routineTitle.toLowerCase().includes('calistenia intermedia con lastre'));
+    assert.ok(andresBars.exercises.some(e => e.name.toLowerCase().includes('lastre')));
+    assert.ok(andresBars.exercises.some(e => e.name.toLowerCase().includes('dominadas')));
+    assert.ok(andresBars.exercises.some(e => e.name.toLowerCase().includes('fondos')));
+    assert.ok(andresBars.exercises.some(e => e.name.toLowerCase().includes('muscle-up')));
+    assert.ok(andresBars.skillTree.weighted_calisthenics, 'Andres skill tree should include weighted_calisthenics');
+    assert.ok(andresBars.skillTree.weighted_calisthenics.levels.length >= 4);
+  });
+
+  it('should strictly exclude hip thrust from all of Tania routines and splits for lumbar protection', () => {
+    const parejaGym = getHybridWorkoutPrescription({
+      profile: FAMILY_PROFILES.pareja,
+      context: 'gym'
+    });
+
+    parejaGym.exercises.forEach(ex => {
+      // Must not be named Hip Thrust
+      assert.ok(!ex.name.toLowerCase().includes('hip thrust'), `Exercise ${ex.name} must not be Hip Thrust`);
+    });
+
+    // Verify floor bridge with bands is prescribed instead
+    assert.ok(parejaGym.exercises.some(e => e.name.toLowerCase().includes('puente de glúteos en suelo')));
+
+    // Verify McGill Big 3 for lumbar core
+    assert.ok(parejaGym.exercises.some(e => e.name.toLowerCase().includes('mcgill') || e.name.toLowerCase().includes('bird-dog')));
+  });
 });
+

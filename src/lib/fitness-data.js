@@ -581,7 +581,7 @@ export const FAMILY_PROFILES = {
         focus: 'Sobrecarga progresiva en máquinas y poleas sin compresión en columna',
         durationMinutes: 45,
         exercises: [
-          { name: 'Hip Thrust en Banco Acolchado (Retroversión Pélvica)', sets: 4, reps: '10-12', restSeconds: 90, rir: 1 },
+          { name: 'Puente de Glúteos en Suelo con Banda Elástica (Cero Cizalla Lumbar)', sets: 4, reps: '12-15 con pausa 2s', restSeconds: 60, rir: 1, substitute: 'Patadas de Glúteo en Cuadrupedia con Banda o Cable', note: 'Espalda 100% apoyada en el suelo. Cero riesgo de cizalla o hiperextensión lumbar (Reemplazo médico a Hip Thrust).' },
           { name: 'Prensa Inclinada de Piernas (Espalda 100% pegada al respaldo)', sets: 4, reps: '10-12', restSeconds: 90, rir: 1 },
           { name: 'Remo con Pecho Apoyado en Banco Inclinado (Chest-Supported Row)', sets: 4, reps: '10-12', restSeconds: 75, rir: 1 },
           { name: 'Curl Femoral Acostada o Sentada en Máquina', sets: 3, reps: '12-15', restSeconds: 60, rir: 1 },
@@ -1810,42 +1810,87 @@ export const HYBRID_ATHLETE_SYSTEM = {
             commonMistake: 'Flexión micro de codo por fatiga.'
           }
         ]
+      },
+      weighted_calisthenics: {
+        id: 'weighted_calisthenics',
+        name: 'Calistenia con Lastre (Dominadas & Fondos Pesados)',
+        icon: '🏋️‍♂️',
+        targetMuscle: 'Dorsal ancho, pectoral mayor, tríceps, bíceps y fuerza de agarre',
+        description: 'La vía reina de la hipertrofia calisténica (Dejan Stipke). Uso de cinturón con discos o chaleco lastrado para romper mesetas de fuerza e hipertrofia.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Base Estricta sin Lastre',
+            target: '4 series × 10 Dominadas estrictas + 4 series × 15 Fondos en paralelas',
+            restSeconds: 90,
+            difficulty: 'Base Consolidada',
+            cues: 'Rango de movimiento completo (ROM). Pecho a la barra en dominadas y codos a 90° en fondos con control excéntrico de 2s.',
+            commonMistake: 'Hacer repeticiones a medias o usar inercia de piernas.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Lastre Intermedio Inicial (+5kg a +12kg)',
+            target: '4 series × 6–8 reps en Dominadas (+10kg) y Fondos (+15kg)',
+            restSeconds: 120,
+            difficulty: 'Intermedio Activo',
+            cues: 'Coloca el cinturón de lastre firme en la cintura baja. Inicia el movimiento desde parada muerta sin balanceo.',
+            commonMistake: 'Acelerar la bajada dejando caer el peso sobre los hombros.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Lastre Intermedio Alto (+15kg a +25kg)',
+            target: '4 series × 5 reps pesadas en Dominadas (+18kg) y Fondos (+25kg)',
+            restSeconds: 120,
+            difficulty: 'Intermedio Avanzado',
+            cues: 'Tracción explosiva con retracción escapular instantánea. Empuje firme con bloqueo de codos arriba.',
+            commonMistake: 'Perder la tensión abdominal permitiendo que las piernas se balanceen.'
+          },
+          {
+            level: 4,
+            title: 'Nivel 4: Atleta Híbrido Avanzado (+30kg a +45kg)',
+            target: '3 series × 3–5 reps con +32kg en Dominadas y +40kg en Fondos',
+            restSeconds: 150,
+            difficulty: 'Master Dejan Stipke',
+            cues: 'Fuerza absoluta de atleta de élite. Tensión de cuerpo completo desde la punta de los pies hasta el agarre.',
+            commonMistake: 'Entrenar al fallo muscular todos los días sin respetar descansos de 48-72h.'
+          }
+        ]
       }
     },
     pareja: {
       hip_thrust: {
         id: 'hip_thrust',
-        name: 'Puentes & Hip Thrust Seguro',
+        name: 'Activación de Glúteos en Suelo (CERO Hip Thrust / Sin Carga Axial)',
         icon: '🍑',
-        targetMuscle: 'Glúteo mayor, isquiotibiales y core posterior',
-        description: 'Progresión rey para glúteos firmes con cero impacto sobre la columna lumbar.',
+        targetMuscle: 'Glúteo mayor, glúteo medio y cadena posterior sin compresión lumbar',
+        description: 'Progresión médica para hipertrofia y tono de glúteos en colchoneta plana. El Hip Thrust en banco queda 100% prohibido para eliminar cizalla e hiperextensión en la columna lumbar.',
         levels: [
           {
             level: 1,
-            title: 'Nivel 1: Puentes de Glúteo en Suelo con Pausa',
-            target: '3 series × 15–20 reps (pausa 2s)',
+            title: 'Nivel 1: Puentes de Glúteo en Suelo con Pausa Isométrica',
+            target: '3 series × 15–20 reps (pausa 3s arriba)',
             restSeconds: 45,
             difficulty: 'Novato',
-            cues: 'Apoya pies firmes, eleva la pelvis apretando glúteos en el punto alto sin arquear la cintura.',
-            commonMistake: 'Subir hiper-extendiendo la zona lumbar en vez de empujar con los glúteos.'
+            cues: 'Espalda 100% plana en el suelo. Eleva la pelvis empujando desde los talones con retroversión pélvica pura, sin arquear la cintura.',
+            commonMistake: 'Arquear la zona lumbar hacia arriba en vez de apretar los glúteos.'
           },
           {
             level: 2,
-            title: 'Nivel 2: Puente Unilateral / con Banda Elástica',
-            target: '3 series × 12 por pierna',
+            title: 'Nivel 2: Puente Unilateral / con Mini-Banda en Muslos',
+            target: '3 series × 12 por pierna (control excéntrico)',
             restSeconds: 60,
             difficulty: 'Intermedio',
-            cues: 'Coloca una mini-banda arriba de las rodillas empujando hacia afuera mientras subes.',
-            commonMistake: 'Dejar que las rodillas se cierren hacia adentro.'
+            cues: 'Coloca la banda elástica sobre las rodillas abriendo hacia afuera para reclutar glúteo medio y estabilizar la pelvis sin dolor.',
+            commonMistake: 'Dejar que la rodilla colapse hacia la línea media.'
           },
           {
             level: 3,
-            title: 'Nivel 3: Hip Thrust en Banco con Barra Acolchada',
-            target: '4 series × 10–12 reps',
-            restSeconds: 90,
+            title: 'Nivel 3: Patadas de Glúteo en Cuadrupedia con Banda / Cable',
+            target: '4 series × 12–15 por pierna (columna neutra)',
+            restSeconds: 60,
             difficulty: 'Avanzado',
-            cues: 'Espalda alta apoyada firme en el borde del banco. Mentón pegado al pecho, empuja desde los talones.',
-            commonMistake: 'Mirar al techo en lugar de mantener la mirada al frente.'
+            cues: 'En 4 apoyos sobre antebrazos para mantener la columna en neutro absoluto. Patea hacia atrás y arriba apretando el glúteo.',
+            commonMistake: 'Rotar la pelvis o hiperextender la zona lumbar (Cero Hip Thrust).'
           }
         ]
       },
@@ -2190,81 +2235,97 @@ export const HYBRID_ATHLETE_SYSTEM = {
         ]
       },
       home_bars: {
-        title: 'Calistenia de Fuerza & Habilidades en Casa (Barras y Paralelas)',
+        title: 'Calistenia Intermedia con Lastre en Casa (Barras & Paralelas)',
         durationMinutes: 65,
-        focus: 'Tensión mecánica en peso corporal, habilidades y volumen de densidad',
+        focus: 'Sobrecarga progresiva con lastre (+5kg a +20kg), habilidades estáticas y densidad muscular (Filosofía Dejan Stipke)',
         blocks: [
           {
-            name: 'Bloque 1: Trucos y Fuerza Estática (25 min)',
+            name: 'Bloque 1: Habilidades & Fuerza Estática Intermedia (20 min)',
             icon: '⚡',
             exercises: [
               {
-                name: 'Práctica de Handstand Kick-ups en Pared',
+                name: 'Práctica de Handstand Kick-ups en Pared / Heel Taps',
                 sets: 5,
                 reps: '30s de intentos activos',
                 restSeconds: 75,
                 substitute: 'Wall Walk sostenido 35s',
-                note: 'Hombros bloqueados en protracción.'
+                note: 'Nivel intermedio: Hombros bloqueados en protracción activa. Busca despegar talones con las yemas de los dedos.'
               },
               {
-                name: 'Front Lever Tuck Holds en Barra',
+                name: 'Front Lever Advanced Tuck / Tuck Holds en Barra',
                 sets: 4,
-                reps: '15s hold',
+                reps: '12 - 15s estáticos',
                 restSeconds: 90,
                 substitute: 'Dragon Flags en suelo o cama',
-                note: 'Codos extendidos sin doblar.'
+                note: 'Codos extendidos 100% rectos. Retracción y depresión escapular para activar dorsal ancho.'
+              },
+              {
+                name: 'Muscle-Up / Transición Explosiva a la Barra',
+                sets: 4,
+                reps: '3 - 5 reps explosivas',
+                restSeconds: 120,
+                substitute: 'Dominadas Altas al Esternón con aceleración vertical',
+                note: 'Tracción explosiva llevando la barra al ombligo o esternón para superar la transición.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Carga Mecánica & Masa Muscular (25 min)',
-            icon: '💪',
+            name: 'Bloque 2: Sobrecarga Progresiva con Lastre (Weighted Calisthenics) (30 min)',
+            icon: '🏋️‍♂️',
             exercises: [
               {
-                name: 'Dominadas Pronas Estrictas en Barra',
+                name: 'Dominadas Pronas Estrictas con Lastre (+10kg a +15kg)',
                 sets: 4,
-                reps: '8 - 10 reps (opcional mochila con peso)',
-                restSeconds: 90,
-                substitute: 'Dominadas Neutras o Supinas',
-                note: 'Rango completo de movimiento, pecho a la barra.'
+                reps: '6 - 8 reps pesadas',
+                restSeconds: 120,
+                substitute: 'Dominadas Neutras o Supinas con Lastre (+10kg)',
+                note: 'Cinturón de lastre en cadera. Pecho a la barra, extensión completa abajo sin balanceo, bajada excéntrica en 2 segundos.'
               },
               {
-                name: 'Fondos Profundos en Barras Paralelas',
+                name: 'Fondos en Barras Paralelas con Lastre (+15kg a +25kg)',
                 sets: 4,
-                reps: '12 - 15 reps',
+                reps: '6 - 8 reps pesadas',
+                restSeconds: 120,
+                substitute: 'Fondos profundos con pausa 2s en el punto bajo',
+                note: 'Baja a 90° con codos pegados, empuje explosivo reclutando pectoral inferior y tríceps.'
+              },
+              {
+                name: 'Flexiones Declinadas con Lastre (Disco o Mochila con Peso +10kg)',
+                sets: 3,
+                reps: '10 - 12 reps',
                 restSeconds: 75,
-                substitute: 'Flexiones Diamante en suelo',
-                note: 'Pausa de 1s en la parte baja para estiramiento pectoral.'
+                substitute: 'Flexiones Arquero o Pseudo Planche Pushups',
+                note: 'Pies elevados en silla/banco. Protracción escapular arriba para fuerza de empuje transferible a Planche.'
               },
               {
-                name: 'Sentadillas Búlgaras en Silla / Sofá',
+                name: 'Sentadillas Búlgaras con Lastre / Mancuernas',
                 sets: 4,
-                reps: '12 por pierna',
-                restSeconds: 60,
-                substitute: 'Pistol Squats asistidas a 1 pierna',
-                note: 'Torso ligeramente inclinado para enfatizar glúteo.'
+                reps: '8 - 10 por pierna',
+                restSeconds: 75,
+                substitute: 'Pistol Squats (Sentadillas a 1 pierna) asistidas',
+                note: 'Carga unilateral que construye masa en cuádriceps y glúteos sin necesidad de barra pesada sobre la espalda.'
               }
             ]
           },
           {
-            name: 'Bloque 3: Core Estático & Circuito Metabólico (15 min)',
+            name: 'Bloque 3: Core de Calistenia & Compresión (15 min)',
             icon: '🔥',
             exercises: [
               {
-                name: 'L-Sit en Paralelas / Hollow Body Hold',
+                name: 'Elevaciones de Piernas a la Barra (Toes to Bar) / L-Sit',
                 sets: 4,
-                reps: '25s continuos',
-                restSeconds: 45,
-                substitute: 'Elevaciones de piernas colgado en barra',
-                note: 'Compresión abdominal y flexores de cadera.'
+                reps: '10 - 12 reps estrictas o L-Sit 25s',
+                restSeconds: 60,
+                substitute: 'Hollow Body Rocks en suelo 40s',
+                note: 'Puntas de pie tocan la barra con piernas rectas. Cero inercia (cero kipping); control motor puro.'
               },
               {
-                name: 'Finisher: 100 Flexiones en el menor tiempo posible',
+                name: 'Caminata o Trote Ligero Post-Calistenia (Zona 2)',
                 sets: 1,
-                reps: '100 reps en micro-series',
+                reps: '15 minutos continuos',
                 restSeconds: 0,
-                substitute: 'Tabata de saltos y flexiones',
-                note: 'Congestión máxima de pecho y tríceps.'
+                substitute: 'Saltos suaves a la cuerda o movilidad articular',
+                note: 'Circulación y lavado de metabolitos para acelerar la hipertrofia y recuperación muscular.'
               }
             ]
           }
@@ -2306,7 +2367,7 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 sets: 4,
                 reps: '10 - 12 reps',
                 restSeconds: 90,
-                substitute: 'Hip Thrust en Máquina o Mancuerna Pesada',
+                substitute: 'Prensa Horizontal con Pies Altos o Step-Ups Bajos Asistidos',
                 note: 'Espalda 100% apoyada en el respaldo. Cero presión sobre la columna lumbar.'
               },
               {
@@ -2318,12 +2379,12 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 note: 'Mancuernas colgando a los costados para no cargar la columna vertebral.'
               },
               {
-                name: 'Hip Thrust con Barra Acolchada / Banda Elástica',
+                name: 'Puente de Glúteos en Suelo con Banda Elástica (Cero Cizalla Lumbar)',
                 sets: 4,
-                reps: '12 reps (pausa 2s arriba)',
-                restSeconds: 90,
-                substitute: 'Puentes de Glúteo a 1 Pierna en Banco',
-                note: 'Máxima activación de glúteo mayor sin hiperextender la espalda baja.'
+                reps: '15 reps (pausa 2s arriba)',
+                restSeconds: 60,
+                substitute: 'Patadas de Glúteo en Polea Baja / Cuadrupedia con Banda',
+                note: 'Espalda y columna 100% plana en el suelo para proteger la zona lumbar con máxima activación de glúteo mayor (Reemplazo médico a Hip Thrust).'
               }
             ]
           },
@@ -2860,7 +2921,7 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 sets: 4,
                 reps: '10 - 12 reps',
                 restSeconds: 90,
-                substitute: 'Hip Thrust en Máquina o Mancuerna Pesada',
+                substitute: 'Prensa Horizontal con Pies Altos o Step-Ups Bajos Asistidos',
                 note: 'Espalda 100% apoyada en el respaldo. Cero presión sobre la columna lumbar.'
               },
               {
@@ -2872,12 +2933,12 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 note: 'Mancuernas colgando a los costados para no cargar la columna vertebral.'
               },
               {
-                name: 'Hip Thrust con Barra Acolchada / Banda Elástica',
+                name: 'Puente de Glúteos en Suelo con Banda Elástica (Cero Cizalla Lumbar)',
                 sets: 4,
-                reps: '12 reps (pausa 2s arriba)',
-                restSeconds: 90,
-                substitute: 'Puentes de Glúteo a 1 Pierna en Banco',
-                note: 'Máxima activación de glúteo mayor sin hiperextender la espalda baja.'
+                reps: '15 reps (pausa 2s arriba)',
+                restSeconds: 60,
+                substitute: 'Patadas de Glúteo en Polea Baja / Cuadrupedia con Banda',
+                note: 'Espalda y columna 100% plana en colchoneta para proteger la zona lumbar con máxima activación de glúteo mayor (Reemplazo médico a Hip Thrust).'
               }
             ]
           },
@@ -3221,7 +3282,14 @@ export function getHybridWorkoutPrescription({
   // Get routine from split or context routine
   const splitRoutine = profileSplits[activeSplitKey];
   const contextRoutine = profileRoutines[context] || profileRoutines.gym;
-  const routine = splitRoutine || contextRoutine;
+  const isContextSpecific = context && context !== 'gym' && !selectedSplit && !isMissedDay && profileRoutines[context];
+  const routine = isContextSpecific ? profileRoutines[context] : (splitRoutine || contextRoutine);
+  if (isContextSpecific) {
+    activeSplitKey = context;
+  }
+
+  // Flattened exercises for easy direct consumption
+  const allExercises = (routine.blocks || []).flatMap((b) => b.exercises || []);
 
   // CNS Readiness Assessment (0 to 100)
   let readiness = 90;
@@ -3297,6 +3365,7 @@ export function getHybridWorkoutPrescription({
     warnings,
     recommendations,
     blocks: routine.blocks || [],
+    exercises: allExercises,
     skillTree: (HYBRID_ATHLETE_SYSTEM.skillTrees && HYBRID_ATHLETE_SYSTEM.skillTrees[profileId]) || HYBRID_ATHLETE_SYSTEM.skillTree
   };
 }

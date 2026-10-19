@@ -303,8 +303,13 @@ export default function HomePage() {
     handstand: 1,
     front_lever: 1,
     muscle_up: 1,
-    planche: 1
+    planche: 1,
+    weighted_calisthenics: 2, // Andrés tiene nivel intermedio en calistenia con lastre
+    hip_thrust: 1,
+    mcgill_core: 1,
+    supported_row: 1
   });
+  const [selectedLastreKg, setSelectedLastreKg] = useState(10); // Lastre activo recomendado para intermedio
   const [showSubstitutesFor, setShowSubstitutesFor] = useState(null); // exercise name or null
   const [completedExercises, setCompletedExercises] = useState([]); // array of exercise identifiers
   const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
@@ -4558,7 +4563,7 @@ export default function HomePage() {
                 <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
                   {[
                     { id: 'gym', label: 'Gimnasio', icon: '🏋️' },
-                    { id: 'home_bars', label: 'En Casa (Barras)', icon: '🏡' },
+                    { id: 'home_bars', label: currentProfile.id === 'andres' ? 'Calistenia (Barras & Lastre)' : 'En Casa (Funcional)', icon: currentProfile.id === 'andres' ? '🤸‍♂️' : '🏡' },
                     { id: 'travel', label: 'Cajabamba / Viaje', icon: '🏔️' }
                   ].map((ctx) => {
                     const isSel = workoutContext === ctx.id;
@@ -4638,6 +4643,116 @@ export default function HomePage() {
                   <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', lineHeight: 1.35 }}>
                     Sesiones suaves de 15 a 25 min para realizar cómodamente en casa o en un paseo tranquilo, sin pesas ni impacto articular.
                   </span>
+                </div>
+              </div>
+            )}
+
+            {/* Banner Específico para Andrés: Calistenia Intermedia con Lastre */}
+            {currentProfile.id === 'andres' && workoutContext === 'home_bars' && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.08))',
+                border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '22px' }}>🤸‍♂️</span>
+                    <div>
+                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
+                        Calistenia Intermedia con Lastre (Barras en Casa)
+                      </strong>
+                      <span style={{ fontSize: '11px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
+                        ⚡ Sobrecarga Progresiva Pesada (+kg) · Enfoque Dejan Stipke
+                      </span>
+                    </div>
+                  </div>
+                  <span style={{
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    color: '#D97706',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    fontSize: '10.5px',
+                    fontWeight: 900
+                  }}>
+                    INTERMEDIO
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  Entrenamiento en barra fija y paralelas con tu <strong>cinturón de lastre</strong>. Prioriza rango de movimiento estricto, 2s de descenso excéntrico y descansos de 120s para reponer fosfocreatina.
+                </div>
+
+                {/* Selector rápido de peso de lastre */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '2px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-main)' }}>⚖️ Tu Lastre Hoy:</span>
+                  {[5, 10, 15, 20, 25].map((kg) => (
+                    <button
+                      key={kg}
+                      type="button"
+                      style={{
+                        padding: '4px 9px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 900,
+                        cursor: 'pointer',
+                        background: selectedLastreKg === kg ? 'var(--fitia-orange)' : 'var(--bg-card)',
+                        color: selectedLastreKg === kg ? '#FFFFFF' : 'var(--text-main)',
+                        border: selectedLastreKg === kg ? '1px solid var(--fitia-orange)' : '1px solid var(--border-subtle)',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onClick={() => {
+                        setSelectedLastreKg(kg);
+                        showToast(`⚖️ Lastre fijado en +${kg} kg. ¡Rango objetivo: 6-8 reps estrictas!`);
+                      }}
+                    >
+                      +{kg} kg
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Banner Específico para Tania: Blindaje Lumbar Activo (Cero Hip Thrust) */}
+            {currentProfile.id === 'pareja' && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.08))',
+                border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '22px' }}>🛡️</span>
+                    <div>
+                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
+                        Blindaje Lumbar Activo (Tania)
+                      </strong>
+                      <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 800 }}>
+                        🚫 CERO Hip Thrust · Cero Carga Axial en Columna
+                      </span>
+                    </div>
+                  </div>
+                  <span style={{
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    color: 'var(--fitia-green)',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    fontSize: '10.5px',
+                    fontWeight: 900
+                  }}>
+                    LUMBAR SAFE
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  <strong>Contraindicación médica aplicada:</strong> El Hip Thrust en banco y pesos muertos están 100% excluidos para evitar cizalla en L4-L5/S1. Tus glúteos se estimulan con <strong>puentes en suelo con banda elástica</strong>, <strong>patadas en cuadrupedia</strong> y <strong>protocolo McGill Big 3</strong> (Bird-Dog + Planchas laterales).
                 </div>
               </div>
             )}
@@ -4876,7 +4991,7 @@ export default function HomePage() {
                       </h3>
                       <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         {currentProfile.id === 'pareja'
-                          ? 'Progresiones de hip thrust, protocolo McGill Big 3 y postura sin compresión axial'
+                          ? 'Activación de glúteos en colchoneta (CERO Hip Thrust), protocolo McGill Big 3 y postura descompresiva'
                           : currentProfile.id === 'hermana'
                           ? 'Pasos gentiles de bienestar, paseos relajantes y hábitos reconfortantes sin fatiga ni sobrecarga'
                           : 'Progresiones nivel por nivel para novatos hasta atletas avanzados'}
