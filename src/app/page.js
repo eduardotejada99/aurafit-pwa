@@ -17,7 +17,9 @@ import {
   calculateCouplePortions,
   generateCoupleGroceryList,
   HYBRID_ATHLETE_SYSTEM,
-  getHybridWorkoutPrescription
+  getHybridWorkoutPrescription,
+  analyzeWeeklyWorkoutBalance,
+  calculateSystemicPillars
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -84,7 +86,7 @@ export const PANTRY_CATEGORIES = [
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('nutrition'); // Fitia default
   const [isDarkMode, setIsDarkMode] = useState(false); // Fitia Signature Light Mode as default
-  const [selectedDay, setSelectedDay] = useState(12); // Wednesday (M)
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate()); // Dynamic today's day of month
   
   // Multi-Profile State (Andrés, Pareja, Hermana)
   const [activeProfileId, setActiveProfileId] = useState('andres');
@@ -123,10 +125,15 @@ export default function HomePage() {
   const [habits, setHabits] = useState(FAMILY_PROFILES.andres.habits);
   // Daily Water Tracker: Starts at 0 every single day!
   const [waterMl, setWaterMl] = useState(0);
-  const [streakDays, setStreakDays] = useState(213);
+  const [streakDays, setStreakDays] = useState(1);
   const [showDamageControl, setShowDamageControl] = useState(false);
   const [showTextLogModal, setShowTextLogModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // User Workout Split & Missed Day State (100% Dynamic & User Controlled)
+  const [selectedSplit, setSelectedSplit] = useState(null); // 'legs' | 'push' | 'pull' | 'full_upper' | 'home_core'
+  const [isMissedDay, setIsMissedDay] = useState(false);
+  const [weeklyWorkoutLogs, setWeeklyWorkoutLogs] = useState({}); // { 'YYYY-MM-DD': { split, title, done, isMissedDay, minutes } }
 
   // Sleep & Recovery State (Interactive Sleep Logger)
   const [sleepHours, setSleepHours] = useState(7.5);
@@ -248,25 +255,56 @@ export default function HomePage() {
   const hybridPrescription = useMemo(() => {
     return getHybridWorkoutPrescription({
       profile: currentProfile,
+      selectedSplit,
+      isMissedDay,
       sleepHours: Number(sleepHours || 7.5),
       sleepQuality: sleepQuality || 'deep',
       recentHeavyDays: Number(recentHeavyDays || 0),
       context: workoutContext,
       durationMode: workoutDurationMode
     });
-  }, [currentProfile, sleepHours, sleepQuality, recentHeavyDays, workoutContext, workoutDurationMode]);
+  }, [currentProfile, selectedSplit, isMissedDay, sleepHours, sleepQuality, recentHeavyDays, workoutContext, workoutDurationMode]);
 
-  // Weight tracking state
-  const [weightLogs, setWeightLogs] = useState([
-    { log_date: '10 Oct', weight_kg: 92.4 },
-    { log_date: '11 Oct', weight_kg: 92.2 },
-    { log_date: '12 Oct', weight_kg: 92.0 },
-    { log_date: '13 Oct', weight_kg: 91.8 },
-    { log_date: '14 Oct', weight_kg: 92.1 },
-    { log_date: '15 Oct', weight_kg: 91.7 },
-    { log_date: '16 Oct', weight_kg: 91.9 },
-    { log_date: '17 Oct', weight_kg: 91.6 }
-  ]);
+  // Dynamic Weekly Workout Balance Analytics (e.g., Legs Monday -> suggests Pull/Back or Push)
+  const weeklyWorkoutBalance = useMemo(() => {
+    return analyzeWeeklyWorkoutBalance({
+      weeklyLogs: weeklyWorkoutLogs,
+      profileId: activeProfileId
+    });
+  }, [weeklyWorkoutLogs, activeProfileId]);
+
+  // The 4 Interconnected Systemic Pillars (0-100 AuraScore + Cross-Pillar Synergies)
+  const systemicPillars = useMemo(() => {
+    return calculateSystemicPillars({
+      profile: currentProfile,
+      loggedFoods,
+      targets,
+      waterMl,
+      sleepHours,
+      sleepQuality,
+      selectedSplit,
+      isMissedDay,
+      todayWorkoutDone,
+      habits,
+      weeklyLogs: weeklyWorkoutLogs
+    });
+  }, [currentProfile, loggedFoods, targets, waterMl, sleepHours, sleepQuality, selectedSplit, isMissedDay, todayWorkoutDone, habits, weeklyWorkoutLogs]);
+
+  // Weight tracking state (dynamically initialized relative to current date)
+  const [weightLogs, setWeightLogs] = useState(() => {
+    const now = new Date();
+    const makeDate = (offsetDays) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - offsetDays);
+      return `${d.getDate()} ${d.toLocaleString('es-PE', { month: 'short' })}`;
+    };
+    return [
+      { log_date: makeDate(6), weight_kg: 92.4 },
+      { log_date: makeDate(4), weight_kg: 92.1 },
+      { log_date: makeDate(2), weight_kg: 91.8 },
+      { log_date: makeDate(0), weight_kg: 91.6 }
+    ];
+  });
   const [newWeightInput, setNewWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
 
@@ -408,15 +446,64 @@ export default function HomePage() {
         setTodayWorkoutDone(false);
       }
 
+      // Weekly Workout Logs & Split for current profile
+      const savedWeek = localStorage.getItem(`aurafit_workout_week_${profileKey}`);
+      if (savedWeek) {
+        try {
+          setWeeklyWorkoutLogs(JSON.parse(savedWeek));
+        } catch (e) {
+          setWeeklyWorkoutLogs({});
+        }
+      } else {
+        setWeeklyWorkoutLogs({});
+      }
+
+      const savedSplit = localStorage.getItem(`aurafit_selected_split_${profileKey}`);
+      setSelectedSplit(savedSplit || null);
+
+      const savedMissed = localStorage.getItem(`aurafit_missed_day_${profileKey}`);
+      setIsMissedDay(savedMissed === todayKey);
+
+      // Dynamic Streak from activity history
+      const savedActivity = localStorage.getItem(`aurafit_activity_days_${profileKey}`);
+      if (savedActivity) {
+        try {
+          const days = JSON.parse(savedActivity);
+          let streak = 0;
+          let checkDate = new Date();
+          while (true) {
+            const k = checkDate.toISOString().split('T')[0];
+            if (days.includes(k)) {
+              streak++;
+              checkDate.setDate(checkDate.getDate() - 1);
+            } else {
+              break;
+            }
+          }
+          setStreakDays(Math.max(1, streak));
+        } catch (e) {
+          setStreakDays(1);
+        }
+      } else {
+        const savedStreak = localStorage.getItem(`aurafit_streak_${profileKey}`);
+        setStreakDays(savedStreak ? parseInt(savedStreak, 10) || 1 : 1);
+      }
+
       const savedWeights = localStorage.getItem(`aurafit_weights_${profileKey}`);
       if (savedWeights) {
         setWeightLogs(JSON.parse(savedWeights));
       } else {
+        const now = new Date();
+        const makeDate = (offsetDays) => {
+          const d = new Date(now);
+          d.setDate(now.getDate() - offsetDays);
+          return `${d.getDate()} ${d.toLocaleString('es-PE', { month: 'short' })}`;
+        };
         setWeightLogs([
-          { log_date: '10 Oct', weight_kg: prof.weightKg + 0.6 },
-          { log_date: '12 Oct', weight_kg: prof.weightKg + 0.3 },
-          { log_date: '15 Oct', weight_kg: prof.weightKg + 0.1 },
-          { log_date: '17 Oct', weight_kg: prof.weightKg }
+          { log_date: makeDate(6), weight_kg: Math.round((prof.weightKg + 0.6) * 10) / 10 },
+          { log_date: makeDate(4), weight_kg: Math.round((prof.weightKg + 0.3) * 10) / 10 },
+          { log_date: makeDate(2), weight_kg: Math.round((prof.weightKg + 0.1) * 10) / 10 },
+          { log_date: makeDate(0), weight_kg: Math.round((prof.weightKg) * 10) / 10 }
         ]);
       }
     } catch (e) {
@@ -957,6 +1044,37 @@ export default function HomePage() {
     showToast('🗑️ Hábito eliminado de tu rutina.');
   };
 
+  const recordActivityToday = () => {
+    try {
+      const todayKey = new Date().toISOString().split('T')[0];
+      const savedRaw = localStorage.getItem(`aurafit_activity_days_${activeProfileId}`);
+      let days = [];
+      if (savedRaw) {
+        try { days = JSON.parse(savedRaw); } catch (e) {}
+      }
+      if (!days.includes(todayKey)) {
+        days.push(todayKey);
+        if (days.length > 60) days = days.slice(-60);
+        localStorage.setItem(`aurafit_activity_days_${activeProfileId}`, JSON.stringify(days));
+        
+        let streak = 0;
+        let checkDate = new Date();
+        while (true) {
+          const k = checkDate.toISOString().split('T')[0];
+          if (days.includes(k)) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+        const finalStreak = Math.max(1, streak);
+        setStreakDays(finalStreak);
+        localStorage.setItem(`aurafit_streak_${activeProfileId}`, finalStreak.toString());
+      }
+    } catch (e) {}
+  };
+
   const addWater = (ml) => {
     setWaterMl((prev) => {
       const maxWater = (currentProfile.waterDailyMl || 3000) + 1500;
@@ -966,6 +1084,7 @@ export default function HomePage() {
         localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: updated }));
         localStorage.setItem(`aurafit_water_${activeProfileId}`, updated.toString());
       } catch (e) {}
+      recordActivityToday();
       return updated;
     });
     showToast(`💧 +${ml} ml de agua registrados.`);
@@ -1004,13 +1123,78 @@ export default function HomePage() {
   const handleToggleTodayWorkout = () => {
     setTodayWorkoutDone((prev) => {
       const next = !prev;
+      const todayKey = new Date().toISOString().split('T')[0];
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
         localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: next, minutes: workoutDurationMins }));
       } catch (e) {}
-      showToast(next ? '🏋️‍♂️ ¡Entrenamiento del día completado con éxito!' : '🏋️‍♂️ Registro de entrenamiento actualizado.');
+
+      // Dynamically record in weekly workout logs for balance analytics and week strip dots!
+      const currentSplitId = selectedSplit || (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle');
+      const updatedWeek = {
+        ...weeklyWorkoutLogs,
+        [todayKey]: {
+          split: currentSplitId,
+          title: hybridPrescription.routineTitle,
+          done: next,
+          isMissedDay: isMissedDay,
+          minutes: workoutDurationMins
+        }
+      };
+      setWeeklyWorkoutLogs(updatedWeek);
+      try {
+        localStorage.setItem(`aurafit_workout_week_${activeProfileId}`, JSON.stringify(updatedWeek));
+      } catch (e) {}
+
+      if (next) recordActivityToday();
+      showToast(next ? '🏋️‍♂️ ¡Entrenamiento del día registrado y contabilizado en la semana!' : '🏋️‍♂️ Registro de entrenamiento actualizado.');
       return next;
     });
+  };
+
+  const handleSelectSplit = (splitId) => {
+    setSelectedSplit(splitId);
+    setIsMissedDay(false);
+    try {
+      localStorage.setItem(`aurafit_selected_split_${activeProfileId}`, splitId);
+      localStorage.removeItem(`aurafit_missed_day_${activeProfileId}`);
+    } catch (e) {}
+    const splitTitle = HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[splitId]?.title || splitId;
+    showToast(`🎯 Split de entrenamiento activo: ${splitTitle.split('(')[0].trim()}`);
+  };
+
+  const handleToggleMissedDay = () => {
+    const nextMissed = !isMissedDay;
+    setIsMissedDay(nextMissed);
+    const todayKey = new Date().toISOString().split('T')[0];
+
+    if (nextMissed) {
+      setSelectedSplit('home_core');
+      try {
+        localStorage.setItem(`aurafit_missed_day_${activeProfileId}`, todayKey);
+        localStorage.setItem(`aurafit_selected_split_${activeProfileId}`, 'home_core');
+      } catch (e) {}
+
+      const updatedWeek = {
+        ...weeklyWorkoutLogs,
+        [todayKey]: {
+          split: 'home_core',
+          title: 'Core & Planchas Express en Casa (Día Ocupado)',
+          done: false,
+          isMissedDay: true,
+          minutes: 12
+        }
+      };
+      setWeeklyWorkoutLogs(updatedWeek);
+      try {
+        localStorage.setItem(`aurafit_workout_week_${activeProfileId}`, JSON.stringify(updatedWeek));
+      } catch (e) {}
+      showToast('⚡ Día Ocupado registrado: Se prescribió rutina de 12 min de planchas en casa.');
+    } else {
+      try {
+        localStorage.removeItem(`aurafit_missed_day_${activeProfileId}`);
+      } catch (e) {}
+      showToast('🔄 Modo Día Ocupado desactivado. Retomando entrenamiento habitual.');
+    }
   };
 
   const handleAdjustWorkoutDuration = (delta) => {
@@ -1052,21 +1236,44 @@ export default function HomePage() {
     const updated = [...weightLogs, { log_date: label, weight_kg: val }];
     setWeightLogs(updated);
     try {
-      localStorage.setItem('aurafit_weights', JSON.stringify(updated));
+      localStorage.setItem(`aurafit_weights_${activeProfileId}`, JSON.stringify(updated));
     } catch (e) {}
     setNewWeightInput('');
     setShowWeightModal(false);
+    recordActivityToday();
   };
 
-  const weekDays = [
-    { day: 'L', num: 10, done: true },
-    { day: 'M', num: 11, done: true },
-    { day: 'M', num: 12, done: true },
-    { day: 'J', num: 13, done: false },
-    { day: 'V', num: 14, done: false },
-    { day: 'S', num: 15, done: false },
-    { day: 'D', num: 16, done: false }
-  ];
+  // 100% Dynamic Week Days: computes actual dates for Monday through Sunday of current week
+  const weekDays = useMemo(() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
+    const distanceToMonday = (dayOfWeek + 6) % 7; // Monday = 0, Tuesday = 1, ..., Sunday = 6
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - distanceToMonday);
+
+    const dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    const days = [];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateKey = d.toISOString().split('T')[0];
+      const isToday = d.toDateString() === now.toDateString();
+      const num = d.getDate();
+
+      const weekLog = weeklyWorkoutLogs[dateKey];
+      const done = weekLog ? !!(weekLog.done || weekLog.isMissedDay) : (isToday ? todayWorkoutDone : false);
+
+      days.push({
+        day: dayLabels[i],
+        num,
+        dateKey,
+        isToday,
+        done
+      });
+    }
+    return days;
+  }, [weeklyWorkoutLogs, todayWorkoutDone]);
 
   const completedHabitsCount = habits.filter((h) => h.completed).length;
 
@@ -1200,17 +1407,19 @@ export default function HomePage() {
       )}
 
       {/* 2. Fitia Week Calendar Strip (Screenshot 6) */}
+      {/* 2. Fitia Week Calendar Strip (Screenshot 6) - 100% Dinámico */}
       <section className="fitia-week-strip">
         {weekDays.map((item) => {
           const isSelected = selectedDay === item.num;
           return (
             <div
-              key={item.num}
-              className={`fitia-day-col ${isSelected ? 'active' : ''}`}
+              key={item.dateKey}
+              className={`fitia-day-col ${isSelected ? 'active' : ''} ${item.isToday ? 'today-active' : ''}`}
               onClick={() => setSelectedDay(item.num)}
+              title={`${item.dateKey}${item.isToday ? ' (Hoy)' : ''}`}
             >
               <span className="fitia-day-name">{item.day}</span>
-              <div className="fitia-day-number">{item.num}</div>
+              <div className="fitia-day-number" style={{ fontWeight: item.isToday ? 900 : 700 }}>{item.num}</div>
               <div className={`fitia-day-dot ${item.done ? '' : 'empty'}`} />
             </div>
           );
@@ -1311,6 +1520,46 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
+              </div>
+            </section>
+
+            {/* Sinergia Pilar 1 & 2: Combustible Nutricional según Split de Hoy */}
+            <section style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '16px',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              boxShadow: 'var(--card-shadow)'
+            }}>
+              <span style={{ fontSize: '26px' }}>
+                {isMissedDay ? '⚡' : selectedSplit === 'legs' ? '🦵' : selectedSplit === 'push' ? '🛡️' : selectedSplit === 'pull' ? '🦅' : '🦁'}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--fitia-green)', letterSpacing: '0.5px' }}>
+                    Sinergia Nutrición ⟷ Entrenamiento
+                  </span>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                    Pilar 1 + 2
+                  </span>
+                </div>
+                <h4 style={{ fontSize: '13px', fontWeight: 900, margin: '2px 0 3px', color: 'var(--text-main)' }}>
+                  {isMissedDay 
+                    ? 'Día Ocupado: Sensibilidad a la Insulina & Core Express' 
+                    : `Combustible para: ${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[selectedSplit || (activeProfileId === 'andres' ? 'legs' : 'glutes_legs')]?.title?.split('(')[0] || 'Entrenamiento del Día'}`}
+                </h4>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.35 }}>
+                  {isMissedDay 
+                    ? 'Prioriza fuentes magras de proteína y ensalada abundante. Evita rebotes de hambre o ayunos extremos; tus 12m de planchas mantendrán activo tu metabolismo.'
+                    : selectedSplit === 'legs'
+                    ? 'Carga pesada de piernas: Ingiere 40-50g de carbohidratos complejos (avena, plátano o arroz) 2h antes para maximizar glucógeno en cuádriceps.'
+                    : selectedSplit === 'pull'
+                    ? 'Día de Espalda & Dominadas lastradas: Consume 30g de proteína de rápida asimilación post-entreno y mantén electrolitos para el agarre.'
+                    : 'Mantén hidratación constante (+500ml con agua pura o limón) y 30-35g de proteína en tu comida post-workout.'}
+                </p>
               </div>
             </section>
 
@@ -2926,6 +3175,208 @@ export default function HomePage() {
               </div>
             )}
 
+            {/* 1.5. BALANCE SEMANAL & CONTROL TOTAL DEL SPLIT (USUARIO TIENE EL MANDO) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* BALANCE SEMANAL INTELIGENTE BANNER */}
+              <div style={{
+                background: 'var(--bg-card)',
+                border: '1.5px solid var(--fitia-green)',
+                borderRadius: '18px',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--fitia-green)', letterSpacing: '0.5px' }}>
+                    📊 Balance Semanal Adaptativo
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {weeklyWorkoutBalance.summary}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
+                  {weeklyWorkoutBalance.recommendation}
+                </p>
+                {weeklyWorkoutBalance.recommendedSplit && selectedSplit !== weeklyWorkoutBalance.recommendedSplit && !isMissedDay && (
+                  <button
+                    type="button"
+                    style={{
+                      alignSelf: 'flex-start',
+                      background: 'var(--fitia-green-soft)',
+                      border: '1px solid var(--fitia-green)',
+                      color: 'var(--fitia-green)',
+                      padding: '5px 12px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleSelectSplit(weeklyWorkoutBalance.recommendedSplit)}
+                  >
+                    ⚡ Aplicar Split Recomendado ({HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.title?.split('(')[0]?.trim() || weeklyWorkoutBalance.recommendedSplit})
+                  </button>
+                )}
+              </div>
+
+              {/* CONTROLADOR DE SPLITS DISPONIBLES (USER FULL CONTROL) */}
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '14px 16px', boxShadow: 'var(--card-shadow)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    🎯 Tu Split de Hoy (Tienes el Control Total):
+                  </span>
+                  <span style={{ fontSize: '11px', color: isMissedDay ? '#DC2626' : 'var(--fitia-green)', fontWeight: 800 }}>
+                    {isMissedDay ? '⚡ Planchas 12m' : 'Personalizable'}
+                  </span>
+                </div>
+
+                {/* Grid of Split Options for Active Profile */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                  {Object.entries(HYBRID_ATHLETE_SYSTEM.splits[activeProfileId] || {}).map(([sKey, sObj]) => {
+                    const isSel = (selectedSplit === sKey) || (!selectedSplit && sKey === (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle'));
+                    return (
+                      <button
+                        key={sKey}
+                        type="button"
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '12px',
+                          fontSize: '11.5px',
+                          fontWeight: 800,
+                          textAlign: 'left',
+                          background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                          color: isSel ? '#FFFFFF' : 'var(--text-main)',
+                          border: isSel ? '1px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onClick={() => handleSelectSplit(sKey)}
+                      >
+                        <span style={{ fontSize: '16px' }}>{sObj.icon || '⚡'}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {sObj.title.split('(')[0].trim()}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* BOTÓN: NO PUDE ENTRENAR HOY / DÍA OCUPADO */}
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-subtle)' }}>
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      background: isMissedDay ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-card-subtle)',
+                      color: isMissedDay ? '#DC2626' : 'var(--text-muted)',
+                      border: isMissedDay ? '1.5px solid #DC2626' : '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer'
+                    }}
+                    onClick={handleToggleMissedDay}
+                  >
+                    <span>
+                      {isMissedDay ? '⚡ Modo Día Ocupado Activo (12 min Planchas en Casa)' : '❌ ¿Día complicado? No pude entrenar hoy'}
+                    </span>
+                    <span style={{ fontSize: '11px', fontWeight: 900 }}>
+                      {isMissedDay ? 'Desactivar ↩️' : 'Sugerir Planchas 12m →'}
+                    </span>
+                  </button>
+                  {isMissedDay && (
+                    <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px', fontSize: '11.5px', color: '#B45309', lineHeight: 1.4 }}>
+                      💡 <strong>Prescripción Dinámica:</strong> Rutina express de 10-12 min de planchas y core isométrico en casa. Cero fricción, mantiene el SNC despierto y se sincroniza la nutrición para preservar la masa magra.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CARD: LOS 4 PILARES DEL CUERPO ÓPTIMO (INTERCONEXIÓN SISTÉMICA) */}
+              <div style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '18px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxShadow: 'var(--card-shadow)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '20px' }}>🧬</span>
+                    <div>
+                      <h4 style={{ fontSize: '14px', fontWeight: 900, margin: 0 }}>
+                        Los 4 Pilares del Cuerpo Óptimo
+                      </h4>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+                        Nutrición celular, fuerza híbrida, SNC y biohacking
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{
+                    background: 'var(--fitia-green-soft)',
+                    color: 'var(--fitia-green)',
+                    fontWeight: 900,
+                    fontSize: '12px',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    border: '1px solid var(--fitia-green)'
+                  }}>
+                    {systemicPillars.totalScore}/100 PTS
+                  </div>
+                </div>
+
+                {/* 4 Pillars Mini Gauges */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {[
+                    { name: 'Nutrición', pts: systemicPillars.pillars.nutrition.points, icon: '🥗', color: '#10B981' },
+                    { name: 'Fuerza', pts: systemicPillars.pillars.workout.points, icon: '🦁', color: '#F97316' },
+                    { name: 'Sueño/SNC', pts: systemicPillars.pillars.sleep.points, icon: '💤', color: '#6366F1' },
+                    { name: 'Hábitos', pts: systemicPillars.pillars.habits.points, icon: '🧘', color: '#3B82F6' }
+                  ].map((p, pIdx) => (
+                    <div key={pIdx} style={{
+                      background: 'var(--bg-card-subtle)',
+                      borderRadius: '10px',
+                      padding: '8px 6px',
+                      textAlign: 'center',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      <span style={{ fontSize: '14px' }}>{p.icon}</span>
+                      <div style={{ fontSize: '9.5px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>{p.name}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 900, color: p.color, marginTop: '2px' }}>{p.pts}/25</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Dynamic Cross-Pillar Synergies */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {systemicPillars.synergies.map((syn, sIdx) => (
+                    <div key={sIdx} style={{
+                      background: 'var(--bg-card-subtle)',
+                      borderLeft: '3px solid var(--fitia-green)',
+                      padding: '8px 10px',
+                      borderRadius: '0 8px 8px 0',
+                      fontSize: '11.5px',
+                      color: 'var(--text-main)',
+                      lineHeight: 1.35
+                    }}>
+                      {syn}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* 2. CNS AUTO-REGULATION & READINESS CARD */}
             <div className="hybrid-readiness-hero">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -3565,9 +4016,11 @@ export default function HomePage() {
               {/* Weight Sparkline */}
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '60px', paddingTop: '10px' }}>
                 {weightLogs.slice(-7).map((log, i) => {
-                  const min = 71.5;
-                  const max = 73.5;
-                  const pct = Math.max(10, Math.min(100, ((log.weight_kg - min) / (max - min)) * 100));
+                  const currentVals = weightLogs.map((l) => Number(l.weight_kg) || currentProfile.weightKg);
+                  const min = Math.min(...currentVals) - 0.5;
+                  const max = Math.max(...currentVals) + 0.5;
+                  const range = max - min || 1;
+                  const pct = Math.max(10, Math.min(100, Math.round(((log.weight_kg - min) / range) * 100)));
                   return (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%' }}>
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-end' }}>

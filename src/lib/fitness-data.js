@@ -1937,15 +1937,573 @@ export const HYBRID_ATHLETE_SYSTEM = {
         ]
       }
     }
+  },
+
+  splits: {
+    andres: {
+      legs: {
+        id: 'legs',
+        name: 'Piernas Pesado (Sentadilla, Prensa & Búlgaras)',
+        shortName: 'Piernas Pesado',
+        icon: '🦵',
+        dayRecommendation: 'Lunes / Inicio de Semana',
+        durationMinutes: 85,
+        focus: 'Fuerza máxima en tren inferior, liberación hormonal y estabilidad articular',
+        blocks: [
+          {
+            name: 'Bloque 1: Fuerza Pesada en Piernas (Sobrecarga Progresiva)',
+            icon: '🏋️‍♂️',
+            exercises: [
+              {
+                name: 'Sentadilla Trasera con Barra / Prensa Pesada',
+                sets: 4,
+                reps: '6 - 8 reps pesadas',
+                restSeconds: 120,
+                substitute: 'Prensa Inclinada a 45° con pies a la anchura de hombros',
+                note: 'RIR 1-2. Céntrate en bajar profundo y empujar con los talones.'
+              },
+              {
+                name: 'Sentadilla Búlgara con Mancuernas Pesadas',
+                sets: 4,
+                reps: '8 - 10 por pierna',
+                restSeconds: 90,
+                substitute: 'Zancadas caminando con mancuernas',
+                note: 'Torso ligeramente inclinado para reclutar glúteo mayor y cuádriceps.'
+              },
+              {
+                name: 'Peso Muerto Rumano con Barra / Mancuernas',
+                sets: 4,
+                reps: '8 - 10 reps',
+                restSeconds: 90,
+                substitute: 'Curl Femoral en Máquina Acostado',
+                note: 'Empuja la cadera hacia atrás hasta sentir estiramiento en isquiotibiales.'
+              },
+              {
+                name: 'Elevación de Talones en Escalón / Máquina',
+                sets: 4,
+                reps: '15 reps con pausa 2s',
+                restSeconds: 60,
+                substitute: 'Gemelos a una pierna sobre disco con mancuerna',
+                note: 'Rango completo de dorsiflexión para tobillos a prueba de lesiones.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Calistenia de Tren Inferior & Core (20 min)',
+            icon: '🤸‍♂️',
+            exercises: [
+              {
+                name: 'Pistol Squats (Sentadilla a 1 Pierna) Asistidas',
+                sets: 3,
+                reps: '6 por pierna',
+                restSeconds: 75,
+                substitute: 'Sentadillas Cosacas de movilidad lateral',
+                note: 'Control excéntrico puro de equilibrio neuromuscular.'
+              },
+              {
+                name: 'L-Sit Tuck en Paralelas / Silla',
+                sets: 4,
+                reps: '20s continuos',
+                restSeconds: 60,
+                substitute: 'Elevaciones de rodillas al pecho en barra',
+                note: 'Compresión activa de psoas y abdominales inferiores.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 3: Motor Híbrido & Quema Calórica Zona 2 (15 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'Caminata Inclinada (12% inclinación, 4.8 km/h)',
+                sets: 1,
+                reps: '15 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Bicicleta suave con resistencia media',
+                note: 'Zona 2 (120-135 bpm) para bombeo circulatorio y lavado de lactato sin agotar glucógeno.'
+              }
+            ]
+          }
+        ]
+      },
+      push: {
+        id: 'push',
+        name: 'Pecho, Hombros & Tríceps (Empuje Pesado)',
+        shortName: 'Pecho & Empuje',
+        icon: '🛡️',
+        dayRecommendation: 'Martes o Jueves',
+        durationMinutes: 80,
+        focus: 'Sobrecarga miofibrilar en empuje horizontal y vertical con transferencias a Handstand',
+        blocks: [
+          {
+            name: 'Bloque 1: Fuerza Pesada de Empuje (40 min)',
+            icon: '🏋️‍♂️',
+            exercises: [
+              {
+                name: 'Press Banca Plano con Barra Pesada',
+                sets: 4,
+                reps: '6 - 8 reps pesadas',
+                restSeconds: 120,
+                substitute: 'Press Inclinado con Mancuernas Pesadas',
+                note: 'Retracción escapular firme. Barra toca el pecho medio con control.'
+              },
+              {
+                name: 'Press Inclinado con Mancuernas (30 grados)',
+                sets: 3,
+                reps: '8 - 10 reps',
+                restSeconds: 90,
+                substitute: 'Press en Máquina Inclinada guiada',
+                note: 'Foco en la clavícula y haz clavicular del pectoral.'
+              },
+              {
+                name: 'Fondos en Paralelas con Lastre / Control',
+                sets: 4,
+                reps: '8 - 10 reps',
+                restSeconds: 90,
+                substitute: 'Flexiones declinadas con pies en banco',
+                note: 'Baja a 90° y empuja con pectoral y tríceps.'
+              },
+              {
+                name: 'Elevaciones Laterales con Mancuernas',
+                sets: 4,
+                reps: '12 - 15 reps',
+                restSeconds: 60,
+                substitute: 'Elevaciones laterales en polea baja',
+                note: 'Construcción de hombros redondos en 3D.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Calistenia Vertical & Habilidades Handstand (25 min)',
+            icon: '🤸‍♂️',
+            exercises: [
+              {
+                name: 'Práctica de Handstand Kick-Ups / Wall Hold',
+                sets: 5,
+                reps: '30s de intentos activos',
+                restSeconds: 75,
+                substitute: 'Pike Pushups en cajón o suelo',
+                note: 'Equilibrio sobre las yemas de los dedos y hombros elevados.'
+              },
+              {
+                name: 'Extensiones de Tríceps en Polea / Francesas',
+                sets: 3,
+                reps: '12 reps',
+                restSeconds: 60,
+                substitute: 'Flexiones Diamante en suelo',
+                note: 'Bloqueo firme al final de la extensión.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 3: Motor Híbrido Zona 2 (15 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'Caminata Inclinada en Cinta (10-12%)',
+                sets: 1,
+                reps: '15 minutos',
+                restSeconds: 0,
+                substitute: 'Remo suave a ritmo constante',
+                note: 'Zona 2 para oxidar grasa y acelerar recuperación del torso.'
+              }
+            ]
+          }
+        ]
+      },
+      pull: {
+        id: 'pull',
+        name: 'Espalda & Tracción Pesada (Lats & Front Lever)',
+        shortName: 'Espalda & Tracción',
+        icon: '🦅',
+        dayRecommendation: 'Miércoles o Viernes',
+        durationMinutes: 85,
+        focus: 'Espalda densa, dorsal ancho y palancas estáticas de Front Lever',
+        blocks: [
+          {
+            name: 'Bloque 1: Fuerza Pesada de Tracción (40 min)',
+            icon: '🏋️‍♂️',
+            exercises: [
+              {
+                name: 'Remo con Barra Libre / Remo Pendlay',
+                sets: 4,
+                reps: '6 - 8 reps estrictas',
+                restSeconds: 120,
+                substitute: 'Remo Unilateral Pesado con Mancuerna en Banco',
+                note: 'Espalda 100% plana. Tirón explosivo hacia el ombligo.'
+              },
+              {
+                name: 'Dominadas Pronas Estrictas con Lastre',
+                sets: 4,
+                reps: '6 - 8 reps',
+                restSeconds: 120,
+                substitute: 'Jalón al Pecho en Polea Alta agarre neutro',
+                note: 'Pecho a la barra, codos hacia los bolsillos traseros.'
+              },
+              {
+                name: 'Remo Unilateral en Banco con Mancuerna Pesada',
+                sets: 3,
+                reps: '10 por brazo',
+                restSeconds: 75,
+                substitute: 'Remo sentado en polea baja con agarre V',
+                note: 'Máximo estiramiento abajo sin rotar el torso.'
+              },
+              {
+                name: 'Face Pulls en Polea con Cuerda / Pájaros',
+                sets: 4,
+                reps: '15 reps controladas',
+                restSeconds: 60,
+                substitute: 'Remo al cuello con agarre ancho',
+                note: 'Salud de hombro, deltoides posterior y trapecio medio.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Palanca Frontal Front Lever & Core (25 min)',
+            icon: '⚡',
+            exercises: [
+              {
+                name: 'Progresión de Front Lever (Tuck / Adv Tuck Holds)',
+                sets: 4,
+                reps: '12 - 15s estáticos',
+                restSeconds: 90,
+                substitute: 'Dragon Flags en suelo o banco plano',
+                note: 'Codos bloqueados al 100%. Retracción y depresión escapular.'
+              },
+              {
+                name: 'Curl de Bíceps con Barra Z / Mancuernas Inclinadas',
+                sets: 3,
+                reps: '10 - 12 reps',
+                restSeconds: 60,
+                substitute: 'Curl martillo con mancuernas para braquiorradial',
+                note: 'Tensión constante sin balanceo lumbar.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 3: Motor Híbrido Zona 2 (15 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'Caminata Inclinada o Remo Concept2',
+                sets: 1,
+                reps: '15 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Bicicleta estática ritmo conversación',
+                note: 'Oxidación de ácidos grasos post-tracción.'
+              }
+            ]
+          }
+        ]
+      },
+      full_upper: {
+        id: 'full_upper',
+        name: 'Torso Híbrido Completo (Dejan Stipke Balance)',
+        shortName: 'Torso Híbrido',
+        icon: '⚡',
+        dayRecommendation: 'Balance General',
+        durationMinutes: 90,
+        focus: 'Sobrecarga miofibrilar pesada, habilidades estáticas y quema oxidativa de grasa',
+        blocks: [
+          {
+            name: 'Bloque 1: Fuerza Pesada & Sobrecarga Progresiva (40 min)',
+            icon: '🏋️‍♂️',
+            exercises: [
+              {
+                name: 'Press Banca Plano con Barra',
+                sets: 4,
+                reps: '6 - 8 pesadas',
+                restSeconds: 120,
+                substitute: 'Press Inclinado con Mancuernas Pesadas o Fondos Lastrados',
+                note: 'Carga pesada con RIR 1-2. Barra controlada en 2s bajando.'
+              },
+              {
+                name: 'Remo Pendlay Libre con Barra',
+                sets: 4,
+                reps: '8 reps estrictas',
+                restSeconds: 90,
+                substitute: 'Remo Unilateral con Mancuerna Pesada en Banco',
+                note: 'Espalda 100% horizontal. Tirón explosivo hacia el ombligo.'
+              },
+              {
+                name: 'Sentadilla Trasera / Prensa de Piernas Pesada',
+                sets: 4,
+                reps: '6 - 8 reps',
+                restSeconds: 120,
+                substitute: 'Sentadilla Hack o Goblet Squat Pesada',
+                note: 'Estímulo sistémico de fuerza y testosterona.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Calistenia de Alto Nivel & Trucos (30 min)',
+            icon: '🤸‍♂️',
+            exercises: [
+              {
+                name: 'Progresión de Front Lever (Tuck o Adv Tuck)',
+                sets: 4,
+                reps: '12 - 18s estáticos',
+                restSeconds: 90,
+                substitute: 'Dominadas Estrictas con Pausa de 2s en el Pecho',
+                note: 'Brazos 100% rectos. Retracción escapular activa.'
+              },
+              {
+                name: 'Fondos en Paralelas con Lastre / Excéntrica Lenta',
+                sets: 4,
+                reps: '8 - 10 reps',
+                restSeconds: 90,
+                substitute: 'Flexiones Declinadas o Press Francés Pesado',
+                note: 'Baja profundo hasta 90 grados y sube con bloqueo firme.'
+              },
+              {
+                name: 'Práctica de Handstand en Pared o Suelo',
+                sets: 5,
+                reps: '20 - 30s equilibrio',
+                restSeconds: 60,
+                substitute: 'Pike Pushups en Cajón para Deltoides',
+                note: 'Enfoque en la presión de las yemas de los dedos.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 3: Motor Híbrido & Quema Calórica Zona 2 (20 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'Caminata en Cinta Inclinada (12% inclinación, 4.8 - 5.2 km/h)',
+                sets: 1,
+                reps: '20 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Remo Concept2 o Bicicleta Estática a ritmo constante',
+                note: 'Mantén frecuencia cardíaca en Zona 2 (120-135 bpm) para oxidar grasa pura sin degradar masa muscular.'
+              }
+            ]
+          }
+        ]
+      },
+      home_core: {
+        id: 'home_core',
+        name: 'Micro-Rutina Express: Planchas & Abdominales en Casa (12 min)',
+        shortName: 'Planchas en Casa',
+        icon: '🔥',
+        dayRecommendation: 'Días Ocupados / Viaje / Descarga',
+        durationMinutes: 12,
+        focus: 'Activación de core, tensión isométrica y quema metabólica en 12 minutos sin equipo',
+        blocks: [
+          {
+            name: 'Circuito Isométrico de Planchas & Core (2 Rondas)',
+            icon: '🔥',
+            exercises: [
+              { name: 'Plancha Frontal Dinámica con Toque de Hombros', sets: 2, reps: '45s continuo', restSeconds: 15, substitute: 'Plancha estática sobre codos', note: 'Anti-rotación y estabilidad escapular.' },
+              { name: 'Hollow Body Hold en Suelo / Alfombra', sets: 2, reps: '40s estricto', restSeconds: 20, substitute: 'Hollow body con rodillas flexionadas', note: 'Presiona la espalda baja contra el piso sin dejar luz.' },
+              { name: 'McGill Bird-Dog Cruzado con Respiración Diafragmática', sets: 2, reps: '10 por lado lentos', restSeconds: 15, substitute: 'Cat-Cow suave', note: 'Blindaje lumbar y glúteo mayor.' },
+              { name: 'Plancha Lateral con Elevación de Cadera', sets: 2, reps: '30s por lado', restSeconds: 15, substitute: 'Plancha lateral apoyando rodillas', note: 'Oblicuos y estabilizadores laterales de pelvis.' },
+              { name: 'L-Sit Tuck en Suelo o Cojín', sets: 2, reps: '25s sostenido', restSeconds: 20, substitute: 'Elevación de piernas acostado', note: 'Compresión abdominal pura y flexores de cadera.' },
+              { name: 'Descanso Activo / Respiración Diafragmática', sets: 2, reps: '60s', restSeconds: 0, substitute: 'Estiramiento suave de abdomen', note: 'Oxigenación y bajada de pulsaciones.' }
+            ]
+          }
+        ]
+      }
+    },
+
+    pareja: {
+      glutes_legs: {
+        id: 'glutes_legs',
+        name: 'Glúteos & Femoral (Cero Compresión Axial)',
+        shortName: 'Glúteos & Piernas',
+        icon: '🍑',
+        dayRecommendation: 'Inicio de Semana',
+        durationMinutes: 50,
+        focus: 'Glúteos, femoral y cadera con columna 100% protegida y descompresión',
+        blocks: [
+          {
+            name: 'Bloque 1: Cadena Posterior sin Carga Axial (25 min)',
+            icon: '🌸',
+            exercises: [
+              {
+                name: 'Prensa Inclinada de Piernas (Pies altos y separados)',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 90,
+                substitute: 'Hip Thrust en Máquina o Mancuerna Pesada',
+                note: 'Espalda 100% apoyada en el respaldo. Cero presión sobre la columna lumbar.'
+              },
+              {
+                name: 'Sentadilla Búlgara con Mancuernas a los Lados',
+                sets: 3,
+                reps: '10 por pierna',
+                restSeconds: 75,
+                substitute: 'Zancadas Estáticas en Máquina Smith guiada',
+                note: 'Mancuernas colgando a los costados para no cargar la columna vertebral.'
+              },
+              {
+                name: 'Hip Thrust con Barra Acolchada / Banda Elástica',
+                sets: 4,
+                reps: '12 reps (pausa 2s arriba)',
+                restSeconds: 90,
+                substitute: 'Puentes de Glúteo a 1 Pierna en Banco',
+                note: 'Máxima activación de glúteo mayor sin hiperextender la espalda baja.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Tracción Atlética & Core Protector McGill (25 min)',
+            icon: '🧘‍♀️',
+            exercises: [
+              {
+                name: 'Jalón al Pecho Polea Alta (Agarre Neutro)',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Remo en Banco Inclinado con Pecho Apoyado',
+                note: 'Agarre neutro para cuidar hombros y alinear la columna.'
+              },
+              {
+                name: 'Remo con Mancuerna en Banco Inclinado (Pecho Apoyado)',
+                sets: 3,
+                reps: '12 reps',
+                restSeconds: 60,
+                substitute: 'Remo en Polea Baja sentado',
+                note: 'El banco soporta todo el peso corporal; la lumbar queda libre de tensión.'
+              },
+              {
+                name: 'McGill Big 3 (Bird-Dog + Plancha Lateral)',
+                sets: 3,
+                reps: '8 por lado / 30s plancha',
+                restSeconds: 45,
+                substitute: 'Deadbug con respiración diafragmática',
+                note: 'El protocolo clínico de oro para estabilidad lumbar permanente.'
+              }
+            ]
+          }
+        ]
+      },
+      back_posture: {
+        id: 'back_posture',
+        name: 'Espalda, Postura & McGill Core (Protección Lumbar)',
+        shortName: 'Espalda & Core',
+        icon: '🧘‍♀️',
+        dayRecommendation: 'Mediados de Semana',
+        durationMinutes: 45,
+        focus: 'Tracción estética y estabilidad lumbar profunda sin carga axial',
+        blocks: [
+          {
+            name: 'Bloque 1: Tracción con Soporte de Banco Completo (25 min)',
+            icon: '🧘‍♀️',
+            exercises: [
+              {
+                name: 'Remo en Banco Inclinado con Pecho Apoyado',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Remo en Polea Baja Sentada con Agarre Neutro',
+                note: 'Cero tensión en la espalda baja; la fuerza se transmite a los dorsales.'
+              },
+              {
+                name: 'Jalón al Pecho con Agarre Neutro Cerrado',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Remo invertido en multipower',
+                note: 'Apertura de caja torácica y postura erguida.'
+              },
+              {
+                name: 'Face Pulls en Polea con Cuerda',
+                sets: 3,
+                reps: '15 reps',
+                restSeconds: 60,
+                substitute: 'Pájaros con mancuernas ligeras apoyada en banco',
+                note: 'Corrige hombros adelantados y alivia trapecios tensos.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Protocolo Clínico McGill Big 3 (20 min)',
+            icon: '🛡️',
+            exercises: [
+              { name: 'Bird-Dog de Control Cruzado', sets: 3, reps: '8 por lado con pausa 3s', restSeconds: 45, substitute: 'Deadbug diafragmático', note: 'Estabilidad neuromuscular de la columna.' },
+              { name: 'Plancha Lateral Apoyando Rodillas', sets: 3, reps: '30s por lado', restSeconds: 45, substitute: 'Puente lateral suave', note: 'Fortalecimiento de cuadrado lumbar.' },
+              { name: 'Descompresión en Postura del Niño (Child Pose)', sets: 1, reps: '4 minutos', restSeconds: 0, substitute: 'Respiración diafragmática boca arriba', note: 'Alivio instantáneo de compresión.' }
+            ]
+          }
+        ]
+      },
+      home_core: {
+        id: 'home_core',
+        name: 'Micro-Rutina Descompresión Lumbar & Core en Casa (10 min)',
+        shortName: 'Core en Casa',
+        icon: '🌸',
+        dayRecommendation: 'Días Ocupados / Viaje / Descarga',
+        durationMinutes: 10,
+        focus: 'Alivio lumbar, glúteos dormidos y estabilidad intervertebral en casa',
+        blocks: [
+          {
+            name: 'Secuencia de Descompresión & Glúteos',
+            icon: '🌸',
+            exercises: [
+              { name: 'Puentes de Glúteo en Suelo con Pausa de 2s', sets: 3, reps: '15 reps', restSeconds: 30, substitute: 'Puente bilateral con banda', note: 'Activación máxima de glúteo sin arquear la lumbar.' },
+              { name: 'Bird-Dog de Control Cruzado', sets: 3, reps: '10 por lado lentos', restSeconds: 30, substitute: 'Deadbug suave', note: 'Protocolo clínico McGill para blindar la columna.' },
+              { name: 'Plancha Lateral Apoyando Rodillas', sets: 3, reps: '25s por lado', restSeconds: 30, substitute: 'Puente lateral suave', note: 'Fortalece cuadrado lumbar sin compresión.' },
+              { name: 'Clamshells (Almejas) para Glúteo Medio', sets: 3, reps: '15 por lado', restSeconds: 20, substitute: 'Abducciones acostada', note: 'Estabilidad de cadera y alivio del nervio ciático.' },
+              { name: 'Descompresión en Postura del Niño (Child Pose)', sets: 1, reps: '3 minutos', restSeconds: 0, substitute: 'Respiración diafragmática acostada boca arriba', note: 'Liberación de tensión muscular post-viaje o post-trabajo.' }
+            ]
+          }
+        ]
+      }
+    },
+
+    hermana: {
+      mobility_gentle: {
+        id: 'mobility_gentle',
+        name: 'Movilidad Amable & Tono Relajado',
+        shortName: 'Movilidad Suave',
+        icon: '🌿',
+        dayRecommendation: 'Cualquier Día',
+        durationMinutes: 30,
+        focus: 'Movilidad articular suave, respiración y bienestar sin fatiga',
+        blocks: [
+          {
+            name: 'Secuencia de Movilidad Relajada',
+            icon: '🌿',
+            exercises: [
+              { name: 'Círculos Suaves de Brazos y Hombros', sets: 3, reps: '10 hacia adelante y atrás', restSeconds: 30, substitute: 'Rotaciones de cuello suaves', note: 'Libera tensión en trapecios.' },
+              { name: 'Estiramiento Suave de Espalda en Silla', sets: 3, reps: '30s por postura', restSeconds: 30, substitute: 'Inclinaciones laterales cómodas', note: 'Flexibilidad sin esfuerzo.' },
+              { name: 'Paseo Suave en Casa o Patio', sets: 1, reps: '10 minutos', restSeconds: 0, substitute: 'Pasos en el sitio con música agradable', note: 'Movimiento gentil y vitalizante.' }
+            ]
+          }
+        ]
+      },
+      walk_energy: {
+        id: 'walk_energy',
+        name: 'Paseo de Bienestar & Respiración Calmante',
+        shortName: 'Paseo Vital',
+        icon: '🚶‍♀️',
+        dayRecommendation: 'Mañana o Tarde',
+        durationMinutes: 20,
+        focus: 'Oxigenación y calma corporal',
+        blocks: [
+          {
+            name: 'Bienestar al Aire Libre',
+            icon: '🌿',
+            exercises: [
+              { name: 'Paseo Suave al Aire Libre', sets: 1, reps: '15 minutos', restSeconds: 0, substitute: 'Movilidad en colchoneta suave', note: 'Disfrutar del aire libre a tu propio ritmo.' },
+              { name: 'Respiraciones Profundas Conscientes', sets: 3, reps: '5 ciclos lentos', restSeconds: 30, substitute: 'Estiramiento de brazos al cielo', note: 'Bajar pulsaciones y recargar energía.' }
+            ]
+          }
+        ]
+      }
+    }
   }
 };
 
 /**
- * 11. Intelligent Hybrid Workout Auto-Regulation Engine
- * Dynamically computes readiness based on sleep, fatigue, location, and past volume.
+ * 11. Intelligent Hybrid Workout Auto-Regulation & Split Engine
+ * Dynamically computes readiness based on sleep, fatigue, location, past volume, and selected split.
  */
 export function getHybridWorkoutPrescription({
   profile = null,
+  selectedSplit = null,
+  isMissedDay = false,
   sleepHours = 7.5,
   sleepQuality = 'deep',
   recentHeavyDays = 0,
@@ -1953,8 +2511,21 @@ export function getHybridWorkoutPrescription({
   durationMode = 'full'
 }) {
   const profileId = profile?.id || 'andres';
+  const profileSplits = HYBRID_ATHLETE_SYSTEM.splits[profileId] || HYBRID_ATHLETE_SYSTEM.splits.andres;
   const profileRoutines = HYBRID_ATHLETE_SYSTEM.routines[profileId] || HYBRID_ATHLETE_SYSTEM.routines.andres;
-  const routine = profileRoutines[context] || profileRoutines.gym;
+
+  // Determine effective split
+  let activeSplitKey = selectedSplit;
+  if (isMissedDay) {
+    activeSplitKey = 'home_core';
+  } else if (!activeSplitKey || !profileSplits[activeSplitKey]) {
+    activeSplitKey = profileId === 'pareja' ? 'glutes_legs' : profileId === 'hermana' ? 'mobility_gentle' : (context === 'home_bars' || context === 'travel') ? 'full_upper' : 'legs';
+  }
+
+  // Get routine from split or context routine
+  const splitRoutine = profileSplits[activeSplitKey];
+  const contextRoutine = profileRoutines[context] || profileRoutines.gym;
+  const routine = splitRoutine || contextRoutine;
 
   // CNS Readiness Assessment (0 to 100)
   let readiness = 90;
@@ -1987,13 +2558,15 @@ export function getHybridWorkoutPrescription({
     badgeColor = '#3B82F6';
   }
 
-  const isExpress = durationMode === 'express';
+  const isExpress = durationMode === 'express' || isMissedDay;
   const effectiveMinutes = isExpress ? Math.min(45, routine.durationMinutes) : routine.durationMinutes;
 
   return {
     profileId,
+    selectedSplit: activeSplitKey,
+    isMissedDay,
     context,
-    routineTitle: routine.title,
+    routineTitle: routine.name || routine.title,
     durationMinutes: effectiveMinutes,
     focus: routine.focus,
     readinessScore: readiness,
@@ -2005,5 +2578,209 @@ export function getHybridWorkoutPrescription({
     skillTree: HYBRID_ATHLETE_SYSTEM.skillTree
   };
 }
+
+/**
+ * 12. Dynamic Weekly Workout History & Balance Analyzer
+ * Inspects what was actually trained this week and recommends missing muscle groups
+ */
+export function analyzeWeeklyWorkoutBalance({ weeklyLogs = {}, profileId = 'andres' }) {
+  const logEntries = Object.values(weeklyLogs || {});
+  const completed = logEntries.filter((l) => l && (l.done || l.status === 'completed'));
+  const missed = logEntries.filter((l) => l && (l.status === 'missed' || l.isMissedDay));
+
+  const legsCount = completed.filter((l) => l.split === 'legs' || l.split === 'glutes_legs' || l.title?.toLowerCase().includes('piernas') || l.title?.toLowerCase().includes('glúteo')).length;
+  const pushCount = completed.filter((l) => l.split === 'push' || l.title?.toLowerCase().includes('pecho') || l.title?.toLowerCase().includes('empuje')).length;
+  const pullCount = completed.filter((l) => l.split === 'pull' || l.split === 'back_posture' || l.title?.toLowerCase().includes('espalda') || l.title?.toLowerCase().includes('tracción')).length;
+  const coreCount = completed.filter((l) => l.split === 'home_core' || l.title?.toLowerCase().includes('planchas') || l.title?.toLowerCase().includes('core')).length;
+
+  let recommendedSplit = 'legs';
+  let weeklySummaryText = '';
+
+  if (profileId === 'pareja') {
+    if (legsCount === 0) {
+      recommendedSplit = 'glutes_legs';
+      weeklySummaryText = '💡 Sugerencia Semanal: Inicia tu semana activando Glúteos & Femoral con cero compresión axial.';
+    } else if (pullCount === 0) {
+      recommendedSplit = 'back_posture';
+      weeklySummaryText = '💡 Sugerencia Semanal: Ya trabajaste Glúteos. Hoy es ideal para Tracción, Postura y McGill Big 3.';
+    } else {
+      recommendedSplit = 'glutes_legs';
+      weeklySummaryText = '💡 Sugerencia Semanal: Excelente balance semanal. Continúa esculpiendo glúteos de forma segura.';
+    }
+  } else if (profileId === 'hermana') {
+    recommendedSplit = 'mobility_gentle';
+    weeklySummaryText = '💡 Sugerencia Amable: Mantén tu vitalidad con un paseo suave o estiramientos relajantes a tu ritmo.';
+  } else {
+    // Andrés Hybrid logic
+    if (legsCount === 0) {
+      recommendedSplit = 'legs';
+      weeklySummaryText = '💡 Sugerencia Semanal: Empieza la semana con Piernas Pesado para disparar la producción hormonal y fuerza base.';
+    } else if (pullCount === 0 && pushCount === 0) {
+      recommendedSplit = 'pull';
+      weeklySummaryText = '💡 Sugerencia Semanal: Ya completaste Piernas el lunes. Para balancear tu torso y compensar lo que faltó la semana anterior, hoy se recomienda: 🦅 Espalda & Tracción Pesada + Front Lever.';
+    } else if (pullCount === 0) {
+      recommendedSplit = 'pull';
+      weeklySummaryText = '💡 Sugerencia Semanal: Tu espalda necesita tracción pesada y palanca de Front Lever para compensar el empuje.';
+    } else if (pushCount === 0) {
+      recommendedSplit = 'push';
+      weeklySummaryText = '💡 Sugerencia Semanal: Ya hiciste Piernas y Espalda. Hoy toca: 🛡️ Pecho & Empuje Pesado + Handstand.';
+    } else {
+      recommendedSplit = 'full_upper';
+      weeklySummaryText = '💡 Sugerencia Semanal: Has cubierto los grandes pilares de fuerza. Hoy puedes hacer Torso Híbrido o practicar trucos de Calistenia.';
+    }
+  }
+
+  return {
+    completedCount: completed.length,
+    missedCount: missed.length,
+    legsCount,
+    pushCount,
+    pullCount,
+    coreCount,
+    recommendedSplit,
+    weeklySummaryText
+  };
+}
+
+/**
+ * 13. Systemic 4 Pillars Engine (Bioconexión 360°)
+ * Evaluates Nutrition, Workout, Sleep, and Habits into an interconnected AuraScore
+ * with dynamic cross-pillar synergies.
+ */
+export function calculateSystemicPillars({
+  profile = null,
+  loggedFoods = [],
+  targets = {},
+  waterMl = 0,
+  sleepHours = 7.5,
+  sleepQuality = 'deep',
+  selectedSplit = 'legs',
+  isMissedDay = false,
+  todayWorkoutDone = false,
+  habits = [],
+  weeklyLogs = {}
+}) {
+  const profileId = profile?.id || 'andres';
+  const targetCals = targets.calories || 2150;
+  const targetProt = targets.protein || 195;
+  const targetWater = profile?.waterDailyMl || 3000;
+
+  // 1. Pillar 1: Nutrition & Cellular Fuel (0 to 25 pts)
+  const totalCals = loggedFoods.reduce((a, c) => a + (Number(c.calories) || 0), 0);
+  const totalProt = loggedFoods.reduce((a, c) => a + (Number(c.protein) || 0), 0);
+  const protRatio = targetProt > 0 ? Math.min(1.2, totalProt / targetProt) : 0;
+  const waterRatio = targetWater > 0 ? Math.min(1.2, waterMl / targetWater) : 0;
+  
+  let p1_nutrition = 18;
+  if (loggedFoods.length > 0) {
+    p1_nutrition = Math.round(15 * Math.min(1, protRatio) + 10 * Math.min(1, waterRatio));
+  } else {
+    p1_nutrition = Math.round(12 + 8 * Math.min(1, waterRatio));
+  }
+  p1_nutrition = Math.max(10, Math.min(25, p1_nutrition));
+
+  // 2. Pillar 2: Workout & Hybrid Overload (0 to 25 pts)
+  let p2_workout = todayWorkoutDone ? 25 : (isMissedDay ? 16 : 18);
+  if (sleepHours < 6.5) p2_workout -= 4;
+  p2_workout = Math.max(10, Math.min(25, p2_workout));
+
+  // 3. Pillar 3: Sleep, CNS & Circadian Rhythm (0 to 25 pts)
+  let p3_sleep = 20;
+  if (sleepHours >= 7.5 && sleepQuality === 'deep') p3_sleep = 25;
+  else if (sleepHours >= 6.5 && sleepQuality !== 'light') p3_sleep = 21;
+  else if (sleepHours < 6.5) p3_sleep = 14;
+  if (sleepQuality === 'light') p3_sleep -= 3;
+  p3_sleep = Math.max(10, Math.min(25, p3_sleep));
+
+  // 4. Pillar 4: Biohacking & Daily Habits (0 to 25 pts)
+  const totalHabits = habits.length || 1;
+  const doneHabits = habits.filter((h) => h.completed).length;
+  const habitRatio = doneHabits / totalHabits;
+  let p4_habits = Math.round(15 + 10 * habitRatio);
+  p4_habits = Math.max(10, Math.min(25, p4_habits));
+
+  const totalAuraScore = Math.min(100, p1_nutrition + p2_workout + p3_sleep + p4_habits);
+
+  let statusGrade = 'Cuerpo Activo';
+  if (totalAuraScore >= 90) statusGrade = '✨ Cuerpo Óptimo / Estado de Flujo';
+  else if (totalAuraScore >= 80) statusGrade = '🔥 Rendimiento Elevado';
+  else if (totalAuraScore >= 70) statusGrade = '⚡ Vitalidad Estable';
+
+  // Cross-Pillar Synergies Generation (Dynamic)
+  const synergies = [];
+
+  // Synergy A: Nutrition ⟷ Workout Split
+  if (isMissedDay || selectedSplit === 'home_core') {
+    synergies.push({
+      id: 'syn_missed_nutrition',
+      category: 'nutrition_workout',
+      icon: '🥗',
+      title: 'Sinergia Nutrición: Día de Descanso / Core',
+      text: 'Al no haber sobrecarga pesada hoy, modera los carbohidratos peri-entreno. Prioriza 40g de proteína magra en cada comida y vegetales saciantes para maximizar la sensibilidad a la insulina sin ganar grasa.'
+    });
+  } else if (selectedSplit === 'legs' || selectedSplit === 'glutes_legs') {
+    synergies.push({
+      id: 'syn_legs_fuel',
+      category: 'nutrition_workout',
+      icon: '🥔',
+      title: profileId === 'pareja' ? 'Sinergia Glúteos: Síntesis Proteica' : 'Sinergia Piernas Pesado: Combustible Anabólico',
+      text: profileId === 'pareja' 
+        ? 'Día de Glúteos sin compresión axial: Consume 30g de proteína limpia post-entreno y alimentos antiinflamatorios (aceite de oliva, cúrcuma) para cuidar discos lumbares.'
+        : 'Día de Piernas Pesado: Necesitas glucógeno denso. Añade +40g de carbohidratos limpios (arroz o papa andina) en tu comida previa y satura 5g de creatina para máxima potencia en sentadilla y prensa.'
+    });
+  } else if (selectedSplit === 'pull' || selectedSplit === 'back_posture') {
+    synergies.push({
+      id: 'syn_pull_fuel',
+      category: 'nutrition_workout',
+      icon: '🦅',
+      title: 'Sinergia Tracción & Espalda: Fuerza de Agarre',
+      text: 'Para transferir potencia a dominadas y Front Lever, consume tu comida 90 min antes para evitar pesadez estomacal y tener la máxima conexión neuromuscular en dorsales.'
+    });
+  } else {
+    synergies.push({
+      id: 'syn_push_fuel',
+      category: 'nutrition_workout',
+      icon: '🛡️',
+      title: 'Sinergia Empuje & Handstand: Presión & Estabilidad',
+      text: 'Carga moderada de carbohidratos y buena hidratación celular para empuje vertical estable sin congestión gástrica.'
+    });
+  }
+
+  // Synergy B: Hydration ⟷ Muscle Performance
+  const waterPct = Math.round((waterMl / targetWater) * 100);
+  synergies.push({
+    id: 'syn_hydration',
+    category: 'hydration_muscle',
+    icon: '💧',
+    title: 'Hidratación Muscular & Tejido Conectivo',
+    text: waterPct < 50
+      ? `Llevas ${waterMl}ml (${waterPct}% de tu meta). Tus fibras musculares están al ${waterPct}% de hidratación. Toma 500ml con una pizca de sal marina antes de iniciar tu sesión pesada para prevenir calambres.`
+      : `¡Excelente nivel de hidratación (${waterMl}ml, ${waterPct}%)! Tus discos intervertebrales y articulaciones tienen amortiguación osmótica óptima para sobrecarga.`
+  });
+
+  // Synergy C: Sleep & CNS ⟷ Metabolism
+  if (sleepHours < 6.5) {
+    synergies.push({
+      id: 'syn_sleep_cns',
+      category: 'sleep_metabolism',
+      icon: '🛌',
+      title: 'Sinergia Sueño Corto: Control de Grelina',
+      text: `Dormiste ${sleepHours}h: Tu leptina (saciedad) cae y sube la grelina (hambre). Inicia el día con desayuno de huevos y fibra para evitar picos de ansiedad por comida procesada.`
+    });
+  }
+
+  return {
+    totalAuraScore,
+    statusGrade,
+    breakdown: {
+      nutrition: p1_nutrition,
+      workout: p2_workout,
+      sleep: p3_sleep,
+      habits: p4_habits
+    },
+    synergies
+  };
+}
+
 
 
