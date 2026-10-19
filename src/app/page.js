@@ -143,19 +143,38 @@ export default function HomePage() {
   const [todayWorkoutDone, setTodayWorkoutDone] = useState(false);
   const [workoutDurationMins, setWorkoutDurationMins] = useState(45);
 
+  // Active Date Key for 100% Dynamic Day Tracking
+  const [selectedDateKey, setSelectedDateKey] = useState(() => new Date().toISOString().split('T')[0]);
+  const [waterByDate, setWaterByDate] = useState({});
+
+  const activeDateKey = selectedDateKey || new Date().toISOString().split('T')[0];
+  const activeWaterMl = activeDateKey === new Date().toISOString().split('T')[0] ? waterMl : (waterByDate[activeDateKey] || 0);
+
   // Daily Logged Foods State (persistent per profile)
   const [loggedFoods, setLoggedFoods] = useState([]);
+
+  // Dynamically filtered foods for the active selected day
+  const activeDayFoods = useMemo(() => {
+    const todayKey = new Date().toISOString().split('T')[0];
+    const targetKey = selectedDateKey || todayKey;
+    return loggedFoods.filter((item) => {
+      if (item.date) {
+        return item.date === targetKey;
+      }
+      return targetKey === todayKey;
+    });
+  }, [loggedFoods, selectedDateKey]);
 
   // Dynamic Nutritional Score Engine (0-100 Scientific Fitia Algorithm)
   const nutritionalScore = useMemo(() => {
     return calculateNutritionalScore({
-      loggedFoods,
+      loggedFoods: activeDayFoods,
       targets,
-      waterMl,
+      waterMl: activeWaterMl,
       waterTargetMl: currentProfile.waterDailyMl || 2500,
       profile: currentProfile
     });
-  }, [loggedFoods, targets, waterMl, currentProfile]);
+  }, [activeDayFoods, targets, activeWaterMl, currentProfile]);
 
   // Unified Intelligent Daily Score: AuraScore del Día (0-100)
   const dailyAuraScore = useMemo(() => {
@@ -191,7 +210,7 @@ export default function HomePage() {
   const [meals, setMeals] = useState([]);
   const [selectedRecipeDetail, setSelectedRecipeDetail] = useState(null);
   const [recipeSlotToLog, setRecipeSlotToLog] = useState('comida');
-  const [quickTextEntry, setQuickTextEntry] = useState('3 huevos fritos con jna cucharada de mantequilla');
+  const [quickTextEntry, setQuickTextEntry] = useState('');
 
   // Interactive Recipe Portion Scaling State (Fitia Scaler)
   const [recipePortionMultipliers, setRecipePortionMultipliers] = useState({});
@@ -277,9 +296,9 @@ export default function HomePage() {
   const systemicPillars = useMemo(() => {
     return calculateSystemicPillars({
       profile: currentProfile,
-      loggedFoods,
+      loggedFoods: activeDayFoods,
       targets,
-      waterMl,
+      waterMl: activeWaterMl,
       sleepHours,
       sleepQuality,
       selectedSplit,
@@ -288,10 +307,11 @@ export default function HomePage() {
       habits,
       weeklyLogs: weeklyWorkoutLogs
     });
-  }, [currentProfile, loggedFoods, targets, waterMl, sleepHours, sleepQuality, selectedSplit, isMissedDay, todayWorkoutDone, habits, weeklyWorkoutLogs]);
+  }, [currentProfile, activeDayFoods, targets, activeWaterMl, sleepHours, sleepQuality, selectedSplit, isMissedDay, todayWorkoutDone, habits, weeklyWorkoutLogs]);
 
-  // Weight tracking state (dynamically initialized relative to current date)
+  // Weight tracking state (dynamically initialized relative to current date and base profile weight)
   const [weightLogs, setWeightLogs] = useState(() => {
+    const profWeight = FAMILY_PROFILES.andres?.weightKg || 92;
     const now = new Date();
     const makeDate = (offsetDays) => {
       const d = new Date(now);
@@ -299,10 +319,10 @@ export default function HomePage() {
       return `${d.getDate()} ${d.toLocaleString('es-PE', { month: 'short' })}`;
     };
     return [
-      { log_date: makeDate(6), weight_kg: 92.4 },
-      { log_date: makeDate(4), weight_kg: 92.1 },
-      { log_date: makeDate(2), weight_kg: 91.8 },
-      { log_date: makeDate(0), weight_kg: 91.6 }
+      { log_date: makeDate(6), weight_kg: Math.round((profWeight + 0.6) * 10) / 10 },
+      { log_date: makeDate(4), weight_kg: Math.round((profWeight + 0.3) * 10) / 10 },
+      { log_date: makeDate(2), weight_kg: Math.round((profWeight + 0.1) * 10) / 10 },
+      { log_date: makeDate(0), weight_kg: Math.round(profWeight * 10) / 10 }
     ];
   });
   const [newWeightInput, setNewWeightInput] = useState('');
@@ -392,15 +412,38 @@ export default function HomePage() {
         setLoggedFoods((prev) => (prev && prev.length > 0 ? prev : []));
       }
 
+      const todayKey = new Date().toISOString().split('T')[0];
+
+      // 4. Habits daily reset check (Preserve custom habits, reset daily completion checks!)
       const savedHabits = localStorage.getItem(`aurafit_habits_${profileKey}`);
+      const savedHabitsDate = localStorage.getItem(`aurafit_habits_date_${profileKey}`);
       if (savedHabits) {
-        setHabits(JSON.parse(savedHabits));
+        try {
+          const parsed = JSON.parse(savedHabits);
+          if (savedHabitsDate === todayKey) {
+            setHabits(parsed);
+          } else {
+            // New calendar day! Reset completion checkboxes to false, preserve all habit definitions!
+            const freshHabits = parsed.map((h) => ({ ...h, completed: false, time: null }));
+            setHabits(freshHabits);
+            localStorage.setItem(`aurafit_habits_${profileKey}`, JSON.stringify(freshHabits));
+            localStorage.setItem(`aurafit_habits_date_${profileKey}`, todayKey);
+          }
+        } catch (e) {
+          setHabits(prof.habits || []);
+        }
       } else {
         setHabits(prof.habits || []);
       }
 
-      // Daily Water Tracker: Starts at 0 every single day!
-      const todayKey = new Date().toISOString().split('T')[0];
+      // 5. Water by date tracker: Starts at 0 every single day!
+      const savedWaterByDate = localStorage.getItem(`aurafit_water_by_date_${profileKey}`);
+      let parsedWaterByDate = {};
+      if (savedWaterByDate) {
+        try { parsedWaterByDate = JSON.parse(savedWaterByDate); } catch (e) {}
+      }
+      setWaterByDate(parsedWaterByDate);
+
       const savedWaterDaily = localStorage.getItem(`aurafit_water_daily_${profileKey}`);
       if (savedWaterDaily) {
         try {
@@ -408,23 +451,31 @@ export default function HomePage() {
           if (parsed.date === todayKey && typeof parsed.ml === 'number') {
             setWaterMl(parsed.ml);
           } else {
-            setWaterMl(0);
+            setWaterMl(parsedWaterByDate[todayKey] || 0);
           }
         } catch (e) {
           setWaterMl(0);
         }
       } else {
-        setWaterMl(0);
+        setWaterMl(parsedWaterByDate[todayKey] || 0);
       }
 
-      // Sleep & Recovery State for current profile
+      // 6. Sleep & Recovery State for current profile (checked by date)
       const savedSleep = localStorage.getItem(`aurafit_sleep_${profileKey}`);
       if (savedSleep) {
         try {
           const parsed = JSON.parse(savedSleep);
-          if (parsed.hours) setSleepHours(parsed.hours);
-          if (parsed.quality) setSleepQuality(parsed.quality);
-        } catch (e) {}
+          if (parsed.date === todayKey) {
+            if (parsed.hours) setSleepHours(parsed.hours);
+            if (parsed.quality) setSleepQuality(parsed.quality);
+          } else {
+            setSleepHours(7.5);
+            setSleepQuality('deep');
+          }
+        } catch (e) {
+          setSleepHours(7.5);
+          setSleepQuality('deep');
+        }
       } else {
         setSleepHours(7.5);
         setSleepQuality('deep');
@@ -655,9 +706,9 @@ export default function HomePage() {
     });
   };
 
-  // Mathematical Totals & Rebalance Engine
+  // Mathematical Totals & Rebalance Engine (100% Dynamic for active day)
   const consumedTotals = useMemo(() => {
-    return loggedFoods.reduce(
+    return activeDayFoods.reduce(
       (acc, item) => ({
         calories: acc.calories + (Number(item.calories) || 0),
         protein: acc.protein + (Number(item.protein) || 0),
@@ -666,11 +717,11 @@ export default function HomePage() {
       }),
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
-  }, [loggedFoods]);
+  }, [activeDayFoods]);
 
   const compensator = useMemo(() => {
-    return calculateCompensatoryRebalance({ loggedFoods, targets });
-  }, [loggedFoods, targets]);
+    return calculateCompensatoryRebalance({ loggedFoods: activeDayFoods, targets });
+  }, [activeDayFoods, targets]);
 
   const detectedInText = useMemo(() => {
     return parseNaturalLanguageFood(quickTextEntry);
@@ -730,6 +781,7 @@ export default function HomePage() {
 
   const handleRegisterFoodFromSearch = (food, slot = 'snack', grams = 50) => {
     const scale = grams / (food.grams || 100);
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
     const newEntry = {
       id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       name: food.name,
@@ -744,10 +796,12 @@ export default function HomePage() {
       icon: food.icon || '🥗',
       isSnack: food.isSnack || false,
       isUltraProcessed: food.isUltraProcessed || false,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: targetDate
     };
 
     persistLoggedFoods((prev) => [newEntry, ...prev]);
+    recordActivityToday();
     setShowFoodSearchModal(false);
     setSelectedFoodToLog(null);
     setFoodSearchQuery('');
@@ -763,6 +817,7 @@ export default function HomePage() {
     if (!typedName || !typedName.trim()) return;
     const nameClean = typedName.trim();
     const parsedList = parseNaturalLanguageFood(nameClean);
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
 
     if (parsedList && parsedList.length > 0) {
       const first = parsedList[0];
@@ -780,9 +835,11 @@ export default function HomePage() {
         icon: first.icon || '🍽️',
         isSnack: first.isSnack || slot === 'snack',
         isUltraProcessed: first.isUltraProcessed || false,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: targetDate
       };
       persistLoggedFoods((prev) => [newEntry, ...prev]);
+      recordActivityToday();
     } else {
       const isSnackLike = /dulce|postre|snack|chocolate|torta|fritura|galleta|queque|keke|chifle|chifles/i.test(nameClean);
       const estCals = isSnackLike ? 280 : 210;
@@ -804,9 +861,11 @@ export default function HomePage() {
         icon: isSnackLike ? '🍌' : '🍽️',
         isSnack: isSnackLike || slot === 'snack',
         isUltraProcessed: isSnackLike,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: targetDate
       };
       persistLoggedFoods((prev) => [newEntry, ...prev]);
+      recordActivityToday();
     }
 
     setShowFoodSearchModal(false);
@@ -815,11 +874,12 @@ export default function HomePage() {
   };
 
   const handleConfirmTextLog = (detectedList, slot = 'snack') => {
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
     if (!detectedList || detectedList.length === 0) {
       // Create fallback item from raw text
       const rawEntry = {
         id: `raw-${Date.now()}`,
-        name: quickTextEntry.slice(0, 40),
+        name: quickTextEntry.slice(0, 40) || 'Registro Manual',
         brand: 'Registro Manual',
         mealSlot: slot,
         servingDesc: 'Porción estimada',
@@ -829,9 +889,11 @@ export default function HomePage() {
         carbs: 45,
         fat: 12,
         icon: '✍️',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: targetDate
       };
       persistLoggedFoods((prev) => [rawEntry, ...prev]);
+      recordActivityToday();
       setShowTextLogModal(false);
       showToast('¡Alimentos registrados con éxito!');
       return;
@@ -851,10 +913,12 @@ export default function HomePage() {
       icon: item.icon,
       isSnack: item.isSnack,
       isUltraProcessed: item.isUltraProcessed,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: targetDate
     }));
 
     persistLoggedFoods((prev) => [...newEntries, ...prev]);
+    recordActivityToday();
     setShowTextLogModal(false);
 
     const hasSnack = newEntries.some((e) => e.isSnack || e.name.toLowerCase().includes('chifle') || e.name.toLowerCase().includes('keke'));
@@ -872,6 +936,7 @@ export default function HomePage() {
 
   const handleAddCompensatoryMeal = (option) => {
     const slot = option.mealSlot.toLowerCase().includes('cena') ? 'cena' : option.mealSlot.toLowerCase().includes('comida') ? 'comida' : 'snack';
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
     const newItems = option.foodItemsToAdd.map((food, idx) => ({
       id: `comp-${Date.now()}-${idx}`,
       name: food.name,
@@ -884,10 +949,12 @@ export default function HomePage() {
       carbs: food.carbs,
       fat: food.fat,
       icon: option.icon,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: targetDate
     }));
 
     persistLoggedFoods((prev) => [...newItems, ...prev]);
+    recordActivityToday();
     showToast(`¡${option.title.split(':')[0]} añadida a tu ${slot.toUpperCase()}! Balance de Lean Bulk asegurado.`);
   };
 
@@ -922,6 +989,7 @@ export default function HomePage() {
     const scaledF = Math.round(baseF * mult * 10) / 10;
     const scaledCal = Math.round(baseCal * mult);
     const scaledG = Math.round(baseG * mult);
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
 
     const newEntry = {
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -935,10 +1003,12 @@ export default function HomePage() {
       carbs: scaledC,
       fat: scaledF,
       icon: meal.icon || '🍲',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: targetDate
     };
 
     persistLoggedFoods((prev) => [newEntry, ...prev]);
+    recordActivityToday();
     setSelectedRecipeDetail(null);
     showToast(`🍲 ¡${newEntry.name} agregado a ${targetSlot.toUpperCase()}! 🔥 +${scaledCal} kcal (+${scaledP}g Proteína)`);
   };
@@ -999,9 +1069,12 @@ export default function HomePage() {
         return h;
       });
       try {
+        const todayKey = new Date().toISOString().split('T')[0];
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
+        localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
       } catch (e) {}
+      recordActivityToday();
       return next;
     });
   };
@@ -1022,7 +1095,9 @@ export default function HomePage() {
     setHabits((prev) => {
       const next = [...prev, habitToAdd];
       try {
+        const todayKey = new Date().toISOString().split('T')[0];
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
+        localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
       } catch (e) {}
       return next;
@@ -1036,7 +1111,9 @@ export default function HomePage() {
     setHabits((prev) => {
       const next = prev.filter((h) => h.id !== habitId);
       try {
+        const todayKey = new Date().toISOString().split('T')[0];
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
+        localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
       } catch (e) {}
       return next;
@@ -1076,26 +1153,39 @@ export default function HomePage() {
   };
 
   const addWater = (ml) => {
+    const todayKey = new Date().toISOString().split('T')[0];
+    const targetKey = selectedDateKey || todayKey;
     setWaterMl((prev) => {
+      const current = targetKey === todayKey ? prev : (waterByDate[targetKey] || 0);
       const maxWater = (currentProfile.waterDailyMl || 3000) + 1500;
-      const updated = Math.min(prev + ml, maxWater);
+      const updated = Math.min(current + ml, maxWater);
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: updated }));
-        localStorage.setItem(`aurafit_water_${activeProfileId}`, updated.toString());
+        if (targetKey === todayKey) {
+          localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: updated }));
+          localStorage.setItem(`aurafit_water_${activeProfileId}`, updated.toString());
+        }
+        const updatedByDate = { ...waterByDate, [targetKey]: updated };
+        setWaterByDate(updatedByDate);
+        localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
       } catch (e) {}
       recordActivityToday();
-      return updated;
+      return targetKey === todayKey ? updated : prev;
     });
     showToast(`💧 +${ml} ml de agua registrados.`);
   };
 
   const handleResetWater = () => {
-    setWaterMl(0);
+    const todayKey = new Date().toISOString().split('T')[0];
+    const targetKey = selectedDateKey || todayKey;
+    if (targetKey === todayKey) setWaterMl(0);
+    const updatedByDate = { ...waterByDate, [targetKey]: 0 };
+    setWaterByDate(updatedByDate);
     try {
-      const todayKey = new Date().toISOString().split('T')[0];
-      localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: 0 }));
-      localStorage.setItem(`aurafit_water_${activeProfileId}`, '0');
+      if (targetKey === todayKey) {
+        localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: 0 }));
+        localStorage.setItem(`aurafit_water_${activeProfileId}`, '0');
+      }
+      localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
     } catch (e) {}
     showToast('💧 Contador de agua reiniciado a 0 ml.');
   };
@@ -1263,7 +1353,8 @@ export default function HomePage() {
       const num = d.getDate();
 
       const weekLog = weeklyWorkoutLogs[dateKey];
-      const done = weekLog ? !!(weekLog.done || weekLog.isMissedDay) : (isToday ? todayWorkoutDone : false);
+      const hasFood = loggedFoods.some((f) => f.date === dateKey);
+      const done = (weekLog && (weekLog.done || weekLog.isMissedDay)) || hasFood || (isToday && (todayWorkoutDone || waterMl > 0 || habits.some((h) => h.completed)));
 
       days.push({
         day: dayLabels[i],
@@ -1274,7 +1365,7 @@ export default function HomePage() {
       });
     }
     return days;
-  }, [weeklyWorkoutLogs, todayWorkoutDone]);
+  }, [weeklyWorkoutLogs, todayWorkoutDone, loggedFoods, waterMl, habits]);
 
   const completedHabitsCount = habits.filter((h) => h.completed).length;
 
@@ -1410,12 +1501,15 @@ export default function HomePage() {
       {/* 2. Fitia Week Calendar Strip (Screenshot 6) - 100% Dinámico */}
       <section className="fitia-week-strip" suppressHydrationWarning>
         {weekDays.map((item) => {
-          const isSelected = selectedDay === item.num;
+          const isSelected = selectedDateKey ? selectedDateKey === item.dateKey : selectedDay === item.num;
           return (
             <div
               key={item.dateKey}
               className={`fitia-day-col ${isSelected ? 'active' : ''} ${item.isToday ? 'today-active' : ''}`}
-              onClick={() => setSelectedDay(item.num)}
+              onClick={() => {
+                setSelectedDay(item.num);
+                setSelectedDateKey(item.dateKey);
+              }}
               title={`${item.dateKey}${item.isToday ? ' (Hoy)' : ''}`}
             >
               <span className="fitia-day-name">{item.day}</span>
@@ -1433,6 +1527,45 @@ export default function HomePage() {
             =================================================================== */}
         {activeTab === 'nutrition' && (
           <>
+            {/* Dynamic Date Selection Indicator */}
+            {selectedDateKey !== new Date().toISOString().split('T')[0] && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '9px 14px',
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                borderRadius: '14px',
+                marginBottom: '14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#3B82F6'
+              }}>
+                <span>📅 Registros del día: {selectedDateKey}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = new Date();
+                    setSelectedDay(today.getDate());
+                    setSelectedDateKey(today.toISOString().split('T')[0]);
+                  }}
+                  style={{
+                    background: '#3B82F6',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Volver a Hoy ↩
+                </button>
+              </div>
+            )}
+
             {/* Fitia Hero Calorie Tracker Card (Screenshot 6) */}
             <section className="fitia-hero-card">
               <span className="fitia-cal-label">kcal</span>
@@ -1794,7 +1927,7 @@ export default function HomePage() {
                 { key: 'cena', label: 'Cena', icon: '🐟', defaultTime: '08:00 PM' },
                 { key: 'snack', label: 'Snacks & Colaciones', icon: '🍌', defaultTime: '05:00 PM' }
               ].map((slot) => {
-                const slotFoods = loggedFoods.filter((f) => f.mealSlot === slot.key);
+                const slotFoods = activeDayFoods.filter((f) => f.mealSlot === slot.key);
                 const slotKcal = slotFoods.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0);
                 const slotP = slotFoods.reduce((acc, curr) => acc + (Number(curr.protein) || 0), 0);
                 const slotC = slotFoods.reduce((acc, curr) => acc + (Number(curr.carbs) || 0), 0);
@@ -3003,10 +3136,10 @@ export default function HomePage() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '14px', color: 'var(--fitia-blue)', fontWeight: 900 }}>
-                    {waterMl} / {currentProfile.waterDailyMl || 2500} ml
+                    {activeWaterMl} / {currentProfile.waterDailyMl || 2500} ml
                   </span>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                    {Math.round((waterMl / (currentProfile.waterDailyMl || 2500)) * 100)}% alcanzado
+                    {Math.round((activeWaterMl / (currentProfile.waterDailyMl || 2500)) * 100)}% alcanzado
                   </div>
                 </div>
               </div>
@@ -3017,7 +3150,7 @@ export default function HomePage() {
                   style={{
                     height: '100%',
                     background: 'var(--fitia-blue)',
-                    width: `${Math.min(100, Math.round((waterMl / (currentProfile.waterDailyMl || 2500)) * 100))}%`,
+                    width: `${Math.min(100, Math.round((activeWaterMl / (currentProfile.waterDailyMl || 2500)) * 100))}%`,
                     borderRadius: '999px',
                     transition: 'width 0.4s ease'
                   }}
