@@ -1,57 +1,81 @@
 /* ==========================================================================
-   AuraFit PWA - Fitia Aesthetic & Emil Kowalski Native Ergonomics
+   AuraFit PWA - Exact Fitia Light & Dark Wellness Aesthetic
    ========================================================================== */
 
 :root {
-  --bg-deep: #060E10;
-  --bg-card: #0E1A1C;
-  --bg-card-subtle: #122225;
-  --bg-surface: #172C2F;
-  --bg-surface-elevated: #1F3A3E;
+  /* Default: Fitia Pure Light Theme (Matching Screenshots 1 to 7) */
+  --bg-page: #F6F8FA;
+  --bg-card: #FFFFFF;
+  --bg-card-subtle: #F0F3F6;
+  --bg-surface: #EEF2F6;
+  --bg-input: #FFFFFF;
   
-  --fitia-green: #10B981;
-  --fitia-green-light: #34D399;
-  --fitia-green-glow: rgba(16, 185, 129, 0.22);
-  --fitia-orange: #F97316;
-  --fitia-orange-glow: rgba(249, 115, 22, 0.22);
-  --fitia-blue: #38BDF8;
-  --fitia-blue-glow: rgba(56, 189, 248, 0.22);
-  --fitia-red: #F87171;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --text-sub: #9CA3AF;
   
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  --text-sub: #64748B;
+  --fitia-green: #00C06D;
+  --fitia-green-light: #10B981;
+  --fitia-green-soft: rgba(0, 192, 109, 0.12);
+  --fitia-orange: #FF6B00;
+  --fitia-orange-soft: rgba(255, 107, 0, 0.12);
+  --fitia-blue: #0284C7;
+  --fitia-blue-soft: rgba(2, 132, 199, 0.12);
+  --fitia-red: #EF4444;
+  --fitia-red-soft: #FEE2E2;
+
+  --border-subtle: #E5E7EB;
+  --border-active: #00C06D;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --header-bg: rgba(255, 255, 255, 0.92);
+  --bottom-nav-bg: rgba(255, 255, 255, 0.94);
   
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(16, 185, 129, 0.35);
-  
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 16px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
   --radius-lg: 24px;
   --radius-full: 9999px;
-  
+
   --safe-bottom: max(16px, env(safe-area-inset-bottom));
   --safe-top: max(16px, env(safe-area-inset-top));
 }
 
-/* Base Resets */
+/* Modo Oscuro Toggle */
+.dark-theme {
+  --bg-page: #080F11;
+  --bg-card: #101E20;
+  --bg-card-subtle: #14282B;
+  --bg-surface: #172F32;
+  --bg-input: #122225;
+  
+  --text-main: #F9FAFB;
+  --text-muted: #9CA3AF;
+  --text-sub: #6B7280;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: #10B981;
+  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  --header-bg: rgba(8, 15, 17, 0.92);
+  --bottom-nav-bg: rgba(8, 15, 17, 0.94);
+}
+
+/* Base Mobile Reset */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
-  -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
-  background-color: var(--bg-deep);
+  background-color: var(--bg-page);
 }
 
 body {
   min-height: 100dvh;
-  background-color: var(--bg-deep);
+  background-color: var(--bg-page);
   color: var(--text-main);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", "Inter", Roboto, sans-serif;
   line-height: 1.45;
@@ -70,6 +94,9 @@ button, a, [role="button"], .touchable {
   user-select: none;
   -webkit-user-select: none;
   cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
 }
 
 button:active, .touchable:active {
@@ -85,12 +112,15 @@ button:active, .touchable:active {
   display: flex;
   flex-direction: column;
   position: relative;
-  background: radial-gradient(circle at 50% -10%, #102425 0%, #060E10 80%);
-  padding-bottom: calc(82px + var(--safe-bottom));
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.85);
+  background: var(--bg-page);
+  padding-bottom: calc(84px + var(--safe-bottom));
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Fitia App Header */
+/* Top Header Fitia (Screenshot 6) */
 .fitia-header {
   padding-top: var(--safe-top);
   padding-left: 20px;
@@ -100,8 +130,8 @@ button:active, .touchable:active {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(6, 14, 16, 0.85);
-  backdrop-filter: blur(16px);
+  background: var(--header-bg);
+  backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
   z-index: 40;
@@ -111,57 +141,71 @@ button:active, .touchable:active {
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
 }
 
 .fitia-header-title {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 900;
   color: var(--text-main);
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
 }
 
 .fitia-header-arrow {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 .fitia-header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .fitia-streak-pill {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(249, 115, 22, 0.15);
-  border: 1px solid rgba(249, 115, 22, 0.35);
-  padding: 4px 10px;
+  background: var(--fitia-orange-soft);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  padding: 4px 11px;
   border-radius: var(--radius-full);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--fitia-orange);
 }
 
-.fitia-avatar {
+.theme-toggle-btn {
   width: 34px;
   height: 34px;
+  border-radius: 50%;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-main);
+}
+
+.fitia-avatar {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 2px solid var(--fitia-green);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  background: var(--bg-surface);
+  background: var(--bg-card-subtle);
 }
 
-/* Fitia Week Calendar Strip (Screenshot 6) */
+/* Week Calendar Strip (Screenshot 6) */
 .fitia-week-strip {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 20px;
+  padding: 12px 20px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -176,27 +220,27 @@ button:active, .touchable:active {
 
 .fitia-day-name {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
 }
 
 .fitia-day-number {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--text-main);
   transition: all 0.15s ease;
 }
 
 .fitia-day-col.active .fitia-day-number {
   background: var(--text-main);
-  color: var(--bg-deep);
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.25);
+  color: var(--bg-card);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
 }
 
 .fitia-day-dot {
@@ -207,53 +251,55 @@ button:active, .touchable:active {
 }
 
 .fitia-day-dot.empty {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-subtle);
 }
 
-/* Main Content Padding */
+/* Content Container */
 .fitia-content {
-  padding: 16px 18px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* Fitia Hero Caloric Card (Screenshot 6) */
+/* ==========================================================================
+   Fitia Hero Calorie Tracker Card (Screenshot 6)
+   ========================================================================== */
 .fitia-hero-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 22px 20px;
+  padding: 24px 20px 20px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--card-shadow);
 }
 
 .fitia-cal-label {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .fitia-cal-val {
-  font-size: 30px;
-  font-weight: 800;
+  font-size: 34px;
+  font-weight: 900;
   color: var(--text-main);
   margin-top: 2px;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
 }
 
 .fitia-cal-val span {
   color: var(--text-muted);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
 }
 
-/* Fitia Sweet-Spot Calorie Slider */
+/* Curved Arch Range Gauge (Screenshot 6) */
 .fitia-gauge-wrap {
   width: 100%;
   margin: 16px 0 10px 0;
@@ -266,7 +312,7 @@ button:active, .touchable:active {
   width: 100%;
   height: 8px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-subtle);
   position: relative;
   overflow: visible;
 }
@@ -274,44 +320,44 @@ button:active, .touchable:active {
 .fitia-gauge-fill {
   height: 100%;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, #10B981, #34D399);
+  background: linear-gradient(90deg, #00C06D, #10B981);
 }
 
 .fitia-gauge-pin {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #10B981;
-  border: 3px solid #FFFFFF;
+  background: var(--fitia-green);
+  border: 3px solid var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #060E10;
-  font-size: 11px;
+  color: #FFFFFF;
+  font-size: 12px;
   font-weight: 900;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 192, 109, 0.5);
 }
 
 .fitia-gauge-labels {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: var(--text-sub);
-  font-weight: 600;
-  padding: 0 2px;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 0 4px;
 }
 
-/* 3 Macro Progress Bars (Fitia Style) */
+/* 3 Macro Progress Bars (Screenshot 6) */
 .fitia-macros-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   width: 100%;
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -325,27 +371,27 @@ button:active, .touchable:active {
 .fitia-macro-name {
   font-size: 12px;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .fitia-macro-numbers {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--text-main);
 }
 
 .fitia-macro-numbers span {
   font-size: 12px;
-  color: var(--text-sub);
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 .fitia-macro-bar-wrap {
   width: 100%;
-  height: 5px;
+  height: 6px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.08);
-  margin-top: 2px;
+  background: var(--bg-card-subtle);
+  margin-top: 4px;
   overflow: hidden;
 }
 
@@ -355,16 +401,18 @@ button:active, .touchable:active {
   background: var(--fitia-green);
 }
 
-/* Meal Slots Section (Screenshot 6) */
+/* ==========================================================================
+   Meal Slots Cards (Screenshots 1 & 6)
+   ========================================================================== */
 .fitia-meal-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px;
+  border-radius: var(--radius-lg);
+  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--card-shadow);
 }
 
 .fitia-meal-header {
@@ -374,13 +422,13 @@ button:active, .touchable:active {
 }
 
 .fitia-meal-title {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 900;
   color: var(--text-main);
 }
 
 .fitia-meal-macro-pill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   display: flex;
@@ -391,23 +439,23 @@ button:active, .touchable:active {
 .fitia-dish-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--bg-surface);
+  gap: 14px;
+  background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
 }
 
 .fitia-dish-thumb {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  object-fit: cover;
-  background: #112022;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 26px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
 }
 
@@ -417,13 +465,13 @@ button:active, .touchable:active {
 
 .fitia-dish-name {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-main);
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .fitia-dish-meta {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   margin-top: 3px;
   display: flex;
@@ -431,23 +479,26 @@ button:active, .touchable:active {
   gap: 6px;
 }
 
-/* Fitia Coach Section (Screenshot 5) */
+/* ==========================================================================
+   Fitia Coach & Despensa (Screenshot 5)
+   ========================================================================== */
 .fitia-coach-card {
-  background: linear-gradient(145deg, #0E2224 0%, #0B191B 100%);
-  border: 1px solid var(--border-active);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: var(--card-shadow);
 }
 
 .fitia-chat-bubble {
   max-width: 88%;
-  padding: 10px 14px;
-  border-radius: 14px;
+  padding: 12px 16px;
+  border-radius: 18px;
   font-size: 14px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .fitia-bubble-bot {
@@ -455,13 +506,12 @@ button:active, .touchable:active {
   color: var(--text-main);
   border-top-left-radius: 4px;
   align-self: flex-start;
-  border: 1px solid var(--border-subtle);
 }
 
 .fitia-bubble-user {
   background: var(--fitia-green);
-  color: #060E10;
-  font-weight: 600;
+  color: #FFFFFF;
+  font-weight: 700;
   border-top-right-radius: 4px;
   align-self: flex-end;
 }
@@ -470,30 +520,28 @@ button:active, .touchable:active {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 4px;
 }
 
 .fitia-pantry-pill {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: var(--radius-full);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
   transition: all 0.15s ease;
 }
 
 .fitia-pantry-pill.active {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--fitia-green-soft);
   border-color: var(--fitia-green);
-  color: var(--fitia-green-light);
+  color: var(--fitia-green);
 }
 
-/* Recipe Carousel in Fitia Coach */
 .fitia-recipes-scroll {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   overflow-x: auto;
   padding-bottom: 6px;
   scroll-snap-type: x mandatory;
@@ -501,9 +549,9 @@ button:active, .touchable:active {
 }
 
 .fitia-recipe-card {
-  flex: 0 0 200px;
+  flex: 0 0 210px;
   scroll-snap-align: start;
-  background: var(--bg-card);
+  background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -514,11 +562,11 @@ button:active, .touchable:active {
 .fitia-recipe-thumb {
   width: 100%;
   height: 110px;
-  background: #172F32;
+  background: var(--bg-surface);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 38px;
+  font-size: 40px;
   position: relative;
 }
 
@@ -526,17 +574,17 @@ button:active, .touchable:active {
   position: absolute;
   bottom: 8px;
   left: 8px;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
   color: #FFFFFF;
   padding: 3px 8px;
   border-radius: var(--radius-full);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .fitia-recipe-body {
-  padding: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -544,67 +592,68 @@ button:active, .touchable:active {
 
 .fitia-recipe-title {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-main);
   line-height: 1.25;
 }
 
 .fitia-recipe-macros {
-  font-size: 10px;
-  color: var(--fitia-green-light);
-  font-weight: 600;
+  font-size: 11px;
+  color: var(--fitia-green);
+  font-weight: 700;
 }
 
-/* Nutritive Score Semi-circle Gauge (Screenshot 2) */
+/* ==========================================================================
+   Puntaje Nutricional & Recomendaciones (Screenshot 2)
+   ========================================================================== */
 .fitia-score-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 22px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+  box-shadow: var(--card-shadow);
 }
 
 .fitia-gauge-circle-wrap {
   position: relative;
-  width: 180px;
-  height: 95px;
+  width: 200px;
+  height: 105px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
   overflow: hidden;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .fitia-gauge-inner-val {
   position: absolute;
-  bottom: 4px;
+  bottom: 6px;
   text-align: center;
 }
 
 .fitia-score-big {
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 900;
   color: var(--text-main);
   line-height: 1;
 }
 
 .fitia-score-grade {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--fitia-green);
   margin-top: 2px;
 }
 
-/* Floating Nutritive Insight Card (Screenshot 2) */
 .fitia-insight-card {
   width: 100%;
-  background: var(--bg-surface);
+  background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 14px 16px;
   margin-top: 14px;
   display: flex;
   flex-direction: column;
@@ -618,89 +667,50 @@ button:active, .touchable:active {
 }
 
 .fitia-insight-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
   border-radius: var(--radius-full);
 }
 
 .fitia-badge-red {
-  background: rgba(248, 113, 113, 0.2);
-  color: #F87171;
+  background: var(--fitia-red-soft);
+  color: var(--fitia-red);
 }
 
 .fitia-badge-green {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34D399;
+  background: var(--fitia-green-soft);
+  color: var(--fitia-green);
 }
 
-/* Habits Tab Elements (Screenshot 11) */
-.fitia-habit-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--bg-card);
+/* ==========================================================================
+   Registro por Texto (Screenshot 4)
+   ========================================================================== */
+.fitia-text-log-box {
+  background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
-  padding: 14px 16px;
   border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  padding: 14px;
 }
 
-.fitia-habit-row.completed {
-  background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.35);
-}
-
-.fitia-habit-left {
+.fitia-text-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.fitia-habit-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  background: var(--bg-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.fitia-habit-name {
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-main);
+  padding: 4px 0;
 }
 
-.fitia-habit-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.fitia-radio-check {
-  width: 28px;
-  height: 28px;
+.fitia-text-bullet {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  border: 2px solid var(--border-subtle);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: transparent;
-  transition: all 0.15s ease;
+  background: var(--fitia-orange);
 }
 
-.fitia-radio-check.checked {
-  background: var(--fitia-green);
-  border-color: var(--fitia-green);
-  color: #060E10;
-  box-shadow: 0 0 10px var(--fitia-green-glow);
-}
-
-/* Fitia Bottom Navigation Bar */
+/* Bottom Navigation Bar Fitia */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -708,15 +718,16 @@ button:active, .touchable:active {
   transform: translateX(-50%);
   width: 100%;
   max-width: 430px;
-  height: calc(64px + var(--safe-bottom));
+  height: calc(66px + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: rgba(7, 16, 17, 0.92);
+  background: var(--bottom-nav-bg);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-subtle);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   align-items: center;
   z-index: 50;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
 }
 
 .nav-item {
@@ -725,55 +736,50 @@ button:active, .touchable:active {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: var(--text-sub);
-  background: none;
-  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
   padding: 8px 0;
   transition: color 0.15s ease;
 }
 
 .nav-item.active {
-  color: var(--fitia-green-light);
+  color: var(--fitia-green);
 }
 
 .nav-icon {
-  font-size: 20px;
+  font-size: 21px;
 }
 
-.nav-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
-/* Primary and SOS Action Buttons */
+/* Primary Button */
 .btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, var(--fitia-green), #059669);
-  color: #060E10;
+  background: var(--fitia-green);
+  color: #FFFFFF;
   border: none;
-  padding: 14px;
+  padding: 15px;
   border-radius: var(--radius-md);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 16px var(--fitia-green-glow);
+  box-shadow: 0 4px 18px rgba(0, 192, 109, 0.35);
 }
 
 .btn-sos {
   width: 100%;
-  background: linear-gradient(135deg, #EF4444, #B91C1C);
+  background: linear-gradient(135deg, #EF4444, #DC2626);
   color: #FFFFFF;
   border: none;
-  padding: 13px;
+  padding: 14px;
   border-radius: var(--radius-md);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
 }

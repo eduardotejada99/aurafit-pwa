@@ -13,18 +13,20 @@ import {
 } from '@/lib/fitness-data';
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState('nutrition'); // Fitia first
+  const [activeTab, setActiveTab] = useState('nutrition'); // Fitia default
+  const [isDarkMode, setIsDarkMode] = useState(false); // Fitia Signature Light Mode as default
   const [selectedDay, setSelectedDay] = useState(12); // Wednesday (M)
   const [habits, setHabits] = useState(DEFAULT_HABITS);
   const [waterMl, setWaterMl] = useState(2250);
   const [streakDays, setStreakDays] = useState(213);
   const [showDamageControl, setShowDamageControl] = useState(false);
+  const [showTextLogModal, setShowTextLogModal] = useState(false);
   
   // Nutrition & Pantry state (Fitia Coach)
   const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'pollo', 'arroz']);
   const [newIngredient, setNewIngredient] = useState('');
   const [meals, setMeals] = useState([]);
-  const [userLoggedCalories, setUserLoggedCalories] = useState(2004);
+  const [quickTextEntry, setQuickTextEntry] = useState('2 huevos\n1 rebanada de pan integral\n1 taza de leche con avena');
   
   // Workout state
   const [workoutMode, setWorkoutMode] = useState('gym');
@@ -59,6 +61,9 @@ export default function HomePage() {
   // Load local storage if available
   useEffect(() => {
     try {
+      const savedTheme = localStorage.getItem('aurafit_theme');
+      if (savedTheme === 'dark') setIsDarkMode(true);
+
       const savedHabits = localStorage.getItem('aurafit_habits');
       if (savedHabits) setHabits(JSON.parse(savedHabits));
 
@@ -74,6 +79,16 @@ export default function HomePage() {
       console.warn('Storage sync err:', err);
     }
   }, []);
+
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('aurafit_theme', next ? 'dark' : 'light');
+      } catch (e) {}
+      return next;
+    });
+  };
 
   // Update meals whenever ingredients change
   useEffect(() => {
@@ -157,13 +172,6 @@ export default function HomePage() {
     setShowWeightModal(false);
   };
 
-  const formatTimer = (sec) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  // Week days for calendar strip (Screenshot 6)
   const weekDays = [
     { day: 'L', num: 10, done: true },
     { day: 'M', num: 11, done: true },
@@ -177,10 +185,10 @@ export default function HomePage() {
   const completedHabitsCount = habits.filter((h) => h.completed).length;
 
   return (
-    <div className="mobile-shell">
+    <div className={`mobile-shell ${isDarkMode ? 'dark-theme' : ''}`}>
       {/* 1. Fitia Top Header (Screenshot 6) */}
       <header className="fitia-header">
-        <div className="fitia-header-left">
+        <div className="fitia-header-left" onClick={() => alert('Seleccionando plan: Aumento de Masa Magra (+300 kcal)')}>
           <span className="fitia-header-title">Hoy</span>
           <span className="fitia-header-arrow">▾</span>
         </div>
@@ -189,8 +197,16 @@ export default function HomePage() {
             <span>🔥</span>
             <span>{streakDays}</span>
           </div>
+          <button
+            type="button"
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+          >
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
           <div className="fitia-avatar" title={DEFAULT_USER_PROFILE.fullName}>
-            <span>⚡</span>
+            <span>🥑</span>
           </div>
         </div>
       </header>
@@ -213,10 +229,10 @@ export default function HomePage() {
         })}
       </section>
 
-      {/* TAB CONTENT */}
+      {/* MAIN TAB VIEWPORT */}
       <main className="fitia-content">
         {/* ===================================================================
-            TAB 1: NUTRICIÓN ESTILO FITIA (Screenshots 1, 2, 5, 6)
+            TAB 1: NUTRICIÓN ESTILO FITIA (Screenshots 1 a 6)
             =================================================================== */}
         {activeTab === 'nutrition' && (
           <>
@@ -274,21 +290,70 @@ export default function HomePage() {
               </div>
             </section>
 
-            {/* Meal Slots List (Screenshot 6) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Quick Actions Row: Fitia Text Log / Search Foods (Screenshot 3 & 4) */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  padding: '12px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  boxShadow: 'var(--card-shadow)',
+                  color: 'var(--text-main)'
+                }}
+                onClick={() => setShowTextLogModal(true)}
+              >
+                <span>✍️</span>
+                <span>Registro por Texto</span>
+              </button>
+
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  padding: '12px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  boxShadow: 'var(--card-shadow)',
+                  color: 'var(--text-main)'
+                }}
+                onClick={() => alert('Base de datos Fitia: +2 millones de alimentos verificados con macros oficiales.')}
+              >
+                <span>🔍</span>
+                <span>Buscar Alimento</span>
+              </button>
+            </div>
+
+            {/* Meal Slots List (Screenshot 1 & 6) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Desayuno */}
               <div className="fitia-meal-card">
                 <div className="fitia-meal-header">
                   <span className="fitia-meal-title">Desayuno</span>
                   <span className="fitia-meal-macro-pill">
-                    🔥 450 kcal · 32P · 45C · 14G
+                    🔥 296 kcal · 21P · 16C · 15G
                   </span>
                 </div>
                 <div className="fitia-dish-item">
                   <div className="fitia-dish-thumb">🍳</div>
                   <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Huevos revueltos, pan integral y avena</div>
-                    <div className="fitia-dish-meta">⏱️ 8 min · Alto en proteína</div>
+                    <div className="fitia-dish-name">Huevos revueltos y pan tostado integral</div>
+                    <div className="fitia-dish-meta">⏱️ 6 min · Verificado con nutricionista</div>
                   </div>
                 </div>
               </div>
@@ -304,8 +369,8 @@ export default function HomePage() {
                 <div className="fitia-dish-item">
                   <div className="fitia-dish-thumb">🍗</div>
                   <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Pechuga de pollo a la plancha con arroz y brócoli</div>
-                    <div className="fitia-dish-meta">⏱️ 15 min · Volumen limpio</div>
+                    <div className="fitia-dish-name">Pollo a la plancha, brócoli al vapor y arroz</div>
+                    <div className="fitia-dish-meta">⏱️ 15 min · Volumen magro</div>
                   </div>
                 </div>
               </div>
@@ -322,7 +387,7 @@ export default function HomePage() {
                   <div className="fitia-dish-thumb">🐟</div>
                   <div className="fitia-dish-info">
                     <div className="fitia-dish-name">Filete de atún con papas al vapor y palta</div>
-                    <div className="fitia-dish-meta">⏱️ 12 min · Grasas saludables</div>
+                    <div className="fitia-dish-meta">⏱️ 10 min · Grasas esenciales</div>
                   </div>
                 </div>
               </div>
@@ -330,7 +395,7 @@ export default function HomePage() {
               {/* Snacks */}
               <div className="fitia-meal-card">
                 <div className="fitia-meal-header">
-                  <span className="fitia-meal-title">Snack & Post-Entreno</span>
+                  <span className="fitia-meal-title">Snack Post-Entreno</span>
                   <span className="fitia-meal-macro-pill">
                     🔥 310 kcal · 25P · 30C · 4G
                   </span>
@@ -338,25 +403,30 @@ export default function HomePage() {
                 <div className="fitia-dish-item">
                   <div className="fitia-dish-thumb">🥣</div>
                   <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Yogur griego con plátano y 5g de creatina</div>
-                    <div className="fitia-dish-meta">⏱️ 3 min · Absorción óptima</div>
+                    <div className="fitia-dish-name">Yogur con granola crujiente y plátano</div>
+                    <div className="fitia-dish-meta">⏱️ 3 min · Con 5g de creatina</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Fitia Coach / Asesoría Nutricional de Despensa (Screenshot 5) */}
+            {/* Fitia Coach / Asesoría Nutricional (Screenshot 5) */}
             <section className="fitia-coach-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '20px' }}>🥗</span>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>
-                  Fitia Coach · Generador de Despensa
-                </span>
+                <span style={{ fontSize: '22px' }}>🥑</span>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    Fitia Coach · ¿Qué puedo comer?
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Generador de recetas adaptado a tu despensa y meta calórica.
+                  </p>
+                </div>
               </div>
 
-              {/* Chat Dialog */}
+              {/* Chat Dialog (Screenshot 5) */}
               <div className="fitia-chat-bubble fitia-bubble-bot">
-                👋 Hola Eduardo, ¿qué ingredientes tienes disponibles hoy en tu despensa?
+                ¿Qué ingredientes tienes disponibles hoy en tu cocina?
               </div>
 
               <div className="fitia-pantry-pills">
@@ -379,15 +449,15 @@ export default function HomePage() {
               <form onSubmit={handleAddIngredient} style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
-                  placeholder="Escribe otro ingrediente..."
+                  placeholder="Otro ingrediente (ej. almendras, manzana)..."
                   value={newIngredient}
                   onChange={(e) => setNewIngredient(e.target.value)}
                   style={{
                     flex: 1,
-                    background: 'var(--bg-surface)',
+                    background: 'var(--bg-card-subtle)',
                     border: '1px solid var(--border-subtle)',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
+                    padding: '11px 14px',
+                    borderRadius: '12px',
                     color: 'var(--text-main)',
                     fontSize: '14px'
                   }}
@@ -396,11 +466,11 @@ export default function HomePage() {
                   type="submit"
                   style={{
                     background: 'var(--fitia-green)',
-                    color: '#060E10',
-                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    fontWeight: 800,
                     border: 'none',
                     padding: '0 16px',
-                    borderRadius: '10px'
+                    borderRadius: '12px'
                   }}
                 >
                   Agregar
@@ -408,7 +478,7 @@ export default function HomePage() {
               </form>
 
               <div className="fitia-chat-bubble fitia-bubble-bot" style={{ marginTop: '4px' }}>
-                Aquí tienes recetas listas para tu superávit magro (+300 kcal):
+                Aquí tienes recetas listas para tu meta de volumen magro:
               </div>
 
               {/* Horizontal Scroll Recipes (Screenshot 5) */}
@@ -434,13 +504,13 @@ export default function HomePage() {
                         type="button"
                         style={{
                           marginTop: '6px',
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          border: '1px solid var(--border-active)',
-                          color: 'var(--fitia-green-light)',
-                          padding: '6px 8px',
+                          background: 'var(--fitia-green-soft)',
+                          border: '1px solid var(--fitia-green)',
+                          color: 'var(--fitia-green)',
+                          padding: '7px 8px',
                           borderRadius: '8px',
                           fontSize: '11px',
-                          fontWeight: 700
+                          fontWeight: 800
                         }}
                         onClick={() => alert(`¡${meal.title} agregado a tu plan de hoy!`)}
                       >
@@ -454,23 +524,23 @@ export default function HomePage() {
 
             {/* Puntaje Nutricional (Screenshot 2) */}
             <section className="fitia-score-card">
-              <span className="fitia-cal-label">Tu puntaje nutricional de hoy</span>
+              <span className="fitia-cal-label">Tu puntaje nutricional</span>
               <div className="fitia-gauge-circle-wrap">
-                <svg width="180" height="95" viewBox="0 0 180 95">
+                <svg width="200" height="105" viewBox="0 0 200 105">
                   <path
-                    d="M 15 90 A 75 75 0 0 1 165 90"
+                    d="M 20 100 A 80 80 0 0 1 180 100"
                     fill="none"
-                    stroke="rgba(255,255,255,0.08)"
-                    strokeWidth="14"
+                    stroke="var(--bg-card-subtle)"
+                    strokeWidth="16"
                     strokeLinecap="round"
                   />
                   <path
-                    d="M 15 90 A 75 75 0 0 1 165 90"
+                    d="M 20 100 A 80 80 0 0 1 180 100"
                     fill="none"
-                    stroke="#10B981"
-                    strokeWidth="14"
-                    strokeDasharray="235"
-                    strokeDashoffset="35"
+                    stroke="#00C06D"
+                    strokeWidth="16"
+                    strokeDasharray="251"
+                    strokeDashoffset="40"
                     strokeLinecap="round"
                   />
                 </svg>
@@ -480,20 +550,20 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Floating Insight Cards (Screenshot 2) */}
+              {/* Floating Insight Card (Screenshot 2) */}
               <div className="fitia-insight-card">
                 <div className="fitia-insight-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>🌾</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>Fibra dietaria</strong>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Fibra dietaria</strong>
                   </div>
                   <span className="fitia-insight-badge fitia-badge-red">Muy bajo</span>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Te faltan <strong>18 g</strong> para tu meta de 30 g.
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  Te faltan <strong>22 g</strong> para tu meta de 30 g.
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-sub)', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
-                  💡 Sugerencia Fitia: Agrega avena integral o brócoli en tu próxima comida.
+                <div style={{ fontSize: '12px', color: 'var(--text-sub)', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', lineHeight: 1.35 }}>
+                  Prueba cambiar el pan blanco por pan integral en tu próxima comida.
                 </div>
               </div>
 
@@ -501,12 +571,12 @@ export default function HomePage() {
                 <div className="fitia-insight-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>⚡</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>Balance Calórico</strong>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Calorías</strong>
                   </div>
                   <span className="fitia-insight-badge fitia-badge-green">Excelente</span>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  2,004 / 2,185 kcal · Ritmo óptimo para aumento de peso magro.
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  2,150 / 2,200 kcal · Ritmo óptimo para superávit limpio.
                 </div>
               </div>
             </section>
@@ -529,42 +599,42 @@ export default function HomePage() {
           <>
             {/* Top Habits Summary Cards (Screenshot 11) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              <div style={{ background: 'var(--bg-card)', padding: '14px 10px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontSize: '20px' }}>💧</span>
-                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>{(waterMl / 1000).toFixed(2)} L</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Agua Hoy</div>
+              <div style={{ background: 'var(--bg-card)', padding: '16px 10px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)' }}>
+                <span style={{ fontSize: '22px' }}>💧</span>
+                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '4px' }}>{(waterMl / 1000).toFixed(2)} L</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Agua Hoy</div>
               </div>
-              <div style={{ background: 'var(--bg-card)', padding: '14px 10px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontSize: '20px' }}>⚡</span>
-                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>5 g</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Creatina</div>
+              <div style={{ background: 'var(--bg-card)', padding: '16px 10px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)' }}>
+                <span style={{ fontSize: '22px' }}>⚡</span>
+                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '4px' }}>5 g</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Creatina</div>
               </div>
-              <div style={{ background: 'var(--bg-card)', padding: '14px 10px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontSize: '20px' }}>🧘</span>
-                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>MindValley</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Meditación</div>
+              <div style={{ background: 'var(--bg-card)', padding: '16px 10px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)' }}>
+                <span style={{ fontSize: '22px' }}>🧘</span>
+                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '4px' }}>MindValley</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Meditación</div>
               </div>
             </div>
 
-            {/* Progress Card (Screenshot 11) */}
-            <div style={{ background: 'linear-gradient(135deg, #10292B 0%, #091719 100%)', border: '1px solid var(--border-active)', borderRadius: '20px', padding: '18px' }}>
+            {/* Habits Progress Header (Screenshot 11) */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '18px', boxShadow: 'var(--card-shadow)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '28px' }}>🔥</span>
                   <div>
-                    <div style={{ fontSize: '16px', fontWeight: 800 }}>Racha de 14 Días</div>
-                    <div style={{ fontSize: '12px', color: 'var(--fitia-green-light)' }}>¡Progreso constante!</div>
+                    <div style={{ fontSize: '16px', fontWeight: 900 }}>4 Días de Racha</div>
+                    <div style={{ fontSize: '12px', color: 'var(--fitia-green)' }}>¡Excelente consistencia!</div>
                   </div>
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)' }}>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-main)' }}>
                   {completedHabitsCount} / {habits.length}
                 </div>
               </div>
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', marginTop: '14px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '8px', background: 'var(--bg-card-subtle)', borderRadius: '999px', marginTop: '14px', overflow: 'hidden' }}>
                 <div
                   style={{
                     height: '100%',
-                    background: 'linear-gradient(90deg, #10B981, #34D399)',
+                    background: 'var(--fitia-green)',
                     width: `${(completedHabitsCount / habits.length) * 100}%`,
                     borderRadius: '999px'
                   }}
@@ -574,48 +644,73 @@ export default function HomePage() {
 
             {/* Habits Checklist (Screenshot 11) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Hábitos del Día
-              </div>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                Hábitos Diarios
+              </span>
               {habits.map((habit) => (
                 <div
                   key={habit.id}
-                  className={`fitia-habit-row ${habit.completed ? 'completed' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    padding: '16px 18px',
+                    borderRadius: '18px',
+                    boxShadow: 'var(--card-shadow)'
+                  }}
                   onClick={() => toggleHabit(habit.id)}
                 >
-                  <div className="fitia-habit-left">
-                    <div className="fitia-habit-icon">{habit.icon}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-card-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
+                      {habit.icon}
+                    </div>
                     <div>
-                      <div className="fitia-habit-name">{habit.name}</div>
-                      <div className="fitia-habit-sub">
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>{habit.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                         {habit.target} {habit.completed && `· Completado a las ${habit.time || 'hoy'}`}
                       </div>
                     </div>
                   </div>
-                  <div className={`fitia-radio-check ${habit.completed ? 'checked' : ''}`}>
+                  <div
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '50%',
+                      border: habit.completed ? 'none' : '2px solid var(--border-subtle)',
+                      background: habit.completed ? 'var(--fitia-green)' : 'transparent',
+                      color: habit.completed ? '#FFFFFF' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '15px',
+                      fontWeight: 900
+                    }}
+                  >
                     ✓
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Water Tracker Quick Buttons */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 800 }}>💧 Hidratación Rápida</span>
-                <span style={{ fontSize: '12px', color: 'var(--fitia-blue)' }}>{waterMl} / 3,500 ml</span>
+            {/* Quick Water Tracker */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px', boxShadow: 'var(--card-shadow)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 800 }}>💧 Hidratación Diaria</span>
+                <span style={{ fontSize: '13px', color: 'var(--fitia-blue)', fontWeight: 800 }}>{waterMl} / 3,500 ml</span>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="button"
                   style={{
                     flex: 1,
-                    background: 'rgba(56, 189, 248, 0.15)',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
-                    color: '#38BDF8',
-                    padding: '10px',
-                    borderRadius: '10px',
-                    fontWeight: 700,
+                    background: 'var(--fitia-blue-soft)',
+                    border: '1px solid rgba(2, 132, 199, 0.25)',
+                    color: 'var(--fitia-blue)',
+                    padding: '11px',
+                    borderRadius: '12px',
+                    fontWeight: 800,
                     fontSize: '13px'
                   }}
                   onClick={() => addWater(250)}
@@ -626,12 +721,12 @@ export default function HomePage() {
                   type="button"
                   style={{
                     flex: 1,
-                    background: 'rgba(56, 189, 248, 0.15)',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
-                    color: '#38BDF8',
-                    padding: '10px',
-                    borderRadius: '10px',
-                    fontWeight: 700,
+                    background: 'var(--fitia-blue-soft)',
+                    border: '1px solid rgba(2, 132, 199, 0.25)',
+                    color: 'var(--fitia-blue)',
+                    padding: '11px',
+                    borderRadius: '12px',
+                    fontWeight: 800,
                     fontSize: '13px'
                   }}
                   onClick={() => addWater(500)}
@@ -649,7 +744,7 @@ export default function HomePage() {
         {activeTab === 'workout' && (
           <>
             {/* Mode Switcher */}
-            <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '4px', borderRadius: '12px', gap: '4px' }}>
+            <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
               <button
                 type="button"
                 style={{
@@ -659,8 +754,9 @@ export default function HomePage() {
                   border: 'none',
                   padding: '10px',
                   borderRadius: '10px',
-                  fontWeight: 700,
-                  fontSize: '13px'
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  boxShadow: workoutMode === 'gym' ? 'var(--card-shadow)' : 'none'
                 }}
                 onClick={() => setWorkoutMode('gym')}
               >
@@ -675,8 +771,9 @@ export default function HomePage() {
                   border: 'none',
                   padding: '10px',
                   borderRadius: '10px',
-                  fontWeight: 700,
-                  fontSize: '13px'
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  boxShadow: workoutMode === 'home_emom' ? 'var(--card-shadow)' : 'none'
                 }}
                 onClick={() => setWorkoutMode('home_emom')}
               >
@@ -686,27 +783,27 @@ export default function HomePage() {
 
             {/* Active Routine Details */}
             {workoutMode === 'gym' ? (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--card-shadow)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: 800 }}>{WORKOUT_ROUTINES.gym.title}</h3>
+                    <h3 style={{ fontSize: '17px', fontWeight: 900 }}>{WORKOUT_ROUTINES.gym.title}</h3>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{WORKOUT_ROUTINES.gym.focus}</p>
                   </div>
-                  <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--fitia-green-light)', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 700 }}>
+                  <span style={{ background: 'var(--fitia-green-soft)', color: 'var(--fitia-green)', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800 }}>
                     {WORKOUT_ROUTINES.gym.targetTime}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {WORKOUT_ROUTINES.gym.exercises.map((ex, idx) => (
-                    <div key={idx} style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                    <div key={idx} style={{ background: 'var(--bg-card-subtle)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 700 }}>{ex.name}</span>
-                        <span style={{ fontSize: '12px', color: 'var(--fitia-orange)', fontWeight: 700 }}>
+                        <span style={{ fontSize: '14px', fontWeight: 800 }}>{ex.name}</span>
+                        <span style={{ fontSize: '13px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
                           {ex.sets} sets × {ex.reps}
                         </span>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-sub)', marginTop: '4px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                         Descanso: {ex.rest} · {ex.notes}
                       </div>
                     </div>
@@ -714,32 +811,32 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--card-shadow)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: 800 }}>{WORKOUT_ROUTINES.home_emom.title}</h3>
+                    <h3 style={{ fontSize: '17px', fontWeight: 900 }}>{WORKOUT_ROUTINES.home_emom.title}</h3>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{WORKOUT_ROUTINES.home_emom.focus}</p>
                   </div>
-                  <span style={{ background: 'rgba(249, 115, 22, 0.15)', color: 'var(--fitia-orange)', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 700 }}>
+                  <span style={{ background: 'var(--fitia-orange-soft)', color: 'var(--fitia-orange)', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800 }}>
                     {WORKOUT_ROUTINES.home_emom.targetTime}
                   </span>
                 </div>
 
                 {/* EMOM Active Timer */}
-                <div style={{ background: 'var(--bg-surface)', padding: '18px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-active)' }}>
-                  <div style={{ fontSize: '36px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
-                    {formatTimer(activeTimerSeconds || 1200)}
+                <div style={{ background: 'var(--bg-card-subtle)', padding: '20px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '40px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
+                    {activeTimerSeconds ? `${Math.floor(activeTimerSeconds / 60).toString().padStart(2, '0')}:${(activeTimerSeconds % 60).toString().padStart(2, '0')}` : '20:00'}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '14px' }}>
                     <button
                       type="button"
                       style={{
                         background: timerRunning ? '#EF4444' : 'var(--fitia-green)',
-                        color: '#060E10',
-                        fontWeight: 800,
+                        color: '#FFFFFF',
+                        fontWeight: 900,
                         border: 'none',
-                        padding: '10px 24px',
-                        borderRadius: '10px'
+                        padding: '10px 26px',
+                        borderRadius: '12px'
                       }}
                       onClick={() => {
                         if (!activeTimerSeconds) setActiveTimerSeconds(1200);
@@ -755,7 +852,7 @@ export default function HomePage() {
                         border: '1px solid var(--border-subtle)',
                         color: 'var(--text-muted)',
                         padding: '10px 16px',
-                        borderRadius: '10px'
+                        borderRadius: '12px'
                       }}
                       onClick={() => {
                         setTimerRunning(false);
@@ -769,9 +866,9 @@ export default function HomePage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {WORKOUT_ROUTINES.home_emom.structure.map((item, idx) => (
-                    <div key={idx} style={{ background: 'var(--bg-surface)', padding: '10px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--fitia-green-light)' }}>{item.minute}</span>
-                      <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>{item.work}</span>
+                    <div key={idx} style={{ background: 'var(--bg-card-subtle)', padding: '11px 14px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--fitia-green)' }}>{item.minute}</span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-main)', fontWeight: 600 }}>{item.work}</span>
                     </div>
                   ))}
                 </div>
@@ -779,24 +876,24 @@ export default function HomePage() {
             )}
 
             {/* Weight Progression Card */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', boxShadow: 'var(--card-shadow)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Evolución de Peso Magro</h3>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 900 }}>Evolución de Peso Magro</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     Actual: <strong>{weightAnalytics.currentWeight} kg</strong> · Ritmo: <strong>{weightAnalytics.ratePerWeekKg} kg/sem</strong>
                   </p>
                 </div>
                 <button
                   type="button"
                   style={{
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid var(--border-active)',
-                    color: 'var(--fitia-green-light)',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
+                    background: 'var(--fitia-green-soft)',
+                    border: '1px solid var(--fitia-green)',
+                    color: 'var(--fitia-green)',
+                    padding: '7px 14px',
+                    borderRadius: '10px',
                     fontSize: '12px',
-                    fontWeight: 700
+                    fontWeight: 800
                   }}
                   onClick={() => setShowWeightModal(true)}
                 >
@@ -817,12 +914,13 @@ export default function HomePage() {
                           style={{
                             width: '100%',
                             height: `${pct}%`,
-                            background: i === weightLogs.slice(-7).length - 1 ? 'var(--fitia-green)' : 'rgba(255,255,255,0.15)',
+                            background: i === weightLogs.slice(-7).length - 1 ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                            border: '1px solid var(--border-subtle)',
                             borderRadius: '4px'
                           }}
                         />
                       </div>
-                      <span style={{ fontSize: '9px', color: 'var(--text-sub)' }}>{log.log_date.split(' ')[0]}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{log.log_date.split(' ')[0]}</span>
                     </div>
                   );
                 })}
@@ -832,13 +930,57 @@ export default function HomePage() {
         )}
       </main>
 
+      {/* Modal: Registro por Texto (Screenshot 4) */}
+      {showTextLogModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '360px', boxShadow: 'var(--card-shadow)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Registro por Texto</h3>
+              <button type="button" onClick={() => setShowTextLogModal(false)} style={{ fontSize: '18px', color: 'var(--text-muted)' }}>✕</button>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              Escribe los alimentos en lenguaje natural. Fitia calcula las calorías y macros automáticamente:
+            </p>
+            <textarea
+              rows={4}
+              value={quickTextEntry}
+              onChange={(e) => setQuickTextEntry(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '14px',
+                padding: '12px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--text-main)',
+                marginBottom: '16px'
+              }}
+            />
+            <div style={{ background: 'var(--fitia-green-soft)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '12px', color: 'var(--text-main)' }}>
+              <strong>Estimación detectada:</strong> ~460 kcal · 32g Proteína · 52g Carbohidratos · 14g Grasas
+            </div>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                alert('¡Alimentos registrados con éxito a tu plan diario!');
+                setShowTextLogModal(false);
+              }}
+            >
+              Confirmar & Agregar al Día
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Weight Modal */}
       {showWeightModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', width: '100%', maxWidth: '340px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '6px' }}>Registrar Peso Diario</h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '340px', boxShadow: 'var(--card-shadow)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '6px' }}>Registrar Peso Diario</h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Pésate en ayunas después de ir al baño para máxima precisión.
+              Pésate en ayunas al despertar para el cálculo de Lean Bulk.
             </p>
             <form onSubmit={handleAddWeightLog}>
               <input
@@ -849,29 +991,29 @@ export default function HomePage() {
                 onChange={(e) => setNewWeightInput(e.target.value)}
                 style={{
                   width: '100%',
-                  background: 'var(--bg-surface)',
+                  background: 'var(--bg-card-subtle)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '12px',
-                  borderRadius: '10px',
+                  padding: '14px',
+                  borderRadius: '14px',
                   color: 'var(--text-main)',
-                  fontSize: '18px',
+                  fontSize: '22px',
                   textAlign: 'center',
-                  fontWeight: 800,
-                  marginBottom: '14px'
+                  fontWeight: 900,
+                  marginBottom: '16px'
                 }}
                 autoFocus
               />
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="button"
-                  style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', padding: '10px', borderRadius: '10px', fontWeight: 600 }}
+                  style={{ flex: 1, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', padding: '12px', borderRadius: '12px', fontWeight: 700 }}
                   onClick={() => setShowWeightModal(false)}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  style={{ flex: 1, background: 'var(--fitia-green)', color: '#060E10', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 800 }}
+                  style={{ flex: 1, background: 'var(--fitia-green)', color: '#FFFFFF', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 900 }}
                 >
                   Guardar
                 </button>
@@ -883,31 +1025,31 @@ export default function HomePage() {
 
       {/* Damage Control Modal */}
       {showDamageControl && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '430px', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '430px', maxHeight: '85vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>🛡️</span>
-                <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Protocolo Damage Control</h3>
+                <span style={{ fontSize: '26px' }}>🛡️</span>
+                <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Protocolo Damage Control</h3>
               </div>
               <button
                 type="button"
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '22px' }}
                 onClick={() => setShowDamageControl(false)}
               >
                 ✕
               </button>
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.4 }}>
               {DAMAGE_CONTROL_PROTOCOL.subtitle}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {DAMAGE_CONTROL_PROTOCOL.steps.map((st) => (
-                <div key={st.step} style={{ background: 'var(--bg-surface)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
+                <div key={st.step} style={{ background: 'var(--bg-card-subtle)', padding: '14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--fitia-orange)', textTransform: 'uppercase' }}>
                     PASO {st.step} · {st.timing}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, margin: '4px 0' }}>{st.action}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, margin: '4px 0' }}>{st.action}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{st.rationale}</div>
                 </div>
               ))}
@@ -915,7 +1057,7 @@ export default function HomePage() {
             <button
               type="button"
               className="btn-primary"
-              style={{ marginTop: '18px' }}
+              style={{ marginTop: '20px' }}
               onClick={() => setShowDamageControl(false)}
             >
               Comprendido, activar protocolo
