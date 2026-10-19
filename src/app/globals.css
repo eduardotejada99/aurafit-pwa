@@ -71,6 +71,9 @@ html {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
   background-color: var(--bg-page);
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 body {
@@ -81,12 +84,15 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
-/* Prevent auto-zoom on iOS */
-input, textarea, select, button {
+/* Prevent auto-zoom on iOS (only apply to text inputs to avoid breaking compact button typography) */
+input, textarea, select {
   font-family: inherit;
-  font-size: 16px !important;
+  font-size: 16px;
 }
 
 button, a, [role="button"], .touchable {
@@ -106,6 +112,7 @@ button:active, .touchable:active {
 
 /* 430px Mobile Shell */
 .mobile-shell {
+  width: 100%;
   max-width: 430px;
   margin: 0 auto;
   min-height: 100dvh;
@@ -118,6 +125,8 @@ button:active, .touchable:active {
   border-left: 1px solid var(--border-subtle);
   border-right: 1px solid var(--border-subtle);
   transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* Top Header Fitia (Screenshot 6) */
@@ -256,10 +265,14 @@ button:active, .touchable:active {
 
 /* Content Container */
 .fitia-content {
-  padding: 18px 20px;
+  padding: 16px 14px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ==========================================================================
@@ -1728,8 +1741,8 @@ button:active, .touchable:active {
 }
 
 .fitia-recipe-card {
-  min-width: 250px;
-  max-width: 270px;
+  min-width: 260px;
+  max-width: 280px;
   flex-shrink: 0;
   background: var(--bg-card);
   border: 1.5px solid var(--border-subtle);
@@ -1739,6 +1752,7 @@ button:active, .touchable:active {
   display: flex;
   flex-direction: column;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
 .fitia-recipe-card:hover {
@@ -1831,11 +1845,15 @@ button:active, .touchable:active {
   background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 6px 10px;
+  padding: 8px 10px;
   margin-bottom: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .portion-scaler-label {
@@ -1844,38 +1862,49 @@ button:active, .touchable:active {
   justify-content: space-between;
   font-size: 11px;
   color: var(--text-muted);
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .portion-scaler-tag {
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 800;
   background: var(--fitia-green-soft);
   color: var(--fitia-green);
   padding: 1px 6px;
   border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .portion-scaler-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .btn-portion-step {
   width: 26px;
   height: 26px;
+  min-width: 26px;
+  flex-shrink: 0;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--text-main);
   font-weight: 900;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
+  padding: 0;
 }
 
 .btn-portion-step:disabled {
@@ -1890,20 +1919,31 @@ button:active, .touchable:active {
 
 .portion-pills {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   flex: 1;
+  min-width: 0;
   justify-content: center;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.portion-pills::-webkit-scrollbar {
+  display: none;
 }
 
 .btn-portion-pill {
-  padding: 3px 8px;
-  border-radius: 8px;
+  padding: 3px 6px;
+  border-radius: 7px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--text-muted);
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
@@ -2243,18 +2283,24 @@ button:active, .touchable:active {
 }
 
 .couple-portion-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .couple-portion-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 10px 8px;
+  padding: 10px 10px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .couple-portion-card.andres {
@@ -2292,7 +2338,7 @@ button:active, .touchable:active {
 .couple-portion-desc {
   font-size: 10px;
   color: var(--text-muted);
-  line-height: 1.3;
+  line-height: 1.35;
   margin-bottom: 8px;
   flex: 1;
 }
@@ -2300,12 +2346,13 @@ button:active, .touchable:active {
 .btn-quick-log-couple {
   border: none;
   border-radius: 8px;
-  padding: 6px 4px;
-  font-size: 10px;
+  padding: 7px 10px;
+  font-size: 10.5px;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.15s ease;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .btn-quick-log-couple.andres {

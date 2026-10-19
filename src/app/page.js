@@ -2384,7 +2384,7 @@ export default function HomePage() {
                                   <div className="recipe-portion-scaler-row">
                                     <div className="portion-scaler-label">
                                       <span>⚖️ Porción: <strong>{Math.round(mult * 100)}%</strong></span>
-                                      {mult !== 1.0 && <span className="portion-scaler-tag">Escala x{mult}</span>}
+                                      {mult !== 1.0 && <span className="portion-scaler-tag">x{mult}</span>}
                                     </div>
                                     <div className="portion-scaler-controls">
                                       <button
@@ -3315,36 +3315,42 @@ export default function HomePage() {
                 background: 'var(--bg-card)',
                 border: '1.5px solid var(--fitia-green)',
                 borderRadius: '18px',
-                padding: '14px 16px',
+                padding: '14px 14px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
+                width: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
                 boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--fitia-green)', letterSpacing: '0.5px' }}>
                     📊 Balance Semanal Adaptativo
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
                     Piernas: {weeklyWorkoutBalance.legsCount || 0} · Empuje: {weeklyWorkoutBalance.pushCount || 0} · Tracción: {weeklyWorkoutBalance.pullCount || 0}
                   </span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
                   {weeklyWorkoutBalance.weeklySummaryText}
                 </p>
                 {weeklyWorkoutBalance.recommendedSplit && selectedSplit !== weeklyWorkoutBalance.recommendedSplit && !isMissedDay && (
                   <button
                     type="button"
                     style={{
-                      alignSelf: 'flex-start',
+                      width: '100%',
+                      boxSizing: 'border-box',
                       background: 'var(--fitia-green-soft)',
                       border: '1px solid var(--fitia-green)',
                       color: 'var(--fitia-green)',
-                      padding: '5px 12px',
-                      borderRadius: '8px',
-                      fontSize: '11px',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      fontSize: '11.5px',
                       fontWeight: 800,
-                      cursor: 'pointer'
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      lineHeight: 1.3
                     }}
                     onClick={() => handleSelectSplit(weeklyWorkoutBalance.recommendedSplit)}
                   >
@@ -3354,10 +3360,10 @@ export default function HomePage() {
               </div>
 
               {/* CONTROLADOR DE SPLITS DISPONIBLES (USER FULL CONTROL) */}
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '14px 16px', boxShadow: 'var(--card-shadow)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '14px 14px', boxShadow: 'var(--card-shadow)', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '4px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)' }}>
-                    🎯 Tu Split de Hoy (Tienes el Control Total):
+                    🎯 Tu Split de Hoy:
                   </span>
                   <span style={{ fontSize: '11px', color: isMissedDay ? '#DC2626' : 'var(--fitia-green)', fontWeight: 800 }}>
                     {isMissedDay ? '⚡ Planchas 12m' : 'Personalizable'}
@@ -3365,7 +3371,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Grid of Split Options for Active Profile */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
                   {Object.entries(HYBRID_ATHLETE_SYSTEM.splits[activeProfileId] || {}).map(([sKey, sObj]) => {
                     const isSel = (selectedSplit === sKey) || (!selectedSplit && sKey === (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle'));
                     return (
@@ -3373,9 +3379,11 @@ export default function HomePage() {
                         key={sKey}
                         type="button"
                         style={{
-                          padding: '10px 12px',
+                          minWidth: 0,
+                          width: '100%',
+                          padding: '9px 8px',
                           borderRadius: '12px',
-                          fontSize: '11.5px',
+                          fontSize: '11px',
                           fontWeight: 800,
                           textAlign: 'left',
                           background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
@@ -3384,13 +3392,14 @@ export default function HomePage() {
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
+                          gap: '6px',
+                          boxSizing: 'border-box',
                           transition: 'all 0.15s ease'
                         }}
                         onClick={() => handleSelectSplit(sKey)}
                       >
-                        <span style={{ fontSize: '16px' }}>{sObj.icon || '⚡'}</span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '15px', flexShrink: 0 }}>{sObj.icon || '⚡'}</span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {sObj.shortName || sObj.name || sKey}
                         </span>
                       </button>
@@ -3404,9 +3413,10 @@ export default function HomePage() {
                     type="button"
                     style={{
                       width: '100%',
-                      padding: '10px 14px',
+                      boxSizing: 'border-box',
+                      padding: '10px 12px',
                       borderRadius: '12px',
-                      fontSize: '12px',
+                      fontSize: '11.5px',
                       fontWeight: 800,
                       background: isMissedDay ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-card-subtle)',
                       color: isMissedDay ? '#DC2626' : 'var(--text-muted)',
@@ -3414,15 +3424,16 @@ export default function HomePage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      gap: '8px',
                       cursor: 'pointer'
                     }}
                     onClick={handleToggleMissedDay}
                   >
-                    <span>
-                      {isMissedDay ? '⚡ Modo Día Ocupado Activo (12 min Planchas en Casa)' : '❌ ¿Día complicado? No pude entrenar hoy'}
+                    <span style={{ minWidth: 0, flex: 1, textAlign: 'left', lineHeight: 1.25 }}>
+                      {isMissedDay ? '⚡ Modo Día Ocupado Activo (12 min Planchas)' : '❌ ¿Día complicado? No pude entrenar'}
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 900 }}>
-                      {isMissedDay ? 'Desactivar ↩️' : 'Sugerir Planchas 12m →'}
+                    <span style={{ fontSize: '11px', fontWeight: 900, flexShrink: 0 }}>
+                      {isMissedDay ? 'Desactivar ↩️' : 'Planchas 12m →'}
                     </span>
                   </button>
                   {isMissedDay && (
@@ -3470,7 +3481,7 @@ export default function HomePage() {
                 </div>
 
                 {/* 4 Pillars Mini Gauges */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '6px', width: '100%', boxSizing: 'border-box' }}>
                   {[
                     { name: 'Nutrición', pts: systemicPillars.breakdown?.nutrition ?? 15, icon: '🥗', color: '#10B981' },
                     { name: 'Fuerza', pts: systemicPillars.breakdown?.workout ?? 15, icon: '🦁', color: '#F97316' },
@@ -3480,13 +3491,16 @@ export default function HomePage() {
                     <div key={pIdx} style={{
                       background: 'var(--bg-card-subtle)',
                       borderRadius: '10px',
-                      padding: '8px 6px',
+                      padding: '8px 4px',
                       textAlign: 'center',
-                      border: '1px solid var(--border-subtle)'
+                      border: '1px solid var(--border-subtle)',
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      boxSizing: 'border-box'
                     }}>
                       <span style={{ fontSize: '14px' }}>{p.icon}</span>
-                      <div style={{ fontSize: '9.5px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>{p.name}</div>
-                      <div style={{ fontSize: '12px', fontWeight: 900, color: p.color, marginTop: '2px' }}>{p.pts}/25</div>
+                      <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.name}</div>
+                      <div style={{ fontSize: '11.5px', fontWeight: 900, color: p.color, marginTop: '2px' }}>{p.pts}/25</div>
                     </div>
                   ))}
                 </div>
@@ -4591,41 +4605,50 @@ export default function HomePage() {
                   }
 
                   return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>Porción:</span>
-                      {portionButtons.map((btn) => (
-                        <button
-                          key={btn.g}
-                          type="button"
-                          style={{
-                            padding: '4px 8px',
-                            borderRadius: '8px',
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            border: customGrams === btn.g ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
-                            background: customGrams === btn.g ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
-                            color: customGrams === btn.g ? 'var(--fitia-green)' : 'var(--text-muted)',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => setCustomGrams(btn.g)}
-                        >
-                          {btn.label}
-                        </button>
-                      ))}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
-                        <input
-                          type="number"
-                          value={customGrams}
-                          onChange={(e) => setCustomGrams(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                          style={{
-                            width: '50px',
-                            padding: '4px 4px !important',
-                            fontSize: '12px !important',
-                            textAlign: 'center',
-                            borderRadius: '8px'
-                          }}
-                        />
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 800 }}>g</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-muted)' }}>⚖️ Cantidad:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <input
+                            type="number"
+                            value={customGrams}
+                            onChange={(e) => setCustomGrams(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            style={{
+                              width: '56px',
+                              padding: '4px 6px',
+                              fontSize: '13px',
+                              fontWeight: 800,
+                              textAlign: 'center',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border-subtle)',
+                              background: 'var(--bg-card-subtle)',
+                              color: 'var(--text-main)'
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 800 }}>g</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%' }}>
+                        {portionButtons.map((btn) => (
+                          <button
+                            key={btn.g}
+                            type="button"
+                            style={{
+                              padding: '5px 9px',
+                              borderRadius: '8px',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              border: customGrams === btn.g ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                              background: customGrams === btn.g ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                              color: customGrams === btn.g ? 'var(--fitia-green)' : 'var(--text-muted)',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                            onClick={() => setCustomGrams(btn.g)}
+                          >
+                            {btn.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   );
@@ -5741,8 +5764,8 @@ export default function HomePage() {
                 <>
                   <div className="recipe-portion-scaler-row" style={{ marginBottom: '14px' }}>
                     <div className="portion-scaler-label">
-                      <span>⚖️ Ajustar tamaño de porción: <strong>{Math.round(mult * 100)}% ({Math.round(350 * mult)}g)</strong></span>
-                      {mult !== 1.0 && <span className="portion-scaler-tag">Escala x{mult}</span>}
+                      <span>⚖️ Porción: <strong>{Math.round(mult * 100)}% ({Math.round(350 * mult)}g)</strong></span>
+                      {mult !== 1.0 && <span className="portion-scaler-tag">x{mult}</span>}
                     </div>
                     <div className="portion-scaler-controls">
                       <button
