@@ -444,8 +444,9 @@ export const DAMAGE_CONTROL_PROTOCOL = {
   ]
 };
 
-// 5. Pantry Ingredients & Meal Generator
+// 5. Pantry Ingredients & Meal Generator (Fitia Didactic Chef)
 export const PANTRY_DATABASE = [
+  // 1. Desayunos de Rendimiento
   {
     id: 'meal-1',
     name: 'Pancakes Proteicos de Avena y Plátano',
@@ -453,6 +454,7 @@ export const PANTRY_DATABASE = [
     icon: '🥞',
     requiredIngredients: ['huevos', 'avena', 'platano'],
     prepMinutes: 10,
+    difficulty: 'Fácil',
     calories: 520,
     protein: 28,
     proteinG: 28,
@@ -461,7 +463,10 @@ export const PANTRY_DATABASE = [
     fat: 14,
     fatG: 14,
     suggestedSlot: 'desayuno',
+    portionDidactic: '3 huevos enteros + 60g avena en hojuelas + 1 plátano seda maduro',
+    didacticWhy: '🔥 Leucina de alto valor biológico + carbohidratos de absorción media para recargar glucógeno sin pico glucémico excesivo.',
     description: '3 huevos enteros, 60g de avena en hojuelas y 1 plátano maduro.',
+    chefTip: 'Cocina a fuego medio-bajo con sartén tapada para que el vapor esponje el centro sin quemar la base.',
     instructions: [
       'Licúa los 3 huevos con 60g de avena, el plátano y una pizca de canela.',
       'Calienta una sartén antiadherente a fuego medio con unas gotas de aceite de oliva.',
@@ -476,6 +481,7 @@ export const PANTRY_DATABASE = [
     icon: '🥣',
     requiredIngredients: ['atun', 'arroz', 'espinaca'],
     prepMinutes: 8,
+    difficulty: 'Fácil',
     calories: 560,
     protein: 42,
     proteinG: 42,
@@ -484,7 +490,10 @@ export const PANTRY_DATABASE = [
     fat: 15,
     fatG: 15,
     suggestedSlot: 'comida',
+    portionDidactic: '1 lata de atún en agua (170g) + 180g arroz cocido + 2 tazas de espinaca salteada',
+    didacticWhy: '⚡ Densidad proteica magra y ácidos grasos Omega-3 para desinflamación celular y digestión ligera en altura Cajabamba.',
     description: '1 lata de atún escurrido, 180g de arroz cocido y espinacas salteadas.',
+    chefTip: 'Agrega zumo de limón fresco y pimienta negra sobre el atún caliente para potenciar la absorción de hierro.',
     instructions: [
       'Saltea las espinacas en sartén durante 2 minutos con sal y limón.',
       'Sirve el arroz caliente en un bowl como base.',
@@ -499,6 +508,7 @@ export const PANTRY_DATABASE = [
     icon: '🍳',
     requiredIngredients: ['pollo', 'papa', 'huevos'],
     prepMinutes: 15,
+    difficulty: 'Medio',
     calories: 580,
     protein: 48,
     proteinG: 48,
@@ -507,7 +517,10 @@ export const PANTRY_DATABASE = [
     fat: 16,
     fatG: 16,
     suggestedSlot: 'cena',
+    portionDidactic: '150g pechuga de pollo picada + 1 papa amarilla cocida en rodajas + 3 huevos batidos',
+    didacticWhy: '🥔 Papa amarilla peruana de fácil digestión con colina y albúmina de huevo para reparación muscular nocturna.',
     description: '150g de pechuga de pollo picada, 1 papa cocida en rodajas doradas y 3 huevos.',
+    chefTip: 'Usa una tapa plana o plato húmedo para voltear la tortilla de un solo movimiento firme sin derramar.',
     instructions: [
       'Dora los cubitos de pollo y las rodajas de papa cocida en sartén con gotas de aceite.',
       'Bate los 3 huevos con sal marina y orégano.',
@@ -522,6 +535,7 @@ export const PANTRY_DATABASE = [
     icon: '🥛',
     requiredIngredients: ['leche', 'avena', 'platano'],
     prepMinutes: 3,
+    difficulty: 'Fácil',
     calories: 490,
     protein: 22,
     proteinG: 22,
@@ -530,7 +544,10 @@ export const PANTRY_DATABASE = [
     fat: 10,
     fatG: 10,
     suggestedSlot: 'snack',
+    portionDidactic: '350ml leche fresca + 50g avena en hojuelas + 1 plátano seda + canela',
+    didacticWhy: '⚡ Ventana anabólica inmediata: Carbohidratos rápidos para elevar insulina controlada y transportar aminoácidos.',
     description: '300ml de leche fresca, 50g de avena en hojuelas y 1 plátano.',
+    chefTip: 'Agrega un cubo de hielo y licúa 60 segundos completos para triturar la avena en una malteada sedosa.',
     instructions: [
       'Agrega la leche, la avena en hojuelas y el plátano a la licuadora.',
       'Añade cubos de hielo y licúa durante 45 segundos hasta obtener textura cremosa.'
@@ -544,6 +561,7 @@ export const PANTRY_DATABASE = [
     icon: '🍳',
     requiredIngredients: ['huevos', 'queso', 'espinaca'],
     prepMinutes: 7,
+    difficulty: 'Fácil',
     calories: 410,
     protein: 34,
     proteinG: 34,
@@ -552,7 +570,10 @@ export const PANTRY_DATABASE = [
     fat: 26,
     fatG: 26,
     suggestedSlot: 'desayuno',
+    portionDidactic: '3 huevos enteros camperos + 50g queso fresco serrano + 1 taza de espinacas tiernas',
+    didacticWhy: '🥑 Bajo índice glucémico y alto contenido de magnesio y calcio para activar el sistema parasimpático sin letargo.',
     description: '3 huevos enteros, 40g de queso fresco y espinacas tiernas.',
+    chefTip: 'Coloca el queso sobre la mitad del omelette cuando esté al 80% de cocción para que gratine con el calor residual.',
     instructions: [
       'Bate los huevos con una pizca de sal marina.',
       'Vierte en la sartén caliente, añade las espinacas frescas y los dados de queso.',
@@ -567,6 +588,7 @@ export const PANTRY_DATABASE = [
     icon: '🍗',
     requiredIngredients: ['pollo', 'arroz', 'brocoli'],
     prepMinutes: 12,
+    difficulty: 'Fácil',
     calories: 530,
     protein: 52,
     proteinG: 52,
@@ -575,7 +597,10 @@ export const PANTRY_DATABASE = [
     fat: 9,
     fatG: 9,
     suggestedSlot: 'comida',
+    portionDidactic: '200g pechuga de pollo magra + 1 taza de arroz blanco cocido + 1 taza colmada de brócoli al vapor',
+    didacticWhy: '🥦 Sulforafano del brócoli para desintoxicación hepática y pechuga pura para síntesis proteica de máxima biodisponibilidad.',
     description: '180g de pechuga magra a la plancha, 1 taza de arroz y floretes de brócoli.',
+    chefTip: 'Cocina el brócoli exactamente 4 minutos al vapor: debe quedar verde esmeralda y crocante, nunca pastoso.',
     instructions: [
       'Sazona la pechuga con sal, ajo y pimienta; dórala 4 min por lado a fuego medio-alto.',
       'Hierve o cuece al vapor el brócoli por 4 minutos para mantener sus nutrientes crujientes.',
@@ -590,6 +615,7 @@ export const PANTRY_DATABASE = [
     icon: '🥗',
     requiredIngredients: ['atun', 'espinaca', 'palta'],
     prepMinutes: 5,
+    difficulty: 'Fácil',
     calories: 390,
     protein: 38,
     proteinG: 38,
@@ -598,25 +624,276 @@ export const PANTRY_DATABASE = [
     fat: 22,
     fatG: 22,
     suggestedSlot: 'cena',
+    portionDidactic: '1 lata de atún en agua (170g) + 1/2 palta hass madura + 2 tazas de espinaca baby + limón y vinagre de manzana',
+    didacticWhy: '🌿 Ácido acético del vinagre + grasa monoinsaturada de la palta: aplanan picos glucémicos y garantizan descanso profundo.',
     description: '1 lata de atún, espinacas baby, 1/2 palta hass y chorrito de vinagre de manzana.',
+    chefTip: 'El vinagre de manzana con la palta crea una emulsión cremosa natural sin necesidad de mayonesas industriales.',
     instructions: [
       'Coloca una base abundante de espinacas en un plato hondo.',
       'Agrega el atún desmenuzado y media palta en láminas.',
       'Aliña con 1 cucharada de vinagre de manzana y limón para aplanar la curva glucémica.'
     ],
     tags: ['cena', 'insulin_sensitivity', 'recomposition']
+  },
+  {
+    id: 'meal-8',
+    name: 'Pollo Saltado Fit con Papa Dorada y Cebolla',
+    title: 'Pollo Saltado Fit con Papa Dorada y Cebolla',
+    icon: '🥘',
+    requiredIngredients: ['pollo', 'papa', 'tomate'],
+    prepMinutes: 14,
+    difficulty: 'Medio',
+    calories: 540,
+    protein: 46,
+    proteinG: 46,
+    carbs: 55,
+    carbsG: 55,
+    fat: 12,
+    fatG: 12,
+    suggestedSlot: 'comida',
+    portionDidactic: '180g tiras de pechuga + 1 papa cocida en bastones dorados en sartén + 1 tomate y 1/2 cebolla en juliana',
+    didacticWhy: '🇵🇪 Sabor criollo tradicional peruano adaptado con salteado al wok a alta temperatura con mínimo aceite.',
+    description: 'Tiras de pollo selladas con tomate, cebolla roja en juliana, sillao bajo en sodio y papas doradas.',
+    chefTip: 'Mantén la sartén humeante antes de agregar el pollo para sellar los jugos y lograr el ahumado característico.',
+    instructions: [
+      'Sella el pollo a fuego vivo durante 3 minutos en sartén muy caliente.',
+      'Agrega la cebolla y tomate en gajos gruesos con chorrito de vinagre y sillao.',
+      'Incorpora las papas cocidas doradas, saltea 1 minuto y sirve caliente.'
+    ],
+    tags: ['comida', 'recomposition', 'lean_bulk']
+  },
+  {
+    id: 'meal-9',
+    name: 'Tostadas Francesas Anabólicas con Canela',
+    title: 'Tostadas Francesas Anabólicas con Canela',
+    icon: '🍞',
+    requiredIngredients: ['huevos', 'pan', 'leche'],
+    prepMinutes: 8,
+    difficulty: 'Fácil',
+    calories: 460,
+    protein: 30,
+    proteinG: 30,
+    carbs: 56,
+    carbsG: 56,
+    fat: 11,
+    fatG: 11,
+    suggestedSlot: 'desayuno',
+    portionDidactic: '2 rebanadas de pan integral de molde + 3 huevos batidos con 50ml de leche y canela generosa',
+    didacticWhy: '🌾 Canela ceilán para sensibilizar receptores GLUT-4 y albúmina completa para arrancar el día con saciedad.',
+    description: 'Pan integral remojado en mezcla de huevos, leche y canela, dorado en sartén.',
+    chefTip: 'Deja que el pan absorba todo el líquido durante 30 segundos por lado antes de llevar a la sartén.',
+    instructions: [
+      'Bate los 3 huevos con la leche, una cucharadita de canela y gotas de vainilla.',
+      'Sumerge las rebanadas de pan integral hasta que absorban la mezcla.',
+      'Dora en sartén a fuego medio durante 3 minutos por lado hasta que estén doradas y firmes.'
+    ],
+    tags: ['desayuno', 'lean_bulk', 'recomposition']
+  },
+  {
+    id: 'meal-10',
+    name: 'Revuelto de 3 Huevos con Palta y Pan Integral',
+    title: 'Revuelto de 3 Huevos con Palta y Pan Integral',
+    icon: '🥑',
+    requiredIngredients: ['huevos', 'palta', 'pan'],
+    prepMinutes: 6,
+    difficulty: 'Fácil',
+    calories: 470,
+    protein: 26,
+    proteinG: 26,
+    carbs: 32,
+    carbsG: 32,
+    fat: 26,
+    fatG: 26,
+    suggestedSlot: 'desayuno',
+    portionDidactic: '3 huevos enteros revueltos en mantequilla + 1/2 palta hass en rodajas + 1 rebanada de pan tostado',
+    didacticWhy: '🍳 Grasa monoinsaturada + fosfolípidos de la yema para soporte hormonal de testosterona matutina.',
+    description: 'Huevos revueltos cremosos acompañados de media palta y pan integral crujiente.',
+    chefTip: 'Cocina los huevos a fuego muy bajo retirando la sartén del calor de a pocos para lograr textura aterciopelada.',
+    instructions: [
+      'Bate los huevos con sal y vierte en sartén a fuego mínimo con media cucharadita de mantequilla.',
+      'Revuelve constantemente con espátula de goma durante 2-3 minutos hasta que queden sedosos.',
+      'Sirve sobre el pan tostado con las láminas de palta y sal marina.'
+    ],
+    tags: ['desayuno', 'recomposition', 'insulin_sensitivity']
+  },
+  {
+    id: 'meal-11',
+    name: 'Chaufa Fit de Pollo y Tortilla en Tiras',
+    title: 'Chaufa Fit de Pollo y Tortilla en Tiras',
+    icon: '🍚',
+    requiredIngredients: ['pollo', 'arroz', 'huevos'],
+    prepMinutes: 12,
+    difficulty: 'Fácil',
+    calories: 590,
+    protein: 48,
+    proteinG: 48,
+    carbs: 65,
+    carbsG: 65,
+    fat: 13,
+    fatG: 13,
+    suggestedSlot: 'comida',
+    portionDidactic: '160g de pechuga picada + 1 huevo batido en tortilla fina + 1 taza colmada de arroz blanco frío',
+    didacticWhy: '⚡ Arroz enfriado previamente (almidón resistente): alimenta la microbiota y reduce la respuesta glucémica.',
+    description: 'Arroz salteado al wok con dados de pechuga dorada, tortilla en tiras y gotas de sillao.',
+    chefTip: 'El secreto del chaufa es usar arroz del día anterior bien frío; granos separados que absorben el sabor sin apelmazarse.',
+    instructions: [
+      'Haz una tortilla fina con el huevo batido, retira y córtala en tiritas.',
+      'En la misma sartén bien caliente dora el pollo picado con ajo y kion.',
+      'Añade el arroz frío, saltea a fuego alto 3 minutos con sillao y mezcla con la tortilla.'
+    ],
+    tags: ['comida', 'lean_bulk', 'recomposition']
+  },
+  {
+    id: 'meal-12',
+    name: 'Mugcake Proteico de Avena y Plátano en Taza',
+    title: 'Mugcake Proteico de Avena y Plátano en Taza',
+    icon: '🧁',
+    requiredIngredients: ['avena', 'huevos', 'platano'],
+    prepMinutes: 4,
+    difficulty: 'Fácil',
+    calories: 380,
+    protein: 21,
+    proteinG: 21,
+    carbs: 52,
+    carbsG: 52,
+    fat: 9,
+    fatG: 9,
+    suggestedSlot: 'snack',
+    portionDidactic: '1 taza: 40g de avena molida + 1 huevo entero + 1/2 plátano machacado + canela',
+    didacticWhy: '🍰 Solución anti-ansiedad: calma antojos dulces en 2 minutos con fibra saciante sin azúcar refinada.',
+    description: 'Bizcochuelo húmedo saludable hecho en microondas en solo 90 segundos.',
+    chefTip: 'Añade una pizca de polvo de hornear o bicarbonato para que crezca esponjoso como un muffin de pastelería.',
+    instructions: [
+      'Machaca medio plátano en una taza grande con un tenedor.',
+      'Añade el huevo, 40g de avena y canela; mezcla enérgicamente hasta integrar.',
+      'Lleva al microondas a potencia máxima durante 90 a 110 segundos. Deja enfriar 1 min.'
+    ],
+    tags: ['snack', 'recomposition', 'lean_bulk']
+  },
+  {
+    id: 'meal-13',
+    name: 'Carne Magra Saltada con Camote Dorado',
+    title: 'Carne Magra Saltada con Camote Dorado',
+    icon: '🥩',
+    requiredIngredients: ['carne', 'camote', 'tomate'],
+    prepMinutes: 14,
+    difficulty: 'Medio',
+    calories: 560,
+    protein: 44,
+    proteinG: 44,
+    carbs: 58,
+    carbsG: 58,
+    fat: 14,
+    fatG: 14,
+    suggestedSlot: 'comida',
+    portionDidactic: '160g de lomo o bistec magro en tiras + 1 camote mediano cocido y dorado + tomate y cebolla',
+    didacticWhy: '🍠 Camote con betacarotenos y hierro hemínico de la carne: máxima oxigenación celular en altura Cajabamba.',
+    description: 'Tiras de carne magra salteadas al fuego con camote dorado en rodajas y verduras criollas.',
+    chefTip: 'Sella la carne en tandas pequeñas para que no suelte agua y quede dorada y suave.',
+    instructions: [
+      'Corta el camote cocido en rodajas y dóralo 3 minutos en sartén con gotas de aceite.',
+      'Saltea la carne en sartén muy caliente 2 minutos por lado con sal marina y comino.',
+      'Agrega el tomate y cebolla, desglasa con vinagre y sirve con el camote.'
+    ],
+    tags: ['comida', 'alta_proteina', 'lean_bulk']
+  },
+  {
+    id: 'meal-14',
+    name: 'Crema Ligera de Brócoli con Dados de Queso y Pollo',
+    title: 'Crema Ligera de Brócoli con Dados de Queso y Pollo',
+    icon: '🥦',
+    requiredIngredients: ['brocoli', 'queso', 'pollo'],
+    prepMinutes: 12,
+    difficulty: 'Fácil',
+    calories: 420,
+    protein: 46,
+    proteinG: 46,
+    carbs: 14,
+    carbsG: 14,
+    fat: 18,
+    fatG: 18,
+    suggestedSlot: 'cena',
+    portionDidactic: '1 bowl: 250g brócoli cocido licuado con caldo + 140g pechuga en dados + 40g queso fresco',
+    didacticWhy: '🌙 Cero pesadez gástrica: vegetal alcalinizante y proteína magra que no altera el ritmo cardíaco nocturno.',
+    description: 'Sopa crema reconfortante de brócoli con pechuga deshilachada y dados de queso.',
+    chefTip: 'Usa el agua de cocción del brócoli para licuar; así retienes todas las vitaminas hidrosolubles y minerales.',
+    instructions: [
+      'Hierve el brócoli 5 minutos en agua con sal; licúalo con un poco de caldo hasta consistencia de crema.',
+      'Regresa a la olla, añade la pechuga cocida en cubos o deshilachada.',
+      'Sirve caliente con los dados de queso fresco flotando encima.'
+    ],
+    tags: ['cena', 'insulin_sensitivity', 'recomposition']
+  },
+  {
+    id: 'meal-15',
+    name: 'Porridge Tibio de Avena con Manzana y Claras',
+    title: 'Porridge Tibio de Avena con Manzana y Claras',
+    icon: '🥣',
+    requiredIngredients: ['avena', 'huevos', 'leche'],
+    prepMinutes: 7,
+    difficulty: 'Fácil',
+    calories: 430,
+    protein: 26,
+    proteinG: 26,
+    carbs: 58,
+    carbsG: 58,
+    fat: 8,
+    fatG: 8,
+    suggestedSlot: 'desayuno',
+    portionDidactic: '50g avena cocida en 200ml de leche + 3 claras de huevo batidas adentro + canela',
+    didacticWhy: '🍎 Betaglucanos de avena: fibra soluble que atrapa colesterol y nutre las bacterias protectoras del colon.',
+    description: 'Avena cremosa caliente enriquecida con claras de huevo para duplicar su contenido proteico.',
+    chefTip: 'Bate las claras e incorpóralas a la avena caliente apagando el fuego; quedará con textura de pudín sin sabor a huevo.',
+    instructions: [
+      'Cocina la avena con la leche y una rama de canela durante 4 minutos a fuego medio.',
+      'Baja el fuego al mínimo, añade las claras batiendo vigorosamente con tenedor durante 1 minuto.',
+      'Sirve en bowl y espolvorea canela en polvo.'
+    ],
+    tags: ['desayuno', 'recomposition', 'lean_bulk']
+  },
+  {
+    id: 'meal-16',
+    name: 'Revuelto de Atún con Huevo y Tomate al Orégano',
+    title: 'Revuelto de Atún con Huevo y Tomate al Orégano',
+    icon: '🍳',
+    requiredIngredients: ['atun', 'huevos', 'tomate'],
+    prepMinutes: 6,
+    difficulty: 'Fácil',
+    calories: 420,
+    protein: 44,
+    proteinG: 44,
+    carbs: 8,
+    carbsG: 8,
+    fat: 22,
+    fatG: 22,
+    suggestedSlot: 'cena',
+    portionDidactic: '1 lata de atún escurrido + 2 huevos enteros camperos + 1 tomate picado en cubitos + orégano',
+    didacticWhy: '🐟 Doble fuente proteica sin carbohidratos refinados: saciedad total para evitar asaltar la refrigeradora de noche.',
+    description: 'Huevos revueltos con atún jugoso, dados de tomate fresco y orégano aromático.',
+    chefTip: 'Saltea el tomate primero 1 minuto para concentrar su dulzor antes de agregar el atún y los huevos.',
+    instructions: [
+      'Saltea el tomate picado en sartén durante 1 minuto con una gota de aceite.',
+      'Agrega el atún desmenuzado y saltea 30 segundos.',
+      'Vierte los 2 huevos batidos, revuelve suavemente 2 minutos y retira jugoso.'
+    ],
+    tags: ['cena', 'alta_proteina', 'insulin_sensitivity']
   }
 ];
 
-export function generateMealsFromPantry(availableIngredients = [], goal = 'recomposition') {
+export function generateMealsFromPantry(availableIngredients = [], goal = 'recomposition', filterSlot = 'all') {
   if (!availableIngredients || availableIngredients.length === 0) {
-    return PANTRY_DATABASE.slice(0, 3).map((m) => ({
+    const defaultList = (filterSlot && filterSlot !== 'all')
+      ? PANTRY_DATABASE.filter((m) => m.suggestedSlot === filterSlot)
+      : PANTRY_DATABASE;
+
+    return (defaultList.length > 0 ? defaultList : PANTRY_DATABASE).slice(0, 3).map((m) => ({
       ...m,
       title: m.title || m.name,
       protein: m.proteinG || m.protein,
       carbs: m.carbsG || m.carbs,
       fat: m.fatG || m.fat,
       matchCount: 0,
+      missingIngredients: m.requiredIngredients || [],
       matchRate: 0
     }));
   }
@@ -626,13 +903,17 @@ export function generateMealsFromPantry(availableIngredients = [], goal = 'recom
   // Score meals based on matching ingredients
   const scored = PANTRY_DATABASE.map((meal) => {
     let matches = 0;
+    const missing = [];
     (meal.requiredIngredients || []).forEach((req) => {
       if (normalized.some((ing) => ing.includes(req) || req.includes(ing))) {
         matches++;
+      } else {
+        missing.push(req);
       }
     });
 
     const isGoalFit = meal.tags ? meal.tags.some((t) => t.includes(goal) || goal.includes(t)) : true;
+    const isSlotFit = !filterSlot || filterSlot === 'all' || meal.suggestedSlot === filterSlot;
 
     return {
       ...meal,
@@ -641,14 +922,20 @@ export function generateMealsFromPantry(availableIngredients = [], goal = 'recom
       carbs: meal.carbsG || meal.carbs,
       fat: meal.fatG || meal.fat,
       matchCount: matches,
+      missingIngredients: missing,
       matchRate: matches / (meal.requiredIngredients?.length || 1),
-      isGoalFit
+      isGoalFit,
+      isSlotFit
     };
   });
 
+  const filtered = (filterSlot && filterSlot !== 'all')
+    ? scored.filter((m) => m.isSlotFit)
+    : scored;
+
   // Sort by highest match rate first, then goal fit
-  scored.sort((a, b) => (b.matchRate - a.matchRate) || (b.matchCount - a.matchCount));
-  return scored;
+  filtered.sort((a, b) => (b.matchRate - a.matchRate) || (b.matchCount - a.matchCount));
+  return filtered;
 }
 
 // 6. Adaptive Workouts: Gym vs Home EMOM

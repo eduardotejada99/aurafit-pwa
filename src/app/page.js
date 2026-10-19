@@ -19,6 +19,62 @@ import {
   calculateCompensatoryRebalance
 } from '@/lib/food-database';
 
+export const PANTRY_CATEGORIES = [
+  {
+    id: 'proteinas',
+    name: 'Proteínas',
+    icon: '🥩',
+    desc: 'Anabólicas y saciantes',
+    items: [
+      { id: 'huevos', name: 'Huevos de Granja', icon: '🥚', defaultG: '3 unidades' },
+      { id: 'pollo', name: 'Pechuga de Pollo', icon: '🍗', defaultG: '180g filete' },
+      { id: 'atun', name: 'Atún en Conserva', icon: '🐟', defaultG: '1 lata (140g)' },
+      { id: 'carne', name: 'Carne Magra Molida', icon: '🥩', defaultG: '160g' },
+      { id: 'queso', name: 'Queso Fresco Pasteurizado', icon: '🧀', defaultG: '70g en cubos' },
+      { id: 'leche', name: 'Leche o Bebida Proteica', icon: '🥛', defaultG: '250ml' }
+    ]
+  },
+  {
+    id: 'carbohidratos',
+    name: 'Carbohidratos',
+    icon: '🥣',
+    desc: 'Energía glucogénica limpia',
+    items: [
+      { id: 'avena', name: 'Hojuelas de Avena', icon: '🥣', defaultG: '60g en seco' },
+      { id: 'arroz', name: 'Arroz Blanco / Integral', icon: '🍚', defaultG: '150g cocido' },
+      { id: 'platano', name: 'Plátano de Seda', icon: '🍌', defaultG: '1 unidad mediana' },
+      { id: 'papa', name: 'Papa Amarilla Andina', icon: '🥔', defaultG: '200g cocida' },
+      { id: 'camote', name: 'Camote Horneado', icon: '🍠', defaultG: '180g' },
+      { id: 'pan', name: 'Pan Integral Masa Madre', icon: '🍞', defaultG: '2 rebanadas' }
+    ]
+  },
+  {
+    id: 'grasas',
+    name: 'Grasas Buenas',
+    icon: '🥑',
+    desc: 'Salud hormonal y absorción',
+    items: [
+      { id: 'palta', name: 'Palta Hass Madura', icon: '🥑', defaultG: '1/2 unidad (80g)' },
+      { id: 'mantequilla', name: 'Mantequilla de Pastura', icon: '🧈', defaultG: '1 cucharada (14g)' },
+      { id: 'aceite', name: 'Aceite de Oliva Extra Virgen', icon: '🫒', defaultG: '1 cucharada (10ml)' },
+      { id: 'mani', name: 'Maní o Mantequilla Maní', icon: '🥜', defaultG: '25g o 1 cda' }
+    ]
+  },
+  {
+    id: 'verduras',
+    name: 'Verduras & Frescos',
+    icon: '🥦',
+    desc: 'Micronutrientes y fibra',
+    items: [
+      { id: 'espinacas', name: 'Espinacas Frescas', icon: '🥬', defaultG: '1 taza colmada' },
+      { id: 'brocoli', name: 'Brócoli al Vapor', icon: '🥦', defaultG: '120g floretes' },
+      { id: 'tomate', name: 'Tomate Maduro', icon: '🍅', defaultG: '1 unidad en gajos' },
+      { id: 'cebolla', name: 'Cebolla Roja Picada', icon: '🧅', defaultG: '1/2 unidad' },
+      { id: 'limon', name: 'Limón Sutil Peruano', icon: '🍋', defaultG: '2 unidades exprimidas' }
+    ]
+  }
+];
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('nutrition'); // Fitia default
   const [isDarkMode, setIsDarkMode] = useState(false); // Fitia Signature Light Mode as default
@@ -80,6 +136,9 @@ export default function HomePage() {
   
   // Nutrition & Pantry state (Fitia Coach)
   const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'pollo', 'arroz']);
+  const [pantryCategoryTab, setPantryCategoryTab] = useState('proteinas');
+  const [pantryMealSlotFilter, setPantryMealSlotFilter] = useState('all');
+  const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
   const [newIngredient, setNewIngredient] = useState('');
   const [meals, setMeals] = useState([]);
   const [selectedRecipeDetail, setSelectedRecipeDetail] = useState(null);
@@ -374,6 +433,19 @@ export default function HomePage() {
     return parseNaturalLanguageFood(quickTextEntry);
   }, [quickTextEntry]);
 
+  // Macro Gap for didactic food recommendation
+  const macroGap = useMemo(() => {
+    const targetP = targets.protein || 150;
+    const targetC = targets.calories || 2000;
+    const pDiff = Math.max(0, targetP - (consumedTotals.protein || 0));
+    const calDiff = Math.max(0, targetC - (consumedTotals.calories || 0));
+    return {
+      protein: Math.round(pDiff),
+      calories: Math.round(calDiff),
+      isMet: pDiff <= 5 && calDiff <= 100
+    };
+  }, [targets, consumedTotals]);
+
   // Food Search API Debounce
   useEffect(() => {
     let active = true;
@@ -565,10 +637,23 @@ export default function HomePage() {
     showToast(`🍲 ¡${mealTitle} agregado a ${targetSlot.toUpperCase()}! 🔥 +${cal} kcal (+${p}g Proteína)`);
   };
 
-  // Update meals whenever ingredients change or active profile changes
+  // Update meals whenever ingredients change, active profile changes, or meal slot filter changes
   useEffect(() => {
-    setMeals(generateMealsFromPantry(selectedIngredients, currentProfile.goal));
-  }, [selectedIngredients, currentProfile.goal]);
+    setMeals(generateMealsFromPantry(selectedIngredients, currentProfile.goal, pantryMealSlotFilter));
+  }, [selectedIngredients, currentProfile.goal, pantryMealSlotFilter]);
+
+  const handleGenerateDidacticRecipes = (filterSlot = null) => {
+    setIsGeneratingRecipes(true);
+    const targetFilter = filterSlot !== null ? filterSlot : pantryMealSlotFilter;
+    if (filterSlot !== null) {
+      setPantryMealSlotFilter(filterSlot);
+    }
+    setTimeout(() => {
+      setMeals(generateMealsFromPantry(selectedIngredients, currentProfile.goal, targetFilter));
+      setIsGeneratingRecipes(false);
+      showToast(`✨ Sugerencias didácticas generadas para ${currentProfile.name} según los alimentos de tu cocina.`);
+    }, 280);
+  };
 
   // Timer effect for walk or EMOM
   useEffect(() => {
@@ -1208,156 +1293,436 @@ export default function HomePage() {
               })}
             </div>
 
-            {/* Fitia Coach / Asesoría Nutricional (Screenshot 5) */}
+            {/* Fitia Coach / Asesoría Nutricional & Despensa Didáctica */}
             <section className="fitia-coach-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '22px' }}>🥑</span>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-main)' }}>
-                    Fitia Coach · ¿Qué puedo comer?
-                  </h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Generador de recetas adaptado a tu despensa y meta calórica.
-                  </p>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '22px',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    flexShrink: 0
+                  }}>
+                    👨‍🍳
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.3px' }}>
+                      Chef Fitia · ¿Qué comer hoy?
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0', lineHeight: 1.3 }}>
+                      Sugerencias didácticas y porciones exactas según lo que tienes en tu cocina.
+                    </p>
+                  </div>
+                </div>
+
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  background: 'var(--fitia-green-soft)',
+                  color: 'var(--fitia-green)',
+                  padding: '4px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {meals.length} Recetas
+                </span>
+              </div>
+
+              {/* Macro Gap Banner (Screenshot / Didactic Guidance) */}
+              <div style={{
+                background: macroGap.isMet 
+                  ? 'rgba(16, 185, 129, 0.08)' 
+                  : 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                border: macroGap.isMet ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '14px',
+                padding: '12px 14px',
+                marginTop: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{macroGap.isMet ? '🎉' : '🎯'}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)' }}>
+                      {macroGap.isMet ? (
+                        '¡Metas del día completadas!'
+                      ) : (
+                        <>Te faltan <strong style={{ color: 'var(--fitia-orange)' }}>{macroGap.protein}g Proteína</strong> y <strong style={{ color: 'var(--fitia-green)' }}>{macroGap.calories} kcal</strong></>
+                      )}
+                    </span>
+                  </div>
+                  {!macroGap.isMet && (
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateDidacticRecipes('comida')}
+                      style={{
+                        background: 'var(--fitia-orange)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontSize: '10px',
+                        fontWeight: 900,
+                        padding: '4px 8px',
+                        borderRadius: '8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Ajustar Menú
+                    </button>
+                  )}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.35 }}>
+                  {currentProfile.goal === 'lean_bulk'
+                    ? '💡 Modo Ganancia Muscular: Prioriza carbohidratos complejos y proteína de alto valor biológico para el estímulo anabólico.'
+                    : currentProfile.goal === 'recomposition'
+                    ? '💡 Modo Recomposición: Mantén la proteína alta para preservar masa magra mientras oxidas grasa en déficit moderado.'
+                    : '💡 Modo Vitalidad & Glucosa: Alimentos con fibra y proteína para evitar picos reactivos de insulina.'}
                 </div>
               </div>
 
-              {/* Chat Dialog (Screenshot 5) */}
-              <div className="fitia-chat-bubble fitia-bubble-bot">
-                ¿Qué ingredientes tienes disponibles hoy en tu cocina?
-              </div>
+              {/* Paso 1: Selección Didáctica de Ingredientes por Categoría */}
+              <div style={{ marginTop: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    1. ¿Qué tienes disponible en tu cocina?
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--fitia-green)' }}>
+                    ✓ {selectedIngredients.length} activos
+                  </span>
+                </div>
 
-              <div className="fitia-pantry-pills">
-                {['huevos', 'avena', 'platano', 'pollo', 'arroz', 'brocoli', 'leche', 'atun', 'papa'].map((item) => {
-                  const isSel = selectedIngredients.includes(item);
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`fitia-pantry-pill ${isSel ? 'active' : ''}`}
-                      onClick={() => toggleIngredient(item)}
-                    >
-                      {isSel ? '✓ ' : '+ '}
-                      {item.charAt(0).toUpperCase() + item.slice(1)}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <form onSubmit={handleAddIngredient} style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  placeholder="Otro ingrediente (ej. almendras, manzana)..."
-                  value={newIngredient}
-                  onChange={(e) => setNewIngredient(e.target.value)}
-                  style={{
-                    flex: 1,
-                    background: 'var(--bg-card-subtle)',
-                    border: '1px solid var(--border-subtle)',
-                    padding: '11px 14px',
-                    borderRadius: '12px',
-                    color: 'var(--text-main)',
-                    fontSize: '14px'
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: 'var(--fitia-green)',
-                    color: '#FFFFFF',
-                    fontWeight: 800,
-                    border: 'none',
-                    padding: '0 16px',
-                    borderRadius: '12px'
-                  }}
-                >
-                  Agregar
-                </button>
-              </form>
-
-              <div className="fitia-chat-bubble fitia-bubble-bot" style={{ marginTop: '8px' }}>
-                {currentProfile.goal === 'recomposition'
-                  ? `👨‍🍳 Chef Fitia para ${currentProfile.name}: Recetas altas en proteína para quemar grasa y preservar músculo:`
-                  : currentProfile.goal === 'lean_bulk'
-                  ? `👨‍🍳 Chef Fitia para ${currentProfile.name}: Recetas anabólicas para superávit limpio y ganancia muscular:`
-                  : `👨‍🍳 Chef Fitia para ${currentProfile.name}: Recetas anti-picos de insulina y glucosa estable:`}
-              </div>
-
-              {/* Horizontal Scroll Recipes */}
-              <div className="fitia-recipes-scroll">
-                {meals.map((meal) => {
-                  const title = meal.title || meal.name;
-                  const prot = meal.protein || meal.proteinG || 0;
-                  const carb = meal.carbs || meal.carbsG || 0;
-                  const fat = meal.fat || meal.fatG || 0;
-                  const slot = meal.suggestedSlot || 'comida';
-
-                  return (
-                    <div key={meal.id} className="fitia-recipe-card">
-                      <div className="fitia-recipe-thumb">
-                        {meal.icon || '🍲'}
-                        <div className="fitia-recipe-badge">⏱️ {meal.prepMinutes} min</div>
-                        {meal.matchCount > 0 && (
-                          <span className="fitia-recipe-match-pill">
-                            ✓ {meal.matchCount} en tu cocina
-                          </span>
+                {/* Category Navigation Tabs */}
+                <div className="pantry-category-bar">
+                  {PANTRY_CATEGORIES.map((cat) => {
+                    const isTabActive = pantryCategoryTab === cat.id;
+                    const itemsInCat = cat.items.map((i) => i.id);
+                    const selectedCount = itemsInCat.filter((id) => selectedIngredients.includes(id)).length;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className={`pantry-cat-tab ${isTabActive ? 'active' : ''}`}
+                        onClick={() => setPantryCategoryTab(cat.id)}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.name}</span>
+                        {selectedCount > 0 && (
+                          <span className="pantry-cat-badge">{selectedCount}</span>
                         )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Active Category Items Grid */}
+                {(() => {
+                  const activeCatObj = PANTRY_CATEGORIES.find((c) => c.id === pantryCategoryTab) || PANTRY_CATEGORIES[0];
+                  return (
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                        {activeCatObj.desc} · <em>Toca para marcar lo que tienes en tu despensa o refri:</em>
                       </div>
-
-                      <div className="fitia-recipe-body">
-                        <div className="fitia-recipe-title">{title}</div>
-                        <div className="fitia-recipe-macros">
-                          <strong style={{ color: 'var(--fitia-orange)' }}>{prot}g</strong> P ·{' '}
-                          <strong style={{ color: 'var(--fitia-blue)' }}>{carb}g</strong> C ·{' '}
-                          <strong style={{ color: 'var(--fitia-purple)' }}>{fat}g</strong> G ·{' '}
-                          <span style={{ color: 'var(--fitia-green)' }}>🔥 {meal.calories} kcal</span>
-                        </div>
-                        <div className="fitia-recipe-desc">{meal.description}</div>
-
-                        <div className="fitia-recipe-btn-row">
-                          <button
-                            type="button"
-                            style={{
-                              flex: 1,
-                              background: 'var(--bg-card-subtle)',
-                              border: '1px solid var(--border-subtle)',
-                              color: 'var(--text-main)',
-                              padding: '8px 4px',
-                              borderRadius: '10px',
-                              fontSize: '11px',
-                              fontWeight: 800,
-                              cursor: 'pointer'
-                            }}
-                            onClick={() => {
-                              setSelectedRecipeDetail(meal);
-                              setRecipeSlotToLog(slot);
-                            }}
-                          >
-                            📖 Ver Pasos
-                          </button>
-                          <button
-                            type="button"
-                            style={{
-                              flex: 1.3,
-                              background: 'var(--fitia-green)',
-                              border: 'none',
-                              color: '#FFFFFF',
-                              padding: '8px 6px',
-                              borderRadius: '10px',
-                              fontSize: '11px',
-                              fontWeight: 900,
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
-                            }}
-                            onClick={() => handleRegisterRecipe(meal, slot)}
-                          >
-                            + Agregar a {slot.toUpperCase()}
-                          </button>
-                        </div>
+                      <div className="pantry-items-grid">
+                        {activeCatObj.items.map((item) => {
+                          const isSel = selectedIngredients.includes(item.id);
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={`pantry-item-card ${isSel ? 'selected' : ''}`}
+                              onClick={() => toggleIngredient(item.id)}
+                            >
+                              <div className="pantry-item-check">{isSel ? '✓' : '+'}</div>
+                              <div className="pantry-item-icon">{item.icon}</div>
+                              <div className="pantry-item-info">
+                                <div className="pantry-item-name">{item.name}</div>
+                                <div className="pantry-item-qty">{item.defaultG}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
-                })}
+                })()}
+
+                {/* Custom Ingredient Input */}
+                <form onSubmit={handleAddIngredient} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <input
+                    type="text"
+                    placeholder="Otro ingrediente de tu cocina (ej. almendras, espinacas, chia)..."
+                    value={newIngredient}
+                    onChange={(e) => setNewIngredient(e.target.value)}
+                    style={{
+                      flex: 1,
+                      background: 'var(--bg-card-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      color: 'var(--text-main)',
+                      fontSize: '13px'
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    style={{
+                      background: 'var(--fitia-green)',
+                      color: '#FFFFFF',
+                      fontWeight: 800,
+                      border: 'none',
+                      padding: '0 14px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Sumar
+                  </button>
+                </form>
+              </div>
+
+              {/* Paso 2: Filtros por Momento del Día & Generación Didáctica */}
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    2. Momento del Día & Opciones
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateDidacticRecipes()}
+                    disabled={isGeneratingRecipes}
+                    style={{
+                      background: 'var(--fitia-green)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
+                    }}
+                  >
+                    {isGeneratingRecipes ? '🔄 Creando...' : '✨ Generar Ahora'}
+                  </button>
+                </div>
+
+                <div className="didactic-filter-row">
+                  {[
+                    { id: 'all', label: '🍽️ Todas', icon: '🍽️' },
+                    { id: 'desayuno', label: '🍳 Desayunos', icon: '🍳' },
+                    { id: 'comida', label: '🍗 Almuerzos', icon: '🍗' },
+                    { id: 'cena', label: '🥗 Cenas', icon: '🥗' },
+                    { id: 'snack', label: '🍌 Snacks', icon: '🍌' }
+                  ].map((filter) => {
+                    const isActive = pantryMealSlotFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        className={`didactic-filter-pill ${isActive ? 'active' : ''}`}
+                        onClick={() => handleGenerateDidacticRecipes(filter.id)}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Paso 3: Sugerencias de Comida Didácticas */}
+              <div style={{ marginTop: '14px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                  {currentProfile.goal === 'recomposition'
+                    ? `👨‍🍳 Sugerencias calculadas para ${currentProfile.name}: Alta densidad proteica para quemar grasa preservando músculo:`
+                    : currentProfile.goal === 'lean_bulk'
+                    ? `👨‍🍳 Sugerencias anabólicas para ${currentProfile.name}: Superávit limpio, digestión rápida y fuerza:`
+                    : `👨‍🍳 Sugerencias anti-fatiga para ${currentProfile.name}: Curva de glucosa plana y energía sostenida:`}
+                </div>
+
+                {meals.length === 0 ? (
+                  <div style={{
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px dashed var(--border-subtle)',
+                    borderRadius: '16px',
+                    padding: '24px 16px',
+                    textAlign: 'center'
+                  }}>
+                    <span style={{ fontSize: '30px' }}>🥣</span>
+                    <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px' }}>
+                      No hay recetas para este filtro específico
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 12px' }}>
+                      Prueba seleccionando "🍽️ Todas" o sumando ingredientes como huevos, pollo o avena.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ padding: '8px 16px', fontSize: '12px', width: 'auto' }}
+                      onClick={() => handleGenerateDidacticRecipes('all')}
+                    >
+                      Ver todas las sugerencias
+                    </button>
+                  </div>
+                ) : (
+                  <div className="fitia-recipes-scroll">
+                    {meals.map((meal) => {
+                      const title = meal.title || meal.name;
+                      const prot = Number(meal.protein || meal.proteinG || 0);
+                      const carb = Number(meal.carbs || meal.carbsG || 0);
+                      const fat = Number(meal.fat || meal.fatG || 0);
+                      const slot = meal.suggestedSlot || 'comida';
+                      const cal = Number(meal.calories || 0);
+
+                      // Calculate Macro Bar Percentages
+                      const totalMacros = (prot * 4) + (carb * 4) + (fat * 9) || 1;
+                      const pPct = Math.round(((prot * 4) / totalMacros) * 100);
+                      const cPct = Math.round(((carb * 4) / totalMacros) * 100);
+                      const fPct = Math.max(0, 100 - pPct - cPct);
+
+                      return (
+                        <div key={meal.id} className="fitia-recipe-card">
+                          {/* Card Header & Badges */}
+                          <div className="fitia-recipe-thumb">
+                            <span style={{ fontSize: '36px' }}>{meal.icon || '🍲'}</span>
+                            <div className="fitia-recipe-badge">
+                              ⏱️ {meal.prepMinutes} min · {slot.toUpperCase()}
+                            </div>
+                            {meal.matchRate === 1 ? (
+                              <span className="fitia-recipe-match-pill full-match">
+                                ✅ 100% en tu cocina
+                              </span>
+                            ) : meal.matchCount > 0 ? (
+                              <span className="fitia-recipe-match-pill">
+                                ✓ {meal.matchCount} disponibles
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className="fitia-recipe-body">
+                            <div className="fitia-recipe-title">{title}</div>
+
+                            {/* Didactic Portion Box (Poner qué comer de forma didáctica) */}
+                            {meal.portionDidactic && (
+                              <div className="fitia-recipe-portion-box">
+                                <span style={{ fontSize: '14px' }}>📦</span>
+                                <div>
+                                  <strong style={{ color: 'var(--text-main)', fontSize: '11px', display: 'block' }}>
+                                    Qué comer (Porción exacta):
+                                  </strong>
+                                  <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+                                    {meal.portionDidactic}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Visual 3-Color Macro Ratio Distribution Bar */}
+                            <div className="recipe-macro-bar-wrap">
+                              <div className="recipe-macro-bar-label">
+                                <span>Distribución calórica:</span>
+                                <span>{prot}g P · {carb}g C · {fat}g G</span>
+                              </div>
+                              <div className="recipe-macro-bar">
+                                <div
+                                  className="macro-bar-seg protein"
+                                  style={{ width: `${pPct}%` }}
+                                  title={`Proteína: ${pPct}%`}
+                                />
+                                <div
+                                  className="macro-bar-seg carbs"
+                                  style={{ width: `${cPct}%` }}
+                                  title={`Carbohidratos: ${cPct}%`}
+                                />
+                                <div
+                                  className="macro-bar-seg fat"
+                                  style={{ width: `${fPct}%` }}
+                                  title={`Grasas: ${fPct}%`}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Macros Numbers Row */}
+                            <div className="fitia-recipe-macros">
+                              <span style={{ color: 'var(--fitia-orange)' }}><strong>{prot}g</strong> Prot</span> ·{' '}
+                              <span style={{ color: 'var(--fitia-blue)' }}><strong>{carb}g</strong> Carb</span> ·{' '}
+                              <span style={{ color: 'var(--fitia-purple)' }}><strong>{fat}g</strong> Gras</span> ·{' '}
+                              <span style={{ color: 'var(--fitia-green)' }}>🔥 <strong>{cal}</strong> kcal</span>
+                            </div>
+
+                            {/* Didactic Physiological Rationale Box */}
+                            {meal.didacticWhy && (
+                              <div className="recipe-didactic-box">
+                                <div className="recipe-didactic-title">💡 ¿Por qué comer esto hoy?</div>
+                                <div className="recipe-didactic-text">{meal.didacticWhy}</div>
+                              </div>
+                            )}
+
+                            {/* Chef Practical Tip Box */}
+                            {meal.chefTip && (
+                              <div className="recipe-chef-tip-box">
+                                <strong>👨‍🍳 Tip Fitia:</strong> {meal.chefTip}
+                              </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="fitia-recipe-btn-row">
+                              <button
+                                type="button"
+                                style={{
+                                  flex: 1,
+                                  background: 'var(--bg-card-subtle)',
+                                  border: '1px solid var(--border-subtle)',
+                                  color: 'var(--text-main)',
+                                  padding: '9px 6px',
+                                  borderRadius: '10px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => {
+                                  setSelectedRecipeDetail(meal);
+                                  setRecipeSlotToLog(slot);
+                                }}
+                              >
+                                📖 Ver Pasos
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  flex: 1.4,
+                                  background: 'var(--fitia-green)',
+                                  border: 'none',
+                                  color: '#FFFFFF',
+                                  padding: '9px 8px',
+                                  borderRadius: '10px',
+                                  fontSize: '11px',
+                                  fontWeight: 900,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                                }}
+                                onClick={() => handleRegisterRecipe(meal, slot)}
+                              >
+                                + Agregar a {slot.toUpperCase()}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </section>
 
@@ -2942,9 +3307,39 @@ export default function HomePage() {
             </div>
 
             {/* Description */}
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.4 }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.4 }}>
               {selectedRecipeDetail.description}
             </div>
+
+            {/* Didactic Portion */}
+            {selectedRecipeDetail.portionDidactic && (
+              <div className="fitia-recipe-portion-box" style={{ marginBottom: '12px' }}>
+                <span style={{ fontSize: '16px' }}>📦</span>
+                <div>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '12px', display: 'block' }}>
+                    Porción Didáctica Recomendada:
+                  </strong>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                    {selectedRecipeDetail.portionDidactic}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Didactic Why Box */}
+            {selectedRecipeDetail.didacticWhy && (
+              <div className="recipe-didactic-box" style={{ marginBottom: '12px' }}>
+                <div className="recipe-didactic-title">💡 ¿Por qué comer esto hoy?</div>
+                <div className="recipe-didactic-text">{selectedRecipeDetail.didacticWhy}</div>
+              </div>
+            )}
+
+            {/* Chef Tip */}
+            {selectedRecipeDetail.chefTip && (
+              <div className="recipe-chef-tip-box" style={{ marginBottom: '14px' }}>
+                <strong>👨‍🍳 Tip del Chef Fitia:</strong> {selectedRecipeDetail.chefTip}
+              </div>
+            )}
 
             {/* Required Ingredients */}
             <div style={{ marginBottom: '16px' }}>
