@@ -297,6 +297,119 @@ export function calculateNutritionalScore({
   };
 }
 
+/**
+ * Intelligent Daily Lifestyle & Recovery Score Engine ("AuraScore del Día")
+ * Combines 4 core health pillars:
+ * 1. Nutrición (0-25 pts) - From dynamic nutritionalScore
+ * 2. Ejercicio & Actividad Física (0-25 pts) - Workouts completed / duration
+ * 3. Sueño & Recuperación (0-25 pts) - Hours and quality of rest
+ * 4. Hábitos & Disciplina Diaria (0-25 pts) - Ratio of completed daily habits
+ */
+export function calculateDailyAuraScore({
+  nutritionScore = 70,
+  workoutDone = false,
+  workoutMinutes = 0,
+  sleepHours = 7.5,
+  sleepQuality = 'deep',
+  completedHabits = 0,
+  totalHabits = 5,
+  profile = null
+}) {
+  // Pillar 1: Nutrición (25 pts max)
+  const nutritionPoints = Math.min(25, Math.max(0, Math.round((nutritionScore / 100) * 25)));
+
+  // Pillar 2: Ejercicio & Actividad Física (25 pts max)
+  let workoutPoints = 0;
+  if (workoutDone || workoutMinutes >= 30) {
+    workoutPoints = 25;
+  } else if (workoutMinutes > 0) {
+    workoutPoints = Math.min(25, Math.round((workoutMinutes / 30) * 25));
+  } else {
+    workoutPoints = 8; // Baseline for active recovery
+  }
+
+  // Pillar 3: Sueño & Recuperación (25 pts max)
+  let sleepPoints = 0;
+  if (sleepHours >= 7 && sleepHours <= 9) {
+    sleepPoints = 22;
+  } else if (sleepHours >= 6 && sleepHours < 7) {
+    sleepPoints = 17;
+  } else if (sleepHours > 9) {
+    sleepPoints = 18;
+  } else {
+    sleepPoints = Math.max(5, Math.round(sleepHours * 2.5));
+  }
+
+  if (sleepQuality === 'deep') sleepPoints = Math.min(25, sleepPoints + 3);
+  else if (sleepQuality === 'light') sleepPoints = Math.max(5, sleepPoints - 3);
+
+  // Pillar 4: Hábitos & Biohacking (25 pts max)
+  const habitRatio = totalHabits > 0 ? completedHabits / totalHabits : 0;
+  const habitPoints = Math.min(25, Math.max(0, Math.round(habitRatio * 25)));
+
+  const totalScore = Math.min(100, Math.max(15, nutritionPoints + workoutPoints + sleepPoints + habitPoints));
+
+  let grade = 'En Progreso';
+  let gradeColor = '#3B82F6';
+  let statusEmoji = '🌱';
+  if (totalScore >= 90) {
+    grade = 'Día Extraordinario';
+    gradeColor = '#00C06D';
+    statusEmoji = '🌟';
+  } else if (totalScore >= 75) {
+    grade = 'Excelente Rendimiento';
+    gradeColor = '#10B981';
+    statusEmoji = '🚀';
+  } else if (totalScore >= 60) {
+    grade = 'Buen Balance';
+    gradeColor = '#3B82F6';
+    statusEmoji = '⚡';
+  } else {
+    grade = 'Construyendo Hábitos';
+    gradeColor = '#8B5CF6';
+    statusEmoji = '🌱';
+  }
+
+  // Personalized Didactic Executive Feedback
+  let didacticSummary = '';
+  const name = profile?.name ? profile.name.split(' ')[0] : 'Atleta';
+  const profileId = profile?.id || 'andres';
+
+  if (profileId === 'andres') {
+    if (totalScore >= 80) {
+      didacticSummary = `¡Gran sinergia, ${name}! La combinación de nutrición anabólica, estímulo de fuerza y oxigenación celular Wim Hof está acelerando tu recomposición corporal en altura.`;
+    } else {
+      didacticSummary = `Buen avance, ${name}. Asegura tus 5g de creatina y descanso nocturno para optimizar la síntesis proteica de tu superávit limpio.`;
+    }
+  } else if (profileId === 'pareja') {
+    if (totalScore >= 80) {
+      didacticSummary = `Día impecable para tus metas, ${name}. Lograste el estímulo muscular sin comprometer tu columna, facilitando la descompresión intervertebral durante el sueño.`;
+    } else {
+      didacticSummary = `Vamos a tu ritmo, ${name}. Prioriza el estiramiento de psoas y una cena rica en aminoácidos para recuperar masa muscular sin dolor lumbar.`;
+    }
+  } else {
+    if (totalScore >= 75) {
+      didacticSummary = `¡Hermoso día de autocuidado, ${name}! Tu hidratación y movimiento amable le dan a tu cuerpo energía limpia y bienestar sin fatiga ni estrés.`;
+    } else {
+      didacticSummary = `Día amable y constante, ${name}. Cada vaso de agua y paseo suave cuenta para tu salud metabólica y vitalidad diaria.`;
+    }
+  }
+
+  return {
+    score: totalScore,
+    grade,
+    gradeColor,
+    statusEmoji,
+    pillars: {
+      nutrition: { points: nutritionPoints, max: 25, pct: Math.round((nutritionPoints / 25) * 100) },
+      workout: { points: workoutPoints, max: 25, pct: Math.round((workoutPoints / 25) * 100) },
+      sleep: { points: sleepPoints, max: 25, pct: Math.round((sleepPoints / 25) * 100) },
+      habits: { points: habitPoints, max: 25, pct: Math.round((habitPoints / 25) * 100) }
+    },
+    didacticSummary
+  };
+}
+
 // 2. The 3 Distinct Family Profiles (Andrés, Pareja, Hermana)
 export const FAMILY_PROFILES = {
   andres: {

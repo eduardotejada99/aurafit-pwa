@@ -12,7 +12,8 @@ import {
   DAMAGE_CONTROL_PROTOCOL,
   WORKOUT_ROUTINES,
   calculateWeightAnalytics,
-  calculateNutritionalScore
+  calculateNutritionalScore,
+  calculateDailyAuraScore
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -116,11 +117,20 @@ export default function HomePage() {
   }, [currentProfile]);
 
   const [habits, setHabits] = useState(FAMILY_PROFILES.andres.habits);
-  const [waterMl, setWaterMl] = useState(2400);
+  // Daily Water Tracker: Starts at 0 every single day!
+  const [waterMl, setWaterMl] = useState(0);
   const [streakDays, setStreakDays] = useState(213);
   const [showDamageControl, setShowDamageControl] = useState(false);
   const [showTextLogModal, setShowTextLogModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Sleep & Recovery State (Interactive Sleep Logger)
+  const [sleepHours, setSleepHours] = useState(7.5);
+  const [sleepQuality, setSleepQuality] = useState('deep'); // 'deep', 'normal', 'light'
+
+  // Daily Workout Completion Tracking (Intelligent Activity Pillar)
+  const [todayWorkoutDone, setTodayWorkoutDone] = useState(false);
+  const [workoutDurationMins, setWorkoutDurationMins] = useState(45);
 
   // Daily Logged Foods State (persistent per profile)
   const [loggedFoods, setLoggedFoods] = useState([]);
@@ -135,6 +145,21 @@ export default function HomePage() {
       profile: currentProfile
     });
   }, [loggedFoods, targets, waterMl, currentProfile]);
+
+  // Unified Intelligent Daily Score: AuraScore del Día (0-100)
+  const dailyAuraScore = useMemo(() => {
+    const completedHabitsCount = habits.filter((h) => h.completed).length;
+    return calculateDailyAuraScore({
+      nutritionScore: nutritionalScore.score,
+      workoutDone: todayWorkoutDone,
+      workoutMinutes: workoutDurationMins,
+      sleepHours,
+      sleepQuality,
+      completedHabits: completedHabitsCount,
+      totalHabits: habits.length,
+      profile: currentProfile
+    });
+  }, [nutritionalScore.score, todayWorkoutDone, workoutDurationMins, sleepHours, sleepQuality, habits, currentProfile]);
 
   // Food Search Modal (+2M Database)
   const [showFoodSearchModal, setShowFoodSearchModal] = useState(false);
@@ -271,11 +296,51 @@ export default function HomePage() {
         setHabits(prof.habits || []);
       }
 
-      const savedWater = localStorage.getItem(`aurafit_water_${profileKey}`);
-      if (savedWater) {
-        setWaterMl(parseInt(savedWater, 10));
+      // Daily Water Tracker: Starts at 0 every single day!
+      const todayKey = new Date().toISOString().split('T')[0];
+      const savedWaterDaily = localStorage.getItem(`aurafit_water_daily_${profileKey}`);
+      if (savedWaterDaily) {
+        try {
+          const parsed = JSON.parse(savedWaterDaily);
+          if (parsed.date === todayKey && typeof parsed.ml === 'number') {
+            setWaterMl(parsed.ml);
+          } else {
+            setWaterMl(0);
+          }
+        } catch (e) {
+          setWaterMl(0);
+        }
       } else {
-        setWaterMl(Math.round((prof.waterDailyMl || 2500) * 0.6));
+        setWaterMl(0);
+      }
+
+      // Sleep & Recovery State for current profile
+      const savedSleep = localStorage.getItem(`aurafit_sleep_${profileKey}`);
+      if (savedSleep) {
+        try {
+          const parsed = JSON.parse(savedSleep);
+          if (parsed.hours) setSleepHours(parsed.hours);
+          if (parsed.quality) setSleepQuality(parsed.quality);
+        } catch (e) {}
+      } else {
+        setSleepHours(7.5);
+        setSleepQuality('deep');
+      }
+
+      // Daily Workout Completion Tracking for current profile
+      const savedWorkout = localStorage.getItem(`aurafit_workout_${profileKey}`);
+      if (savedWorkout) {
+        try {
+          const parsed = JSON.parse(savedWorkout);
+          if (parsed.date === todayKey) {
+            setTodayWorkoutDone(!!parsed.done);
+            if (parsed.minutes) setWorkoutDurationMins(parsed.minutes);
+          } else {
+            setTodayWorkoutDone(false);
+          }
+        } catch (e) {}
+      } else {
+        setTodayWorkoutDone(false);
       }
 
       const savedWeights = localStorage.getItem(`aurafit_weights_${profileKey}`);
@@ -791,13 +856,68 @@ export default function HomePage() {
 
   const addWater = (ml) => {
     setWaterMl((prev) => {
-      const maxWater = (currentProfile.waterDailyMl || 3000) + 1000;
+      const maxWater = (currentProfile.waterDailyMl || 3000) + 1500;
       const updated = Math.min(prev + ml, maxWater);
       try {
+        const todayKey = new Date().toISOString().split('T')[0];
+        localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: updated }));
         localStorage.setItem(`aurafit_water_${activeProfileId}`, updated.toString());
-        localStorage.setItem('aurafit_water', updated.toString());
       } catch (e) {}
       return updated;
+    });
+    showToast(`💧 +${ml} ml de agua registrados.`);
+  };
+
+  const handleResetWater = () => {
+    setWaterMl(0);
+    try {
+      const todayKey = new Date().toISOString().split('T')[0];
+      localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: 0 }));
+      localStorage.setItem(`aurafit_water_${activeProfileId}`, '0');
+    } catch (e) {}
+    showToast('💧 Contador de agua reiniciado a 0 ml.');
+  };
+
+  const handleUpdateSleepHours = (delta) => {
+    setSleepHours((prev) => {
+      const next = Math.min(12, Math.max(4, Math.round((prev + delta) * 10) / 10));
+      try {
+        const todayKey = new Date().toISOString().split('T')[0];
+        localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: next, quality: sleepQuality }));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleSetSleepQuality = (qual) => {
+    setSleepQuality(qual);
+    try {
+      const todayKey = new Date().toISOString().split('T')[0];
+      localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: sleepHours, quality: qual }));
+    } catch (e) {}
+    showToast(`💤 Calidad de descanso registrada como ${qual === 'deep' ? 'Profunda & Reparadora' : qual === 'normal' ? 'Normal' : 'Ligera'}.`);
+  };
+
+  const handleToggleTodayWorkout = () => {
+    setTodayWorkoutDone((prev) => {
+      const next = !prev;
+      try {
+        const todayKey = new Date().toISOString().split('T')[0];
+        localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: next, minutes: workoutDurationMins }));
+      } catch (e) {}
+      showToast(next ? '🏋️‍♂️ ¡Entrenamiento del día completado con éxito!' : '🏋️‍♂️ Registro de entrenamiento actualizado.');
+      return next;
+    });
+  };
+
+  const handleAdjustWorkoutDuration = (delta) => {
+    setWorkoutDurationMins((prev) => {
+      const next = Math.min(120, Math.max(15, prev + delta));
+      try {
+        const todayKey = new Date().toISOString().split('T')[0];
+        localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: todayWorkoutDone, minutes: next }));
+      } catch (e) {}
+      return next;
     });
   };
 
@@ -1979,56 +2099,324 @@ export default function HomePage() {
             =================================================================== */}
         {activeTab === 'habits' && (
           <>
-            {/* Top Habits Summary Cards (Screenshot 11) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              <div style={{ background: 'var(--bg-card)', padding: '16px 10px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)' }}>
-                <span style={{ fontSize: '22px' }}>💧</span>
-                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '4px' }}>{(waterMl / 1000).toFixed(2)} L</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Agua Hoy</div>
-              </div>
-              <div style={{ background: 'var(--bg-card)', padding: '16px 10px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)' }}>
-                <span style={{ fontSize: '22px' }}>⚡</span>
-                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '4px' }}>5 g</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Creatina</div>
-              </div>
-              <div style={{ background: 'var(--bg-card)', padding: '16px 10px', borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)' }}>
-                <span style={{ fontSize: '22px' }}>🧘</span>
-                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '4px' }}>MindValley</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Meditación</div>
-              </div>
-            </div>
-
-            {/* Habits Progress Header (Screenshot 11) */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '18px', boxShadow: 'var(--card-shadow)' }}>
+            {/* ===================================================================
+                HERO: AURASCORE DEL DÍA (Puntaje Holístico de Rendimiento & Salud)
+                =================================================================== */}
+            <section className="aurascore-hero-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '28px' }}>🔥</span>
-                  <div>
-                    <div style={{ fontSize: '16px', fontWeight: 900 }}>4 Días de Racha</div>
-                    <div style={{ fontSize: '12px', color: 'var(--fitia-green)' }}>¡Excelente consistencia!</div>
+                <span className="fitia-cal-label">AuraScore del Día</span>
+                <span
+                  className="aurascore-badge"
+                  style={{
+                    background: `${dailyAuraScore.gradeColor}18`,
+                    color: dailyAuraScore.gradeColor,
+                    border: `1px solid ${dailyAuraScore.gradeColor}40`
+                  }}
+                >
+                  <span>{dailyAuraScore.statusEmoji}</span>
+                  <span>{dailyAuraScore.grade}</span>
+                </span>
+              </div>
+
+              {/* Gauge Row with Circular SVG + Coach Rationale */}
+              <div className="aurascore-gauge-row">
+                <div className="aurascore-circle-wrap">
+                  <svg width="96" height="96" viewBox="0 0 96 96">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      fill="none"
+                      stroke="var(--bg-card-subtle)"
+                      strokeWidth="9"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      fill="none"
+                      stroke={dailyAuraScore.gradeColor}
+                      strokeWidth="9"
+                      strokeDasharray="251"
+                      strokeDashoffset={Math.round(251 * (1 - dailyAuraScore.score / 100))}
+                      strokeLinecap="round"
+                      transform="rotate(-90 48 48)"
+                      style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.4s ease' }}
+                    />
+                  </svg>
+                  <div className="aurascore-circle-inner">
+                    <span className="aurascore-big-number" style={{ color: dailyAuraScore.gradeColor }}>
+                      {dailyAuraScore.score}
+                    </span>
+                    <span className="aurascore-max-label">/ 100 PTS</span>
                   </div>
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-main)' }}>
-                  {completedHabitsCount} / {habits.length}
+
+                <div className="aurascore-hero-info">
+                  <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text-main)', marginBottom: '4px' }}>
+                    Sincronización Inteligente
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.35 }}>
+                    Integra tu alimentación, entrenamiento muscular, descanso reparador y hábitos biohacking.
+                  </div>
                 </div>
               </div>
-              <div style={{ width: '100%', height: '8px', background: 'var(--bg-card-subtle)', borderRadius: '999px', marginTop: '14px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    background: 'var(--fitia-green)',
-                    width: `${(completedHabitsCount / habits.length) * 100}%`,
-                    borderRadius: '999px'
-                  }}
-                />
+
+              {/* Personalized AI Coach Summary */}
+              <div className="aurascore-coach-box">
+                <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '3px' }}>
+                  💡 Diagnóstico AuraFit ({currentProfile.name}):
+                </strong>
+                {dailyAuraScore.didacticSummary}
+              </div>
+
+              {/* The 4 Lifestyle Pillars (2x2 Grid) */}
+              <div className="aurascore-pillars-grid">
+                {/* 1. Nutrición */}
+                <div className="aurascore-pillar-card">
+                  <div>
+                    <div className="pillar-card-header">
+                      <span className="pillar-title">🥗 Nutrición</span>
+                      <span className="pillar-pts-badge" style={{ color: '#10B981' }}>
+                        {dailyAuraScore.pillars.nutrition.points}/25
+                      </span>
+                    </div>
+                    <div className="pillar-progress-track">
+                      <div
+                        className="pillar-progress-fill"
+                        style={{ width: `${dailyAuraScore.pillars.nutrition.pct}%`, background: '#10B981' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                      {nutritionalScore.breakdown.calories.current} / {nutritionalScore.breakdown.calories.target} kcal · {nutritionalScore.breakdown.protein.current}g P
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('diario')}
+                    style={{
+                      marginTop: '8px',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--fitia-green)',
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      textAlign: 'left',
+                      padding: 0,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Ver comidas registradas →
+                  </button>
+                </div>
+
+                {/* 2. Ejercicio & Movilidad */}
+                <div className="aurascore-pillar-card">
+                  <div>
+                    <div className="pillar-card-header">
+                      <span className="pillar-title">🏋️‍♂️ Ejercicio</span>
+                      <span className="pillar-pts-badge" style={{ color: '#F97316' }}>
+                        {dailyAuraScore.pillars.workout.points}/25
+                      </span>
+                    </div>
+                    <div className="pillar-progress-track">
+                      <div
+                        className="pillar-progress-fill"
+                        style={{ width: `${dailyAuraScore.pillars.workout.pct}%`, background: '#F97316' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                      {todayWorkoutDone ? `✅ ${workoutDurationMins}m completado` : '⏳ Sesión pendiente'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={handleToggleTodayWorkout}
+                      style={{
+                        flex: 1,
+                        padding: '4px 6px',
+                        borderRadius: '6px',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        border: todayWorkoutDone ? '1px solid #F97316' : '1px solid var(--border-subtle)',
+                        background: todayWorkoutDone ? 'rgba(249, 115, 22, 0.15)' : 'var(--bg-card-subtle)',
+                        color: todayWorkoutDone ? '#F97316' : 'var(--text-muted)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {todayWorkoutDone ? '✓ Hecho' : '+ Marcar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAdjustWorkoutDuration(-10)}
+                      style={{ padding: '2px 5px', fontSize: '9px', background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      −
+                    </button>
+                    <span style={{ fontSize: '10px', fontWeight: 800 }}>{workoutDurationMins}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleAdjustWorkoutDuration(10)}
+                      style={{ padding: '2px 5px', fontSize: '9px', background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Descanso & Sueño */}
+                <div className="aurascore-pillar-card">
+                  <div>
+                    <div className="pillar-card-header">
+                      <span className="pillar-title">💤 Sueño</span>
+                      <span className="pillar-pts-badge" style={{ color: '#6366F1' }}>
+                        {dailyAuraScore.pillars.sleep.points}/25
+                      </span>
+                    </div>
+                    <div className="pillar-progress-track">
+                      <div
+                        className="pillar-progress-fill"
+                        style={{ width: `${dailyAuraScore.pillars.sleep.pct}%`, background: '#6366F1' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                      {sleepHours}h ({sleepQuality === 'deep' ? 'Profundo' : sleepQuality === 'normal' ? 'Normal' : 'Inquieto'})
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn-portion-step"
+                      style={{ width: '22px', height: '22px', fontSize: '12px' }}
+                      onClick={() => handleUpdateSleepHours(-0.5)}
+                    >
+                      −
+                    </button>
+                    <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-main)' }}>{sleepHours} hrs</span>
+                    <button
+                      type="button"
+                      className="btn-portion-step"
+                      style={{ width: '22px', height: '22px', fontSize: '12px' }}
+                      onClick={() => handleUpdateSleepHours(0.5)}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Hábitos & Biohacking */}
+                <div className="aurascore-pillar-card">
+                  <div>
+                    <div className="pillar-card-header">
+                      <span className="pillar-title">🧘 Hábitos</span>
+                      <span className="pillar-pts-badge" style={{ color: '#3B82F6' }}>
+                        {dailyAuraScore.pillars.habits.points}/25
+                      </span>
+                    </div>
+                    <div className="pillar-progress-track">
+                      <div
+                        className="pillar-progress-fill"
+                        style={{ width: `${dailyAuraScore.pillars.habits.pct}%`, background: '#3B82F6' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                      {completedHabitsCount} de {habits.length} completados
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--fitia-green)', fontWeight: 800, marginTop: '8px' }}>
+                    🔥 {streakDays} días de racha
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ===================================================================
+                LOGGER INTERACTIVO DE SUEÑO & DESCANSO
+                =================================================================== */}
+            <div className="sleep-logger-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '20px' }}>🌙</span>
+                  <div>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Registro de Sueño & Descanso</strong>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Horas dormidas anoche y calidad de recuperación</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 900, color: '#6366F1' }}>
+                  {sleepHours} Horas
+                </span>
+              </div>
+
+              {/* Stepper Row */}
+              <div className="sleep-stepper-row">
+                <button
+                  type="button"
+                  className="btn-sleep-step"
+                  onClick={() => handleUpdateSleepHours(-0.5)}
+                  disabled={sleepHours <= 4}
+                >
+                  −
+                </button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[6, 7, 7.5, 8, 8.5, 9].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      className={`btn-portion-pill ${sleepHours === val ? 'active' : ''}`}
+                      onClick={() => {
+                        setSleepHours(val);
+                        try {
+                          const todayKey = new Date().toISOString().split('T')[0];
+                          localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: val, quality: sleepQuality }));
+                        } catch (e) {}
+                      }}
+                    >
+                      {val}h
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="btn-sleep-step"
+                  onClick={() => handleUpdateSleepHours(0.5)}
+                  disabled={sleepHours >= 12}
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Quality Selector Chips */}
+              <div className="sleep-quality-chips">
+                {[
+                  { key: 'deep', label: '😴 Profundo & Reparador' },
+                  { key: 'normal', label: '😌 Normal / Estable' },
+                  { key: 'light', label: '🥱 Ligero / Inquieto' }
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`btn-sleep-quality ${sleepQuality === item.key ? 'active' : ''}`}
+                    onClick={() => handleSetSleepQuality(item.key)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Habits Checklist (Screenshot 11) */}
+            {/* ===================================================================
+                CHECKLIST DE HÁBITOS DIARIOS ADAPTATIVOS
+                =================================================================== */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                Hábitos Diarios ({currentProfile.name})
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  Hábitos Diarios ({currentProfile.name})
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-green)' }}>
+                  {completedHabitsCount} / {habits.length}
+                </span>
+              </div>
               {habits.map((habit) => (
                 <div
                   key={habit.id}
@@ -2101,13 +2489,43 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Quick Water Tracker */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px', boxShadow: 'var(--card-shadow)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 800 }}>💧 Hidratación Diaria</span>
-                <span style={{ fontSize: '13px', color: 'var(--fitia-blue)', fontWeight: 800 }}>{waterMl} / 3,500 ml</span>
+            {/* ===================================================================
+                HIDRATACIÓN DIARIA (SE INICIA EN 0 CADA DÍA)
+                =================================================================== */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '18px', boxShadow: 'var(--card-shadow)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '20px' }}>💧</span>
+                  <div>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Hidratación Diaria</strong>
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Inicia en 0 ml todos los días</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--fitia-blue)', fontWeight: 900 }}>
+                    {waterMl} / {currentProfile.waterDailyMl || 2500} ml
+                  </span>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                    {Math.round((waterMl / (currentProfile.waterDailyMl || 2500)) * 100)}% alcanzado
+                  </div>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
+
+              {/* Progress bar */}
+              <div style={{ width: '100%', height: '8px', background: 'var(--bg-card-subtle)', borderRadius: '999px', overflow: 'hidden', marginBottom: '14px' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    background: 'var(--fitia-blue)',
+                    width: `${Math.min(100, Math.round((waterMl / (currentProfile.waterDailyMl || 2500)) * 100))}%`,
+                    borderRadius: '999px',
+                    transition: 'width 0.4s ease'
+                  }}
+                />
+              </div>
+
+              {/* Quick Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
                   style={{
@@ -2115,10 +2533,11 @@ export default function HomePage() {
                     background: 'var(--fitia-blue-soft)',
                     border: '1px solid rgba(2, 132, 199, 0.25)',
                     color: 'var(--fitia-blue)',
-                    padding: '11px',
+                    padding: '10px 6px',
                     borderRadius: '12px',
                     fontWeight: 800,
-                    fontSize: '13px'
+                    fontSize: '12px',
+                    cursor: 'pointer'
                   }}
                   onClick={() => addWater(250)}
                 >
@@ -2131,14 +2550,49 @@ export default function HomePage() {
                     background: 'var(--fitia-blue-soft)',
                     border: '1px solid rgba(2, 132, 199, 0.25)',
                     color: 'var(--fitia-blue)',
-                    padding: '11px',
+                    padding: '10px 6px',
                     borderRadius: '12px',
                     fontWeight: 800,
-                    fontSize: '13px'
+                    fontSize: '12px',
+                    cursor: 'pointer'
                   }}
                   onClick={() => addWater(500)}
                 >
                   +500 ml (Botella)
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    background: 'var(--fitia-blue-soft)',
+                    border: '1px solid rgba(2, 132, 199, 0.25)',
+                    color: 'var(--fitia-blue)',
+                    padding: '10px 6px',
+                    borderRadius: '12px',
+                    fontWeight: 800,
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => addWater(1000)}
+                >
+                  +1.0 L (Litro)
+                </button>
+                <button
+                  type="button"
+                  title="Reiniciar a 0 ml"
+                  style={{
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-muted)',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={handleResetWater}
+                >
+                  ↺ 0
                 </button>
               </div>
             </div>

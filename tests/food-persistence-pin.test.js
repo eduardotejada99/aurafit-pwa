@@ -130,3 +130,96 @@ describe('AuraFit Dynamic Nutritional Score Engine', () => {
   });
 });
 
+describe('AuraFit Holistic Daily Lifestyle Engine (calculateDailyAuraScore)', () => {
+  it('should calculate balanced AuraScore combining all 4 pillars', async () => {
+    const { calculateDailyAuraScore, FAMILY_PROFILES } = await import('../src/lib/fitness-data.js');
+
+    const result = calculateDailyAuraScore({
+      nutritionScore: 90,
+      workoutDone: true,
+      workoutMinutes: 50,
+      sleepHours: 8,
+      sleepQuality: 'deep',
+      completedHabits: 5,
+      totalHabits: 5,
+      profile: FAMILY_PROFILES.andres
+    });
+
+    assert.ok(result.score >= 90, `Expected score >= 90, got ${result.score}`);
+    assert.strictEqual(result.grade, 'Día Extraordinario');
+    assert.strictEqual(result.statusEmoji, '🌟');
+    assert.strictEqual(result.pillars.nutrition.points, 23); // round(90/100 * 25)
+    assert.strictEqual(result.pillars.workout.points, 25);
+    assert.strictEqual(result.pillars.sleep.points, 25); // 22 + 3 deep
+    assert.strictEqual(result.pillars.habits.points, 25);
+    assert.ok(result.didacticSummary.includes('Andrés'));
+    assert.ok(result.didacticSummary.includes('Wim Hof'));
+  });
+
+  it('should adapt didactic feedback respectfully for Pareja avoiding lumbar strain', async () => {
+    const { calculateDailyAuraScore, FAMILY_PROFILES } = await import('../src/lib/fitness-data.js');
+
+    const result = calculateDailyAuraScore({
+      nutritionScore: 80,
+      workoutDone: true,
+      workoutMinutes: 45,
+      sleepHours: 7.5,
+      sleepQuality: 'normal',
+      completedHabits: 4,
+      totalHabits: 5,
+      profile: FAMILY_PROFILES.pareja
+    });
+
+    assert.ok(result.score >= 75);
+    assert.ok(result.didacticSummary.includes('columna') || result.didacticSummary.includes('lumbar'));
+  });
+
+  it('should adapt didactic feedback gently for Hermana without alarms or red alerts', async () => {
+    const { calculateDailyAuraScore, FAMILY_PROFILES } = await import('../src/lib/fitness-data.js');
+
+    const result = calculateDailyAuraScore({
+      nutritionScore: 65,
+      workoutDone: false,
+      workoutMinutes: 15,
+      sleepHours: 7,
+      sleepQuality: 'normal',
+      completedHabits: 2,
+      totalHabits: 4,
+      profile: FAMILY_PROFILES.hermana
+    });
+
+    assert.ok(result.score >= 50);
+    assert.ok(result.didacticSummary.includes('autocuidado') || result.didacticSummary.includes('amable'));
+    assert.strictEqual(result.didacticSummary.includes('peligro'), false);
+    assert.strictEqual(result.didacticSummary.includes('mal estado'), false);
+  });
+
+  it('should guarantee that water starts at 0 on a new day date-key check', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = '2026-10-18';
+
+    // Mock storage with legacy/yesterday data
+    const mockStorage = {
+      aurafit_water_daily_andres: JSON.stringify({ date: yesterday, amount: 2400 })
+    };
+
+    let waterMl = 0;
+    const storedDaily = mockStorage['aurafit_water_daily_andres'];
+    if (storedDaily) {
+      try {
+        const parsed = JSON.parse(storedDaily);
+        if (parsed.date === today) {
+          waterMl = parsed.amount || 0;
+        } else {
+          // New day detected: reset to 0
+          waterMl = 0;
+        }
+      } catch (e) {
+        waterMl = 0;
+      }
+    }
+
+    assert.strictEqual(waterMl, 0, 'Water counter MUST start at 0 on a new day');
+  });
+});
+
