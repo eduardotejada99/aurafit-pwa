@@ -13,19 +13,21 @@ import {
 } from '@/lib/fitness-data';
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState('habits');
+  const [activeTab, setActiveTab] = useState('nutrition'); // Fitia first
+  const [selectedDay, setSelectedDay] = useState(12); // Wednesday (M)
   const [habits, setHabits] = useState(DEFAULT_HABITS);
-  const [waterMl, setWaterMl] = useState(1750);
-  const [streakDays, setStreakDays] = useState(14);
+  const [waterMl, setWaterMl] = useState(2250);
+  const [streakDays, setStreakDays] = useState(213);
   const [showDamageControl, setShowDamageControl] = useState(false);
   
-  // Nutrition & Pantry state
-  const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'arroz']);
+  // Nutrition & Pantry state (Fitia Coach)
+  const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'pollo', 'arroz']);
   const [newIngredient, setNewIngredient] = useState('');
   const [meals, setMeals] = useState([]);
+  const [userLoggedCalories, setUserLoggedCalories] = useState(2004);
   
   // Workout state
-  const [workoutMode, setWorkoutMode] = useState('gym'); // 'gym' or 'home_emom'
+  const [workoutMode, setWorkoutMode] = useState('gym');
   const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
 
@@ -121,41 +123,38 @@ export default function HomePage() {
     });
   };
 
-  const addIngredient = (e) => {
-    e.preventDefault();
-    if (!newIngredient.trim()) return;
-    const item = newIngredient.trim().toLowerCase();
-    if (!selectedIngredients.includes(item)) {
-      const updated = [...selectedIngredients, item];
-      setSelectedIngredients(updated);
+  const toggleIngredient = (ing) => {
+    const lower = ing.toLowerCase().trim();
+    setSelectedIngredients((prev) => {
+      const exists = prev.includes(lower);
+      const updated = exists ? prev.filter((i) => i !== lower) : [...prev, lower];
       try {
         localStorage.setItem('aurafit_ingredients', JSON.stringify(updated));
       } catch (e) {}
-    }
+      return updated;
+    });
+  };
+
+  const handleAddIngredient = (e) => {
+    e.preventDefault();
+    if (!newIngredient.trim()) return;
+    toggleIngredient(newIngredient);
     setNewIngredient('');
   };
 
-  const removeIngredient = (ing) => {
-    const updated = selectedIngredients.filter((i) => i !== ing);
-    setSelectedIngredients(updated);
-    try {
-      localStorage.setItem('aurafit_ingredients', JSON.stringify(updated));
-    } catch (e) {}
-  };
-
-  const handleAddWeight = (e) => {
+  const handleAddWeightLog = (e) => {
     e.preventDefault();
     const val = parseFloat(newWeightInput);
-    if (!val || val < 40 || val > 150) return;
+    if (!val || val < 40 || val > 160) return;
     const now = new Date();
-    const dateStr = `${now.getDate()} ${now.toLocaleString('es-ES', { month: 'short' })}`;
-    const updated = [...weightLogs, { log_date: dateStr, weight_kg: val }];
+    const label = `${now.getDate()} ${now.toLocaleString('es-PE', { month: 'short' })}`;
+    const updated = [...weightLogs, { log_date: label, weight_kg: val }];
     setWeightLogs(updated);
-    setNewWeightInput('');
-    setShowWeightModal(false);
     try {
       localStorage.setItem('aurafit_weights', JSON.stringify(updated));
     } catch (e) {}
+    setNewWeightInput('');
+    setShowWeightModal(false);
   };
 
   const formatTimer = (sec) => {
@@ -164,229 +163,223 @@ export default function HomePage() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const startWalkTimer = (mins = 20) => {
-    setActiveTimerSeconds(mins * 60);
-    setTimerRunning(true);
-  };
+  // Week days for calendar strip (Screenshot 6)
+  const weekDays = [
+    { day: 'L', num: 10, done: true },
+    { day: 'M', num: 11, done: true },
+    { day: 'M', num: 12, done: true },
+    { day: 'J', num: 13, done: false },
+    { day: 'V', num: 14, done: false },
+    { day: 'S', num: 15, done: false },
+    { day: 'D', num: 16, done: false }
+  ];
+
+  const completedHabitsCount = habits.filter((h) => h.completed).length;
 
   return (
-    <>
-      {/* Sticky Header */}
-      <header className="app-header">
-        <div className="brand-badge">
-          <div className="brand-icon">⚡</div>
-          <div>
-            <h1 className="brand-title">AuraFit</h1>
-          </div>
+    <div className="mobile-shell">
+      {/* 1. Fitia Top Header (Screenshot 6) */}
+      <header className="fitia-header">
+        <div className="fitia-header-left">
+          <span className="fitia-header-title">Hoy</span>
+          <span className="fitia-header-arrow">▾</span>
         </div>
-        <div className="streak-pill">
-          <span>🔥</span>
-          <span>{streakDays} Días Racha</span>
+        <div className="fitia-header-right">
+          <div className="fitia-streak-pill">
+            <span>🔥</span>
+            <span>{streakDays}</span>
+          </div>
+          <div className="fitia-avatar" title={DEFAULT_USER_PROFILE.fullName}>
+            <span>⚡</span>
+          </div>
         </div>
       </header>
 
-      {/* Main Tabbed Content */}
-      <main className="main-content">
-        {/* ============================================================ */}
-        {/* TAB 1: HÁBITOS & BIOHACKING                                   */}
-        {/* ============================================================ */}
-        {activeTab === 'habits' && (
-          <>
-            {/* Daily Summary Hero */}
-            <div className="aura-card glow-emerald">
-              <div className="card-header-row">
-                <span className="card-title">
-                  <span>⚡</span> Hábitos de Hoy
-                </span>
-                <span className="card-subtitle">
-                  {habits.filter((h) => h.completed).length} de {habits.length} listos
-                </span>
-              </div>
-              <div
-                style={{
-                  height: '6px',
-                  background: 'rgba(255,255,255,0.08)',
-                  borderRadius: '4px',
-                  overflow: 'hidden',
-                  margin: '8px 0 14px'
-                }}
-              >
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${(habits.filter((h) => h.completed).length / habits.length) * 100}%`,
-                    background: 'linear-gradient(90deg, #10B981, #06B6D4)',
-                    transition: 'width 0.3s ease'
-                  }}
-                />
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                Consistencia celular activa. La regla: <em>nunca fallar dos días seguidos</em>.
-              </p>
+      {/* 2. Fitia Week Calendar Strip (Screenshot 6) */}
+      <section className="fitia-week-strip">
+        {weekDays.map((item) => {
+          const isSelected = selectedDay === item.num;
+          return (
+            <div
+              key={item.num}
+              className={`fitia-day-col ${isSelected ? 'active' : ''}`}
+              onClick={() => setSelectedDay(item.num)}
+            >
+              <span className="fitia-day-name">{item.day}</span>
+              <div className="fitia-day-number">{item.num}</div>
+              <div className={`fitia-day-dot ${item.done ? '' : 'empty'}`} />
             </div>
+          );
+        })}
+      </section>
 
-            {/* Habit Items */}
-            <div>
-              {habits.map((habit) => (
-                <div key={habit.id} className={`habit-item ${habit.completed ? 'done' : ''}`}>
-                  <div className="habit-info">
-                    <div className="habit-icon-box">{habit.icon}</div>
-                    <div>
-                      <div className="habit-title">{habit.name}</div>
-                      <div className="habit-sub">
-                        {habit.target} {habit.time ? `• Hecho a las ${habit.time}` : ''}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    className={`check-button ${habit.completed ? 'checked' : ''}`}
-                    onClick={() => toggleHabit(habit.id)}
-                    aria-label={`Completar ${habit.name}`}
-                  >
-                    ✓
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Quick Water Boost */}
-            <div className="aura-card">
-              <div className="card-header-row">
-                <span className="card-title">
-                  <span>💧</span> Hidratación Celular
-                </span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-cyan)' }}>
-                  {waterMl} / {DEFAULT_USER_PROFILE.waterDailyMl} ml
-                </span>
-              </div>
-              <div
-                style={{
-                  height: '8px',
-                  background: 'rgba(255,255,255,0.08)',
-                  borderRadius: '4px',
-                  overflow: 'hidden',
-                  marginBottom: '12px'
-                }}
-              >
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${Math.min((waterMl / DEFAULT_USER_PROFILE.waterDailyMl) * 100, 100)}%`,
-                    background: 'linear-gradient(90deg, #06B6D4, #3B82F6)'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => addWater(250)}>
-                  + 250 ml
-                </button>
-                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => addWater(500)}>
-                  + 500 ml Electrolitos
-                </button>
-              </div>
-            </div>
-
-            {/* Telegram Communicator Integration Card */}
-            <div className="aura-card glow-cyan" style={{ padding: '14px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>🤖</span>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700' }}>Telegram Bridge Conectado</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Alerta preventiva programada a las 18:00 si falta creatina o lección.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* ============================================================ */}
-        {/* TAB 2: NUTRICIÓN & DESPENSA                                  */}
-        {/* ============================================================ */}
+      {/* TAB CONTENT */}
+      <main className="fitia-content">
+        {/* ===================================================================
+            TAB 1: NUTRICIÓN ESTILO FITIA (Screenshots 1, 2, 5, 6)
+            =================================================================== */}
         {activeTab === 'nutrition' && (
           <>
-            {/* Lean Bulk Caloric Target */}
-            <div className="aura-card glow-emerald">
-              <div className="card-header-row">
-                <span className="card-title">
-                  <span>🥗</span> Plan Nutricional: Lean Bulk
-                </span>
-                <span style={{ fontSize: '12px', background: 'rgba(16,185,129,0.15)', color: '#10B981', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
-                  +{targets.surplus} kcal Superávit
-                </span>
-              </div>
-              <div style={{ margin: '8px 0 12px' }}>
-                <span style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)', letterSpacing: '-1px' }}>
-                  {targets.targetCalories.toLocaleString()}
-                </span>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '6px' }}>kcal / día</span>
+            {/* Fitia Hero Calorie Tracker Card (Screenshot 6) */}
+            <section className="fitia-hero-card">
+              <span className="fitia-cal-label">kcal</span>
+              <div className="fitia-cal-val">
+                2,004 <span>/ {targets.targetCalories}</span>
               </div>
 
-              {/* Macros Breakdown */}
-              <div className="macros-grid">
-                <div className="macro-box">
-                  <div className="macro-val" style={{ color: '#60A5FA' }}>{targets.macros.proteinGrams}g</div>
-                  <div className="macro-name">Proteína (2g/kg)</div>
+              {/* Fitia Sweet-Spot Calorie Gauge */}
+              <div className="fitia-gauge-wrap">
+                <div className="fitia-gauge-track">
+                  <div className="fitia-gauge-fill" style={{ width: '85%' }} />
+                  <div className="fitia-gauge-pin" style={{ left: '85%' }}>
+                    ✓
+                  </div>
                 </div>
-                <div className="macro-box">
-                  <div className="macro-val" style={{ color: '#FBBF24' }}>{targets.macros.carbsGrams}g</div>
-                  <div className="macro-name">Carbohidratos</div>
+                <div className="fitia-gauge-labels">
+                  <span>1,787</span>
+                  <span>Meta Lean Bulk</span>
+                  <span>2,185</span>
                 </div>
-                <div className="macro-box">
-                  <div className="macro-val" style={{ color: '#F472B6' }}>{targets.macros.fatGrams}g</div>
-                  <div className="macro-name">Grasas Saludables</div>
+              </div>
+
+              {/* 3 Fitia Macro Progress Bars */}
+              <div className="fitia-macros-row">
+                <div className="fitia-macro-item">
+                  <span className="fitia-macro-name">Proteínas</span>
+                  <span className="fitia-macro-numbers">
+                    165 <span>/ {targets.macros.proteinGrams} g</span>
+                  </span>
+                  <div className="fitia-macro-bar-wrap">
+                    <div className="fitia-macro-bar-fill" style={{ width: '95%' }} />
+                  </div>
+                </div>
+                <div className="fitia-macro-item">
+                  <span className="fitia-macro-name">Carb.</span>
+                  <span className="fitia-macro-numbers">
+                    194 <span>/ {targets.macros.carbsGrams} g</span>
+                  </span>
+                  <div className="fitia-macro-bar-wrap">
+                    <div className="fitia-macro-bar-fill" style={{ width: '78%' }} />
+                  </div>
+                </div>
+                <div className="fitia-macro-item">
+                  <span className="fitia-macro-name">Grasas</span>
+                  <span className="fitia-macro-numbers">
+                    62 <span>/ {targets.macros.fatGrams} g</span>
+                  </span>
+                  <div className="fitia-macro-bar-wrap">
+                    <div className="fitia-macro-bar-fill" style={{ width: '88%' }} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Meal Slots List (Screenshot 6) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Desayuno */}
+              <div className="fitia-meal-card">
+                <div className="fitia-meal-header">
+                  <span className="fitia-meal-title">Desayuno</span>
+                  <span className="fitia-meal-macro-pill">
+                    🔥 450 kcal · 32P · 45C · 14G
+                  </span>
+                </div>
+                <div className="fitia-dish-item">
+                  <div className="fitia-dish-thumb">🍳</div>
+                  <div className="fitia-dish-info">
+                    <div className="fitia-dish-name">Huevos revueltos, pan integral y avena</div>
+                    <div className="fitia-dish-meta">⏱️ 8 min · Alto en proteína</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comida / Almuerzo */}
+              <div className="fitia-meal-card">
+                <div className="fitia-meal-header">
+                  <span className="fitia-meal-title">Comida</span>
+                  <span className="fitia-meal-macro-pill">
+                    🔥 732 kcal · 86P · 71C · 10G
+                  </span>
+                </div>
+                <div className="fitia-dish-item">
+                  <div className="fitia-dish-thumb">🍗</div>
+                  <div className="fitia-dish-info">
+                    <div className="fitia-dish-name">Pechuga de pollo a la plancha con arroz y brócoli</div>
+                    <div className="fitia-dish-meta">⏱️ 15 min · Volumen limpio</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cena */}
+              <div className="fitia-meal-card">
+                <div className="fitia-meal-header">
+                  <span className="fitia-meal-title">Cena</span>
+                  <span className="fitia-meal-macro-pill">
+                    🔥 512 kcal · 42P · 48C · 12G
+                  </span>
+                </div>
+                <div className="fitia-dish-item">
+                  <div className="fitia-dish-thumb">🐟</div>
+                  <div className="fitia-dish-info">
+                    <div className="fitia-dish-name">Filete de atún con papas al vapor y palta</div>
+                    <div className="fitia-dish-meta">⏱️ 12 min · Grasas saludables</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Snacks */}
+              <div className="fitia-meal-card">
+                <div className="fitia-meal-header">
+                  <span className="fitia-meal-title">Snack & Post-Entreno</span>
+                  <span className="fitia-meal-macro-pill">
+                    🔥 310 kcal · 25P · 30C · 4G
+                  </span>
+                </div>
+                <div className="fitia-dish-item">
+                  <div className="fitia-dish-thumb">🥣</div>
+                  <div className="fitia-dish-info">
+                    <div className="fitia-dish-name">Yogur griego con plátano y 5g de creatina</div>
+                    <div className="fitia-dish-meta">⏱️ 3 min · Absorción óptima</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* BOTÓN SOS DAMAGE CONTROL */}
-            <button className="btn-sos" onClick={() => setShowDamageControl(true)}>
-              <span>🚨</span>
-              <span>Comí Mal: Activar Damage Control</span>
-            </button>
-
-            {/* Pantry & Meal Suggestions */}
-            <div className="aura-card">
-              <div className="card-header-row">
-                <span className="card-title">
-                  <span>🍳</span> ¿Qué tengo en mi cocina?
+            {/* Fitia Coach / Asesoría Nutricional de Despensa (Screenshot 5) */}
+            <section className="fitia-coach-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>🥗</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>
+                  Fitia Coach · Generador de Despensa
                 </span>
-                <span className="card-subtitle">{selectedIngredients.length} ingredientes</span>
               </div>
 
-              {/* Ingredients Tags */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-                {selectedIngredients.map((ing) => (
-                  <span
-                    key={ing}
-                    style={{
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-subtle)',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-full)',
-                      fontSize: '12px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    {ing}
+              {/* Chat Dialog */}
+              <div className="fitia-chat-bubble fitia-bubble-bot">
+                👋 Hola Eduardo, ¿qué ingredientes tienes disponibles hoy en tu despensa?
+              </div>
+
+              <div className="fitia-pantry-pills">
+                {['huevos', 'avena', 'platano', 'pollo', 'arroz', 'brocoli', 'leche', 'atun', 'papa'].map((item) => {
+                  const isSel = selectedIngredients.includes(item);
+                  return (
                     <button
-                      onClick={() => removeIngredient(ing)}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-sub)', fontSize: '12px' }}
+                      key={item}
+                      type="button"
+                      className={`fitia-pantry-pill ${isSel ? 'active' : ''}`}
+                      onClick={() => toggleIngredient(item)}
                     >
-                      ✕
+                      {isSel ? '✓ ' : '+ '}
+                      {item.charAt(0).toUpperCase() + item.slice(1)}
                     </button>
-                  </span>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Add Ingredient Form */}
-              <form onSubmit={addIngredient} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <form onSubmit={handleAddIngredient} style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
-                  placeholder="Agregar ingrediente (ej. pollo, espinaca)"
+                  placeholder="Escribe otro ingrediente..."
                   value={newIngredient}
                   onChange={(e) => setNewIngredient(e.target.value)}
                   style={{
@@ -394,343 +387,545 @@ export default function HomePage() {
                     background: 'var(--bg-surface)',
                     border: '1px solid var(--border-subtle)',
                     padding: '10px 14px',
-                    borderRadius: 'var(--radius-sm)',
+                    borderRadius: '10px',
                     color: 'var(--text-main)',
-                    outline: 'none'
+                    fontSize: '14px'
                   }}
                 />
-                <button type="submit" className="btn-secondary">
-                  + Añadir
+                <button
+                  type="submit"
+                  style={{
+                    background: 'var(--fitia-green)',
+                    color: '#060E10',
+                    fontWeight: 700,
+                    border: 'none',
+                    padding: '0 16px',
+                    borderRadius: '10px'
+                  }}
+                >
+                  Agregar
                 </button>
               </form>
 
-              {/* Suggested Meals */}
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '10px', color: 'var(--text-muted)' }}>
-                  PLATOS SUGERIDOS PARA HOY:
-                </div>
+              <div className="fitia-chat-bubble fitia-bubble-bot" style={{ marginTop: '4px' }}>
+                Aquí tienes recetas listas para tu superávit magro (+300 kcal):
+              </div>
+
+              {/* Horizontal Scroll Recipes (Screenshot 5) */}
+              <div className="fitia-recipes-scroll">
                 {meals.map((meal) => (
-                  <div
-                    key={meal.id}
-                    style={{
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '12px',
-                      marginBottom: '10px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-main)' }}>{meal.name}</div>
-                      <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '700' }}>
-                        ⏱ {meal.prepMinutes} min
-                      </span>
+                  <div key={meal.id} className="fitia-recipe-card">
+                    <div className="fitia-recipe-thumb">
+                      {meal.id.includes('pancake')
+                        ? '🥞'
+                        : meal.id.includes('parfait')
+                        ? '🥣'
+                        : meal.id.includes('bowl')
+                        ? '🍗'
+                        : '🥘'}
+                      <div className="fitia-recipe-badge">⏱️ {meal.prepMinutes} min</div>
                     </div>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '6px 0 8px' }}>
-                      {meal.description}
-                    </p>
-                    <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: 'var(--text-sub)' }}>
-                      <span>🔥 <strong>{meal.calories}</strong> kcal</span>
-                      <span>💪 <strong>{meal.proteinG}g</strong> P</span>
-                      <span>🌾 <strong>{meal.carbsG}g</strong> C</span>
-                      <span>🥑 <strong>{meal.fatG}g</strong> G</span>
+                    <div className="fitia-recipe-body">
+                      <div className="fitia-recipe-title">{meal.title}</div>
+                      <div className="fitia-recipe-macros">
+                        🔥 {meal.calories} kcal · {meal.protein}P · {meal.carbs}C · {meal.fat}G
+                      </div>
+                      <button
+                        type="button"
+                        style={{
+                          marginTop: '6px',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          border: '1px solid var(--border-active)',
+                          color: 'var(--fitia-green-light)',
+                          padding: '6px 8px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 700
+                        }}
+                        onClick={() => alert(`¡${meal.title} agregado a tu plan de hoy!`)}
+                      >
+                        + Agregar a mi plan
+                      </button>
                     </div>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            {/* Puntaje Nutricional (Screenshot 2) */}
+            <section className="fitia-score-card">
+              <span className="fitia-cal-label">Tu puntaje nutricional de hoy</span>
+              <div className="fitia-gauge-circle-wrap">
+                <svg width="180" height="95" viewBox="0 0 180 95">
+                  <path
+                    d="M 15 90 A 75 75 0 0 1 165 90"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.08)"
+                    strokeWidth="14"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 15 90 A 75 75 0 0 1 165 90"
+                    fill="none"
+                    stroke="#10B981"
+                    strokeWidth="14"
+                    strokeDasharray="235"
+                    strokeDashoffset="35"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="fitia-gauge-inner-val">
+                  <div className="fitia-score-big">85</div>
+                  <div className="fitia-score-grade">Bueno</div>
+                </div>
+              </div>
+
+              {/* Floating Insight Cards (Screenshot 2) */}
+              <div className="fitia-insight-card">
+                <div className="fitia-insight-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🌾</span>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>Fibra dietaria</strong>
+                  </div>
+                  <span className="fitia-insight-badge fitia-badge-red">Muy bajo</span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Te faltan <strong>18 g</strong> para tu meta de 30 g.
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-sub)', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
+                  💡 Sugerencia Fitia: Agrega avena integral o brócoli en tu próxima comida.
+                </div>
+              </div>
+
+              <div className="fitia-insight-card" style={{ marginTop: '8px' }}>
+                <div className="fitia-insight-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>⚡</span>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>Balance Calórico</strong>
+                  </div>
+                  <span className="fitia-insight-badge fitia-badge-green">Excelente</span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  2,004 / 2,185 kcal · Ritmo óptimo para aumento de peso magro.
+                </div>
+              </div>
+            </section>
+
+            {/* Damage Control SOS Trigger */}
+            <button
+              type="button"
+              className="btn-sos"
+              onClick={() => setShowDamageControl(true)}
+            >
+              <span>🚨 Protocolo Damage Control (Comida Trampa)</span>
+            </button>
+          </>
+        )}
+
+        {/* ===================================================================
+            TAB 2: HÁBITOS SALUDABLES (Screenshot 11)
+            =================================================================== */}
+        {activeTab === 'habits' && (
+          <>
+            {/* Top Habits Summary Cards (Screenshot 11) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              <div style={{ background: 'var(--bg-card)', padding: '14px 10px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '20px' }}>💧</span>
+                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>{(waterMl / 1000).toFixed(2)} L</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Agua Hoy</div>
+              </div>
+              <div style={{ background: 'var(--bg-card)', padding: '14px 10px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '20px' }}>⚡</span>
+                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>5 g</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Creatina</div>
+              </div>
+              <div style={{ background: 'var(--bg-card)', padding: '14px 10px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '20px' }}>🧘</span>
+                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>MindValley</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Meditación</div>
+              </div>
+            </div>
+
+            {/* Progress Card (Screenshot 11) */}
+            <div style={{ background: 'linear-gradient(135deg, #10292B 0%, #091719 100%)', border: '1px solid var(--border-active)', borderRadius: '20px', padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '28px' }}>🔥</span>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 800 }}>Racha de 14 Días</div>
+                    <div style={{ fontSize: '12px', color: 'var(--fitia-green-light)' }}>¡Progreso constante!</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)' }}>
+                  {completedHabitsCount} / {habits.length}
+                </div>
+              </div>
+              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', marginTop: '14px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #10B981, #34D399)',
+                    width: `${(completedHabitsCount / habits.length) * 100}%`,
+                    borderRadius: '999px'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Habits Checklist (Screenshot 11) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Hábitos del Día
+              </div>
+              {habits.map((habit) => (
+                <div
+                  key={habit.id}
+                  className={`fitia-habit-row ${habit.completed ? 'completed' : ''}`}
+                  onClick={() => toggleHabit(habit.id)}
+                >
+                  <div className="fitia-habit-left">
+                    <div className="fitia-habit-icon">{habit.icon}</div>
+                    <div>
+                      <div className="fitia-habit-name">{habit.name}</div>
+                      <div className="fitia-habit-sub">
+                        {habit.target} {habit.completed && `· Completado a las ${habit.time || 'hoy'}`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`fitia-radio-check ${habit.completed ? 'checked' : ''}`}>
+                    ✓
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Water Tracker Quick Buttons */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 800 }}>💧 Hidratación Rápida</span>
+                <span style={{ fontSize: '12px', color: 'var(--fitia-blue)' }}>{waterMl} / 3,500 ml</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38BDF8',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '13px'
+                  }}
+                  onClick={() => addWater(250)}
+                >
+                  +250 ml (Vaso)
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38BDF8',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '13px'
+                  }}
+                  onClick={() => addWater(500)}
+                >
+                  +500 ml (Botella)
+                </button>
               </div>
             </div>
           </>
         )}
 
-        {/* ============================================================ */}
-        {/* TAB 3: WORKOUT HÍBRIDO ADAPTATIVO                            */}
-        {/* ============================================================ */}
+        {/* ===================================================================
+            TAB 3: WORKOUT ADAPTATIVO & PESO
+            =================================================================== */}
         {activeTab === 'workout' && (
           <>
-            {/* Toggle Segmented Control: Gym vs Home */}
-            <div className="segmented-control">
+            {/* Mode Switcher */}
+            <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '4px', borderRadius: '12px', gap: '4px' }}>
               <button
-                className={`segment-btn ${workoutMode === 'gym' ? 'active' : ''}`}
+                type="button"
+                style={{
+                  flex: 1,
+                  background: workoutMode === 'gym' ? 'var(--bg-card)' : 'transparent',
+                  color: workoutMode === 'gym' ? 'var(--text-main)' : 'var(--text-muted)',
+                  border: 'none',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  fontSize: '13px'
+                }}
                 onClick={() => setWorkoutMode('gym')}
               >
-                🏋️ Gimnasio (Push / Torso)
+                🏋️ Gimnasio (Hipertrofia)
               </button>
               <button
-                className={`segment-btn ${workoutMode === 'home_emom' ? 'active' : ''}`}
+                type="button"
+                style={{
+                  flex: 1,
+                  background: workoutMode === 'home_emom' ? 'var(--bg-card)' : 'transparent',
+                  color: workoutMode === 'home_emom' ? 'var(--text-main)' : 'var(--text-muted)',
+                  border: 'none',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  fontSize: '13px'
+                }}
                 onClick={() => setWorkoutMode('home_emom')}
               >
-                🏠 En Casa (EMOM 30m)
+                🏠 Sin Gym (EMOM Casa)
               </button>
             </div>
 
-            {/* Workout Details Card */}
-            <div className="aura-card glow-cyan">
-              <div className="card-header-row">
-                <span className="card-title">
-                  <span>{workoutMode === 'gym' ? '🏋️' : '⏱️'}</span>
-                  {WORKOUT_ROUTINES[workoutMode].title}
-                </span>
-                <span style={{ fontSize: '12px', color: 'var(--accent-cyan)', fontWeight: '700' }}>
-                  {WORKOUT_ROUTINES[workoutMode].durationMinutes} min
-                </span>
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
-                <strong>Enfoque:</strong> {WORKOUT_ROUTINES[workoutMode].focus} • {WORKOUT_ROUTINES[workoutMode].equipment}
-              </p>
+            {/* Active Routine Details */}
+            {workoutMode === 'gym' ? (
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800 }}>{WORKOUT_ROUTINES.gym.title}</h3>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{WORKOUT_ROUTINES.gym.focus}</p>
+                  </div>
+                  <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--fitia-green-light)', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 700 }}>
+                    {WORKOUT_ROUTINES.gym.targetTime}
+                  </span>
+                </div>
 
-              {/* Workout Exercises */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {workoutMode === 'gym'
-                  ? WORKOUT_ROUTINES.gym.exercises.map((ex, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: 'var(--bg-surface)',
-                          padding: '10px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          border: '1px solid var(--border-subtle)'
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: '700' }}>{ex.name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {ex.sets} series × {ex.reps} reps (RIR {ex.rir})
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', background: 'rgba(6,182,212,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                          Descanso {ex.restSeconds}s
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {WORKOUT_ROUTINES.gym.exercises.map((ex, idx) => (
+                    <div key={idx} style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700 }}>{ex.name}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--fitia-orange)', fontWeight: 700 }}>
+                          {ex.sets} sets × {ex.reps}
                         </span>
                       </div>
-                    ))
-                  : WORKOUT_ROUTINES.home_emom.exercises.map((ex, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: 'var(--bg-surface)',
-                          padding: '10px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          border: '1px solid var(--border-subtle)'
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: '700' }}>
-                            Minuto {ex.minute}: {ex.name}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ex.target}</div>
-                        </div>
-                        <span style={{ fontSize: '11px', color: '#FBBF24', background: 'rgba(245,158,11,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                          Pausa {ex.restSeconds}s
-                        </span>
+                      <div style={{ fontSize: '11px', color: 'var(--text-sub)', marginTop: '4px' }}>
+                        Descanso: {ex.rest} · {ex.notes}
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800 }}>{WORKOUT_ROUTINES.home_emom.title}</h3>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{WORKOUT_ROUTINES.home_emom.focus}</p>
+                  </div>
+                  <span style={{ background: 'rgba(249, 115, 22, 0.15)', color: 'var(--fitia-orange)', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 700 }}>
+                    {WORKOUT_ROUTINES.home_emom.targetTime}
+                  </span>
+                </div>
 
-            {/* Weight Tracker & Moving Average */}
-            <div className="aura-card glow-emerald">
-              <div className="card-header-row">
-                <span className="card-title">
-                  <span>⚖️</span> Seguimiento de Ganancia Magra
-                </span>
+                {/* EMOM Active Timer */}
+                <div style={{ background: 'var(--bg-surface)', padding: '18px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-active)' }}>
+                  <div style={{ fontSize: '36px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
+                    {formatTimer(activeTimerSeconds || 1200)}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      style={{
+                        background: timerRunning ? '#EF4444' : 'var(--fitia-green)',
+                        color: '#060E10',
+                        fontWeight: 800,
+                        border: 'none',
+                        padding: '10px 24px',
+                        borderRadius: '10px'
+                      }}
+                      onClick={() => {
+                        if (!activeTimerSeconds) setActiveTimerSeconds(1200);
+                        setTimerRunning(!timerRunning);
+                      }}
+                    >
+                      {timerRunning ? 'Pausar' : 'Iniciar EMOM'}
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-muted)',
+                        padding: '10px 16px',
+                        borderRadius: '10px'
+                      }}
+                      onClick={() => {
+                        setTimerRunning(false);
+                        setActiveTimerSeconds(1200);
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {WORKOUT_ROUTINES.home_emom.structure.map((item, idx) => (
+                    <div key={idx} style={{ background: 'var(--bg-surface)', padding: '10px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--fitia-green-light)' }}>{item.minute}</span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>{item.work}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Weight Progression Card */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Evolución de Peso Magro</h3>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Actual: <strong>{weightAnalytics.currentWeight} kg</strong> · Ritmo: <strong>{weightAnalytics.ratePerWeekKg} kg/sem</strong>
+                  </p>
+                </div>
                 <button
-                  className="btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '11px' }}
+                  type="button"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid var(--border-active)',
+                    color: 'var(--fitia-green-light)',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700
+                  }}
                   onClick={() => setShowWeightModal(true)}
                 >
-                  + Pesaje
+                  + Pesarme
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '8px 0 14px' }}>
-                <div className="macro-box">
-                  <div className="macro-val">{weightAnalytics.currentWeight} kg</div>
-                  <div className="macro-name">Actual</div>
-                </div>
-                <div className="macro-box">
-                  <div className="macro-val" style={{ color: '#10B981' }}>{weightAnalytics.movingAverage} kg</div>
-                  <div className="macro-name">Media 7 días</div>
-                </div>
-                <div className="macro-box">
-                  <div className="macro-val" style={{ color: '#60A5FA' }}>{weightAnalytics.targetWeight} kg</div>
-                  <div className="macro-name">Meta</div>
-                </div>
-              </div>
-
-              {/* Minimalist SVG Trend Chart */}
-              <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', padding: '12px', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  <span>Tendencia Últimos Días</span>
-                  <span style={{ color: '#10B981', fontWeight: '700' }}>
-                    +{weightAnalytics.weeklyChangeKg} kg/semana (Ritmo Óptimo)
-                  </span>
-                </div>
-                <svg width="100%" height="60" viewBox="0 0 320 60" style={{ overflow: 'visible' }}>
-                  <polyline
-                    fill="none"
-                    stroke="#10B981"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points="10,48 50,42 90,44 130,38 170,30 210,34 250,26 290,20"
-                  />
-                  {/* Dots */}
-                  {[
-                    [10, 48], [50, 42], [90, 44], [130, 38], [170, 30], [210, 34], [250, 26], [290, 20]
-                  ].map(([x, y], i) => (
-                    <circle key={i} cx={x} cy={y} r="4" fill="#0A0E1A" stroke="#10B981" strokeWidth="2" />
-                  ))}
-                </svg>
+              {/* Weight Sparkline */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '60px', paddingTop: '10px' }}>
+                {weightLogs.slice(-7).map((log, i) => {
+                  const min = 71.5;
+                  const max = 73.5;
+                  const pct = Math.max(10, Math.min(100, ((log.weight_kg - min) / (max - min)) * 100));
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%' }}>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-end' }}>
+                        <div
+                          style={{
+                            width: '100%',
+                            height: `${pct}%`,
+                            background: i === weightLogs.slice(-7).length - 1 ? 'var(--fitia-green)' : 'rgba(255,255,255,0.15)',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontSize: '9px', color: 'var(--text-sub)' }}>{log.log_date.split(' ')[0]}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </>
         )}
       </main>
 
-      {/* ============================================================ */}
-      {/* MODAL SOS: DAMAGE CONTROL POST-COMIDA CHATARRA               */}
-      {/* ============================================================ */}
-      {showDamageControl && (
-        <div className="modal-overlay" onClick={() => setShowDamageControl(false)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>🚨</span>
-                <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-rose)' }}>
-                  Damage Control Activo
-                </span>
-              </div>
-              <button
-                onClick={() => setShowDamageControl(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-sub)', fontSize: '20px' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              {DAMAGE_CONTROL_PROTOCOL.objective}
+      {/* Weight Modal */}
+      {showWeightModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', width: '100%', maxWidth: '340px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '6px' }}>Registrar Peso Diario</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              Pésate en ayunas después de ir al baño para máxima precisión.
             </p>
-
-            {/* Timer Box */}
-            <div
-              style={{
-                background: 'rgba(244,63,94,0.1)',
-                border: '1px solid rgba(244,63,94,0.3)',
-                borderRadius: 'var(--radius-md)',
-                padding: '16px',
-                textAlign: 'center',
-                marginBottom: '18px'
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'var(--accent-rose)', fontWeight: '700', textTransform: 'uppercase' }}>
-                Temporizador de Caminata GLUT-4
-              </div>
-              <div style={{ fontSize: '38px', fontWeight: '900', color: 'var(--text-main)', margin: '6px 0' }}>
-                {formatTimer(activeTimerSeconds > 0 ? activeTimerSeconds : 1200)}
-              </div>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            <form onSubmit={handleAddWeightLog}>
+              <input
+                type="number"
+                step="0.1"
+                placeholder="Ej. 72.8"
+                value={newWeightInput}
+                onChange={(e) => setNewWeightInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  color: 'var(--text-main)',
+                  fontSize: '18px',
+                  textAlign: 'center',
+                  fontWeight: 800,
+                  marginBottom: '14px'
+                }}
+                autoFocus
+              />
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <button
-                  className="btn-primary"
-                  style={{ width: 'auto', padding: '8px 20px', background: 'var(--accent-rose)' }}
-                  onClick={() => (timerRunning ? setTimerRunning(false) : startWalkTimer(20))}
+                  type="button"
+                  style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', padding: '10px', borderRadius: '10px', fontWeight: 600 }}
+                  onClick={() => setShowWeightModal(false)}
                 >
-                  {timerRunning ? 'Pausar' : 'Iniciar 20 Min'}
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, background: 'var(--fitia-green)', color: '#060E10', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 800 }}
+                >
+                  Guardar
                 </button>
               </div>
-            </div>
-
-            {/* Protocol Steps */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {DAMAGE_CONTROL_PROTOCOL.steps.map((st) => (
-                <div
-                  key={st.id}
-                  style={{
-                    background: 'var(--bg-surface)',
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-subtle)'
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                    <span>{st.icon}</span>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>{st.title}</strong>
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-main)', marginBottom: '4px' }}>
-                    {st.action}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    🔬 <strong>Base científica:</strong> {st.science}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              className="btn-secondary"
-              style={{ width: '100%', marginTop: '16px', padding: '12px' }}
-              onClick={() => setShowDamageControl(false)}
-            >
-              Cerrar y Regresar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL REGISTRAR PESAJE                                        */}
-      {/* ============================================================ */}
-      {showWeightModal && (
-        <div className="modal-overlay" onClick={() => setShowWeightModal(false)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <span style={{ fontSize: '16px', fontWeight: '800' }}>Registrar Pesaje de Hoy</span>
-              <button
-                onClick={() => setShowWeightModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-sub)', fontSize: '20px' }}
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleAddWeight}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Peso corporal en ayunas (kg):
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Ej. 72.8"
-                  value={newWeightInput}
-                  onChange={(e) => setNewWeightInput(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    padding: '12px',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--text-main)',
-                    fontSize: '18px',
-                    fontWeight: '700'
-                  }}
-                  autoFocus
-                />
-              </div>
-              <button type="submit" className="btn-primary">
-                Guardar Pesaje
-              </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Thumb-Zone Bottom Navigation */}
+      {/* Damage Control Modal */}
+      {showDamageControl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-card)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px 20px calc(24px + var(--safe-bottom))', width: '100%', maxWidth: '430px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '24px' }}>🛡️</span>
+                <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Protocolo Damage Control</h3>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px' }}
+                onClick={() => setShowDamageControl(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              {DAMAGE_CONTROL_PROTOCOL.subtitle}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {DAMAGE_CONTROL_PROTOCOL.steps.map((st) => (
+                <div key={st.step} style={{ background: 'var(--bg-surface)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
+                    PASO {st.step} · {st.timing}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, margin: '4px 0' }}>{st.action}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{st.rationale}</div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ marginTop: '18px' }}
+              onClick={() => setShowDamageControl(false)}
+            >
+              Comprendido, activar protocolo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-    </>
+    </div>
   );
 }

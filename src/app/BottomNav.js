@@ -2,8 +2,8 @@
 
 export default function BottomNav({ activeTab, setActiveTab }) {
   const tabs = [
+    { id: 'nutrition', label: 'Nutrición', icon: '🥑' },
     { id: 'habits', label: 'Hábitos', icon: '⚡' },
-    { id: 'nutrition', label: 'Nutrición', icon: '🥗' },
     { id: 'workout', label: 'Workout', icon: '💪' }
   ];
 
