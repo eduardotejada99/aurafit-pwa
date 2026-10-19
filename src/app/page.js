@@ -185,17 +185,24 @@ export default function HomePage() {
   // Daily Logged Foods State (persistent per profile)
   const [loggedFoods, setLoggedFoods] = useState([]);
 
-  // Dynamically filtered foods for the active selected day
+  // Dynamically filtered foods for the active selected day and active profile
   const activeDayFoods = useMemo(() => {
     const todayKey = new Date().toISOString().split('T')[0];
     const targetKey = selectedDateKey || todayKey;
     return loggedFoods.filter((item) => {
+      // Strict multi-user profile isolation: items must match activeProfileId
+      if (item.profileId) {
+        if (item.profileId !== activeProfileId) return false;
+      } else {
+        // Legacy untagged items only belong to 'andres'
+        if (activeProfileId !== 'andres') return false;
+      }
       if (item.date) {
         return item.date === targetKey;
       }
       return targetKey === todayKey;
     });
-  }, [loggedFoods, selectedDateKey]);
+  }, [loggedFoods, selectedDateKey, activeProfileId]);
 
   // Dynamic Nutritional Score Engine (0-100 Scientific Fitia Algorithm)
   const nutritionalScore = useMemo(() => {
@@ -792,43 +799,53 @@ export default function HomePage() {
 
   const loadProfileData = (profileKey) => {
     try {
-      const prof = FAMILY_PROFILES[profileKey];
+      const prof = familyProfiles[profileKey] || FAMILY_PROFILES[profileKey];
       if (!prof) return;
 
       // 1. Check profile-specific storage key
-      let savedFoods = null;
+      let savedFoods = [];
       const rawProfileFoods = localStorage.getItem(`aurafit_foods_${profileKey}`);
       if (rawProfileFoods) {
         try {
           const parsed = JSON.parse(rawProfileFoods);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            savedFoods = parsed;
+          if (Array.isArray(parsed)) {
+            // Strictly filter out any items belonging to other profiles
+            savedFoods = parsed.filter((item) => {
+              if (item.profileId) return item.profileId === profileKey;
+              // Legacy untagged items only belong to 'andres'
+              return profileKey === 'andres';
+            });
           }
         } catch (e) {}
       }
 
-      // 2. Migration fallback: check legacy storage keys where user's phone might have logged foods
-      if (!savedFoods || savedFoods.length === 0) {
+      // 2. Legacy fallback ONLY for 'andres' (NEVER copy andres' foods to pareja or hermana!)
+      if (profileKey === 'andres' && savedFoods.length === 0) {
         const legacyRaw = localStorage.getItem('aurafit_logged_foods') || localStorage.getItem('aurafit_backup_last_logged');
         if (legacyRaw) {
           try {
             const legacyParsed = JSON.parse(legacyRaw);
             if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
-              savedFoods = legacyParsed;
-              // Migrate and persist to this profile immediately so it is never lost
-              localStorage.setItem(`aurafit_foods_${profileKey}`, JSON.stringify(legacyParsed));
+              savedFoods = legacyParsed.map((item) => ({ ...item, profileId: 'andres' }));
+              localStorage.setItem(`aurafit_foods_andres`, JSON.stringify(savedFoods));
             }
           } catch (e) {}
         }
       }
 
-      // 3. Set logged foods - NEVER overwrite user's actual food with mock data!
-      if (savedFoods && Array.isArray(savedFoods)) {
-        setLoggedFoods(savedFoods);
-      } else {
-        // If profile has no previous entries, keep existing state if any, or empty array
-        setLoggedFoods((prev) => (prev && prev.length > 0 ? prev : []));
+      // 3. Clean up contaminated profile storage in localStorage & cloud if foreign items were purged
+      if (rawProfileFoods) {
+        try {
+          const parsed = JSON.parse(rawProfileFoods);
+          if (Array.isArray(parsed) && parsed.length !== savedFoods.length) {
+            localStorage.setItem(`aurafit_foods_${profileKey}`, JSON.stringify(savedFoods));
+            queueCloudSync(`aurafit_foods_${profileKey}`, savedFoods, profileKey);
+          }
+        } catch (e) {}
       }
+
+      // 4. Set logged foods - strictly to this profile's foods (empty array if no foods logged yet)
+      setLoggedFoods(savedFoods);
 
       const todayKey = new Date().toISOString().split('T')[0];
 
@@ -984,9 +1001,7 @@ export default function HomePage() {
     if (!familyProfiles[newId]) return;
     // CRITICAL: Persist current profile's logged foods before switching!
     try {
-      if (loggedFoods && loggedFoods.length > 0) {
-        localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods));
-      }
+      localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods || []));
     } catch (e) {}
 
     setActiveProfileId(newId);
@@ -1099,7 +1114,9 @@ export default function HomePage() {
     // CRITICAL: Ensure current foods remain safely saved and NOT replaced
     try {
       localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods));
-      localStorage.setItem('aurafit_logged_foods', JSON.stringify(loggedFoods));
+      if (activeProfileId === 'andres') {
+        localStorage.setItem('aurafit_logged_foods', JSON.stringify(loggedFoods));
+      }
       queueCloudSync(`aurafit_foods_${activeProfileId}`, loggedFoods, activeProfileId);
     } catch (e) {}
     setShowProfileModal(false);
@@ -1169,18 +1186,28 @@ export default function HomePage() {
     }, 3800);
   };
 
-  const persistLoggedFoods = (updater) => {
+  const persistLoggedFoods = (updater, targetProfileId = null) => {
+    const profileKey = targetProfileId || activeProfileId;
     setLoggedFoods((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
+      const cleanList = Array.isArray(next)
+        ? next.map((item) => ({
+            ...item,
+            profileId: item.profileId || profileKey
+          }))
+        : [];
+
       try {
-        localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(next));
-        localStorage.setItem('aurafit_logged_foods', JSON.stringify(next));
-        localStorage.setItem('aurafit_backup_last_logged', JSON.stringify(next));
-        queueCloudSync(`aurafit_foods_${activeProfileId}`, next, activeProfileId);
+        localStorage.setItem(`aurafit_foods_${profileKey}`, JSON.stringify(cleanList));
+        if (profileKey === 'andres') {
+          localStorage.setItem('aurafit_foods_andres', JSON.stringify(cleanList));
+          localStorage.setItem('aurafit_logged_foods', JSON.stringify(cleanList));
+        }
+        queueCloudSync(`aurafit_foods_${profileKey}`, cleanList, profileKey);
       } catch (e) {
         console.warn('Storage save err:', e);
       }
-      return next;
+      return cleanList;
     });
   };
 
@@ -1262,6 +1289,7 @@ export default function HomePage() {
     const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
     const newEntry = {
       id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      profileId: activeProfileId,
       name: food.name,
       brand: food.brand,
       mealSlot: slot,
@@ -1301,6 +1329,7 @@ export default function HomePage() {
       const first = parsedList[0];
       const newEntry = {
         id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        profileId: activeProfileId,
         name: first.name,
         brand: 'Compendio Nutricional Fitia',
         mealSlot: slot,
@@ -1327,6 +1356,7 @@ export default function HomePage() {
 
       const newEntry = {
         id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        profileId: activeProfileId,
         name: nameClean,
         brand: 'Alimento Personalizado',
         mealSlot: slot,
@@ -1357,6 +1387,7 @@ export default function HomePage() {
       // Create fallback item from raw text
       const rawEntry = {
         id: `raw-${Date.now()}`,
+        profileId: activeProfileId,
         name: quickTextEntry.slice(0, 40) || 'Registro Manual',
         brand: 'Registro Manual',
         mealSlot: slot,
@@ -1379,6 +1410,7 @@ export default function HomePage() {
 
     const newEntries = detectedList.map((item) => ({
       id: `text-${Date.now()}-${item.id}`,
+      profileId: activeProfileId,
       name: item.name,
       brand: item.brand,
       mealSlot: slot,
@@ -1417,6 +1449,7 @@ export default function HomePage() {
     const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
     const newItems = option.foodItemsToAdd.map((food, idx) => ({
       id: `comp-${Date.now()}-${idx}`,
+      profileId: activeProfileId,
       name: food.name,
       brand: 'Pivote Proteico Fitia',
       mealSlot: slot,
@@ -1471,6 +1504,7 @@ export default function HomePage() {
 
     const newEntry = {
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      profileId: activeProfileId,
       name: mult !== 1.0 ? `${mealTitle} (${Math.round(mult * 100)}% porción)` : mealTitle,
       brand: 'Chef AuraFit Despensa',
       mealSlot: targetSlot,
@@ -1489,6 +1523,55 @@ export default function HomePage() {
     recordActivityToday();
     setSelectedRecipeDetail(null);
     showToast(`🍲 ¡${newEntry.name} agregado a ${targetSlot.toUpperCase()}! 🔥 +${scaledCal} kcal (+${scaledP}g Proteína)`);
+  };
+
+  // Safe Multi-User Couple Serving Handler (1 Sartén, 2 Porciones Independientes)
+  const handleServeCouplePortion = (targetProfileKey, portionData) => {
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const newEntry = {
+      id: `couple-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      profileId: targetProfileKey,
+      name: portionData.name,
+      brand: 'Cocina en Pareja AuraFit (1 Sartén)',
+      mealSlot: portionData.mealSlot || 'comida',
+      servingDesc: portionData.servingDesc || 'Porción 1 Sartén',
+      grams: portionData.grams || 250,
+      calories: Math.round(Number(portionData.calories) || 0),
+      protein: parseFloat((Number(portionData.protein) || 0).toFixed(1)),
+      carbs: parseFloat((Number(portionData.carbs) || 0).toFixed(1)),
+      fat: parseFloat((Number(portionData.fat) || 0).toFixed(1)),
+      icon: portionData.icon || '🍲',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: targetDate
+    };
+
+    if (targetProfileKey === activeProfileId) {
+      persistLoggedFoods((prev) => [newEntry, ...prev]);
+      recordActivityToday();
+      showToast(`🍽️ ¡Porción servida a tu diario (${familyProfiles[targetProfileKey]?.name || targetProfileKey})!`);
+    } else {
+      try {
+        const raw = localStorage.getItem(`aurafit_foods_${targetProfileKey}`);
+        let targetFoods = [];
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              targetFoods = parsed.filter(item => !item.profileId || item.profileId === targetProfileKey);
+            }
+          } catch (e) {}
+        }
+        const updatedTargetFoods = [newEntry, ...targetFoods];
+        localStorage.setItem(`aurafit_foods_${targetProfileKey}`, JSON.stringify(updatedTargetFoods));
+        if (targetProfileKey === 'andres') {
+          localStorage.setItem('aurafit_logged_foods', JSON.stringify(updatedTargetFoods));
+        }
+        queueCloudSync(`aurafit_foods_${targetProfileKey}`, updatedTargetFoods, targetProfileKey);
+      } catch (e) {
+        console.warn('Error serving to another profile:', e);
+      }
+      showToast(`🍽️ ¡Porción servida con éxito al diario de ${familyProfiles[targetProfileKey]?.name || targetProfileKey}!`);
+    }
   };
 
   // Update meals whenever ingredients change, active profile changes, or meal slot filter changes
