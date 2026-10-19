@@ -4924,6 +4924,85 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+            {/* Banner Específico: 100% Máquinas de Gimnasio en Piernas (Cero Híbrido) */}
+            {(hybridPrescription.selectedSplit === 'legs' || hybridPrescription.selectedSplit === 'piernas' || hybridPrescription.selectedSplit === 'glutes') && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.08))',
+                border: '1.5px solid rgba(59, 130, 246, 0.4)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '22px' }}>🦵</span>
+                    <div>
+                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
+                        Entrenamiento de Piernas: 100% Máquinas de Gimnasio
+                      </strong>
+                      <span style={{ fontSize: '11px', color: '#2563EB', fontWeight: 800 }}>
+                        ⚙️ Cero Híbrido en Piernas · Hipertrofia & Aislamiento Puro
+                      </span>
+                    </div>
+                  </div>
+                  <span style={{
+                    background: 'rgba(59, 130, 246, 0.2)',
+                    color: '#2563EB',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    fontSize: '10.5px',
+                    fontWeight: 900
+                  }}>
+                    100% MÁQUINAS
+                  </span>
+                </div>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  <strong>Regla biomecánica aplicada:</strong> En piernas todo se realiza en máquinas guiadas (Prensa 45°, Hack Squat, Sillón de Extensiones, Curl Femoral sentado y Máquina de Aductores). Cero calistenia y cero inestabilidad libre para máxima sobrecarga muscular en estiramiento sin fatiga lumbar ni balanceos. En el <strong>tren superior sí se mantiene el sistema híbrido</strong> (calistenia de élite + pesas).
+                </div>
+              </div>
+            )}
+
+            {/* Banner Específico: Tren Superior Híbrido (Calistenia + Sobrecarga Pesada) */}
+            {(hybridPrescription.selectedSplit === 'push' || hybridPrescription.selectedSplit === 'pull' || hybridPrescription.selectedSplit === 'full_upper') && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.08))',
+                border: '1.5px solid rgba(245, 158, 11, 0.35)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '22px' }}>⚡</span>
+                    <div>
+                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
+                        Tren Superior Híbrido: Calistenia de Élite + Sobrecarga Pesada
+                      </strong>
+                      <span style={{ fontSize: '11px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
+                        🤸‍♂️ Dejan Stipke Synergy · Barras, Lastre & Pesas Libres
+                      </span>
+                    </div>
+                  </div>
+                  <span style={{
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    color: 'var(--fitia-orange)',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    fontSize: '10.5px',
+                    fontWeight: 900
+                  }}>
+                    HÍBRIDO SUPERIOR
+                  </span>
+                </div>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  En tren superior se fusiona la sobrecarga pesada con barras, mancuernas y poleas, junto con el dominio de habilidades calisténicas de alto nivel (Dominadas lastradas, Fondos pesados, Handstand y Front Lever).
+                </div>
+              </div>
+            )}
 
             {/* 4. MODULAR WORKOUT BLOCKS (DEJAN STIPKE SYSTEM) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

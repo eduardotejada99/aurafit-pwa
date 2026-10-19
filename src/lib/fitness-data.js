@@ -499,7 +499,7 @@ export const FAMILY_PROFILES = {
         focus: 'Preservar músculo en déficit y oxidar grasa',
         durationMinutes: 50,
         exercises: [
-          { name: 'Sentadilla con Barra / Prensa Pesada', sets: 4, reps: '6-8 pesadas', restSeconds: 120, rir: 2 },
+          { name: 'Prensa Inclinada de Piernas a 45° en Máquina', sets: 4, reps: '8-12 pesadas', restSeconds: 120, rir: 2 },
           { name: 'Press Banca con Mancuernas', sets: 4, reps: '8-10', restSeconds: 90, rir: 1 },
           { name: 'Peso Muerto Rumano (Isquios/Glúteo)', sets: 3, reps: '8-10', restSeconds: 90, rir: 2 },
           { name: 'Remo con Barra o Polea Baja', sets: 4, reps: '10-12', restSeconds: 75, rir: 1 },
@@ -2189,12 +2189,13 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 note: 'Espalda 100% horizontal. Tirón explosivo hacia el ombligo.'
               },
               {
-                name: 'Sentadilla Trasera / Prensa de Piernas Pesada',
+                name: 'Prensa de Piernas Inclinada a 45° en Máquina',
                 sets: 4,
-                reps: '6 - 8 reps',
+                reps: '8 - 12 reps con pausa 2s abajo',
                 restSeconds: 120,
-                substitute: 'Sentadilla Hack o Goblet Squat Pesada',
-                note: 'Estímulo sistémico de fuerza y testosterona.'
+                equipment: 'machine',
+                substitute: 'Sentadilla Hack en Máquina Guiada',
+                note: '100% Máquina de gimnasio: máxima estabilidad externa y sobrecarga en cuádriceps sin fatiga espinal.'
               }
             ]
           },
@@ -2549,84 +2550,102 @@ export const HYBRID_ATHLETE_SYSTEM = {
     andres: {
       legs: {
         id: 'legs',
-        name: 'Piernas Pesado (Sentadilla, Prensa & Búlgaras)',
-        shortName: 'Piernas Pesado',
+        name: 'Piernas Pesado (100% Máquinas de Gimnasio · Cero Híbrido)',
+        shortName: 'Piernas 100% Máquinas',
         icon: '🦵',
         dayRecommendation: 'Lunes / Inicio de Semana',
         durationMinutes: 85,
-        focus: 'Fuerza máxima en tren inferior, liberación hormonal y estabilidad articular',
+        focus: '100% Máquinas de gimnasio: hipertrofia profunda con estabilidad extrema, máxima tensión mecánica en estiramiento y cero balance o fatiga lumbar (No Híbrido)',
+        badge: '100% MÁQUINAS',
+        equipment: 'machine',
         blocks: [
           {
-            name: 'Bloque 1: Fuerza Pesada en Piernas (Sobrecarga Progresiva)',
+            name: 'Bloque 1: Hipertrofia Pesada en Máquinas: Cuádriceps & Aductores (100% Máquinas)',
             icon: '🏋️‍♂️',
             exercises: [
               {
-                name: 'Sentadilla Trasera con Barra / Prensa Pesada',
+                name: 'Prensa de Piernas Inclinada a 45° (Leg Press 45°)',
                 sets: 4,
-                reps: '6 - 8 reps pesadas',
+                reps: '8 - 12 reps (pausa 2s en máxima profundidad)',
                 restSeconds: 120,
-                substitute: 'Prensa Inclinada a 45° con pies a la anchura de hombros',
-                note: 'RIR 1-2. Céntrate en bajar profundo y empujar con los talones.'
+                equipment: 'machine',
+                substitute: 'Prensa Horizontal Guiada con Pies Medios',
+                note: '100% Máquina: pies al ancho de hombros, cadera pegada al asiento. Pausa isométrica de 2s en el estiramiento profundo.'
               },
               {
-                name: 'Sentadilla Búlgara con Mancuernas Pesadas',
+                name: 'Sentadilla Hack en Máquina (Hack Squat Machine)',
                 sets: 4,
-                reps: '8 - 10 por pierna',
-                restSeconds: 90,
-                substitute: 'Zancadas caminando con mancuernas',
-                note: 'Torso ligeramente inclinado para reclutar glúteo mayor y cuádriceps.'
+                reps: '8 - 10 reps profundas',
+                restSeconds: 120,
+                equipment: 'machine',
+                substitute: 'Prensa Inclinada unilateral o Máquina V-Squat guiada',
+                note: '100% Máquina: espalda totalmente respaldada, recorrido profundo sin despegue de talones para quemar los vastos.'
               },
               {
-                name: 'Peso Muerto Rumano con Barra / Mancuernas',
+                name: 'Sillón de Extensión de Cuádriceps en Máquina (Leg Extension)',
                 sets: 4,
-                reps: '8 - 10 reps',
-                restSeconds: 90,
-                substitute: 'Curl Femoral en Máquina Acostado',
-                note: 'Empuja la cadera hacia atrás hasta sentir estiramiento en isquiotibiales.'
+                reps: '12 - 15 reps (contracción 1-2s arriba)',
+                restSeconds: 75,
+                equipment: 'machine',
+                substitute: 'Extensiones de pierna unilaterales en máquina',
+                note: '100% Máquina: aislamiento estricto del recto femoral en posición acortada con pico de contracción.'
               },
               {
-                name: 'Elevación de Talones en Escalón / Máquina',
-                sets: 4,
-                reps: '15 reps con pausa 2s',
+                name: 'Máquina de Aductores de Cadera Sentada (Seated Adductor Machine)',
+                sets: 3,
+                reps: '12 - 15 reps controladas',
                 restSeconds: 60,
-                substitute: 'Gemelos a una pierna sobre disco con mancuerna',
-                note: 'Rango completo de dorsiflexión para tobillos a prueba de lesiones.'
+                equipment: 'machine',
+                substitute: 'Aductores en polea baja con tobillera',
+                note: '100% Máquina: hipertrofia del aductor mayor para grosor total del muslo y estabilidad de rodilla.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Calistenia de Tren Inferior & Core (20 min)',
-            icon: '🤸‍♂️',
+            name: 'Bloque 2: Isquiotibiales & Pantorrillas en Máquinas (Aislamiento Completo · Cero Calistenia)',
+            icon: '🦵',
             exercises: [
               {
-                name: 'Pistol Squats (Sentadilla a 1 Pierna) Asistidas',
-                sets: 3,
-                reps: '6 por pierna',
-                restSeconds: 75,
-                substitute: 'Sentadillas Cosacas de movilidad lateral',
-                note: 'Control excéntrico puro de equilibrio neuromuscular.'
+                name: 'Curl Femoral Sentado o Tumbado en Máquina (Leg Curl Machine)',
+                sets: 4,
+                reps: '10 - 12 reps (bajada lenta en 3s)',
+                restSeconds: 90,
+                equipment: 'machine',
+                substitute: 'Curl femoral acostado en máquina con pausa',
+                note: '100% Máquina: Nippard Protocol con torso inclinado hacia adelante para máximo estiramiento de isquiotibiales.'
               },
               {
-                name: 'L-Sit Tuck en Paralelas / Silla',
+                name: 'Elevación de Pantorrillas en Máquina Smith o Prensa (Calf Raise Machine)',
                 sets: 4,
-                reps: '20s continuos',
+                reps: '12 - 15 reps (pausa 3s en máximo estiramiento abajo)',
                 restSeconds: 60,
-                substitute: 'Elevaciones de rodillas al pecho en barra',
-                note: 'Compresión activa de psoas y abdominales inferiores.'
+                equipment: 'machine',
+                substitute: 'Elevación de talones en máquina de sóleo sentado',
+                note: '100% Máquina: pausa profunda para eliminar el rebote elástico del tendón de Aquiles y reclutar el gastrocnemio.'
+              },
+              {
+                name: 'Máquina de Abductores de Cadera (Seated Abductor Machine)',
+                sets: 3,
+                reps: '15 reps con pausa 2s abierta',
+                restSeconds: 60,
+                equipment: 'machine',
+                substitute: 'Abducciones en polea baja con tobillera',
+                note: '100% Máquina: glúteo medio y estabilizadores pélvicos sin carga en columna.'
               }
             ]
           },
           {
-            name: 'Bloque 3: Motor Híbrido & Quema Calórica Zona 2 (15 min)',
+            name: 'Bloque 3: Motor Cardiovascular en Máquina Zona 2 (15 min)',
             icon: '🔥',
             exercises: [
               {
-                name: 'Caminata Inclinada (12% inclinación, 4.8 km/h)',
+                name: 'Caminata en Cinta Inclinada (10-12% inclinación, 4.8 km/h)',
                 sets: 1,
                 reps: '15 minutos continuos',
                 restSeconds: 0,
-                substitute: 'Bicicleta suave con resistencia media',
-                note: 'Zona 2 (120-135 bpm) para bombeo circulatorio y lavado de lactato sin agotar glucógeno.'
+                equipment: 'machine',
+                substitute: 'Elíptica en máquina o bicicleta estática a ritmo constante',
+                note: 'Zona 2 (120-135 bpm) en máquina cardiovascular para bombeo circulatorio y lavado de lactato sin agotar glucógeno.'
               }
             ]
           }
@@ -2804,61 +2823,68 @@ export const HYBRID_ATHLETE_SYSTEM = {
       },
       glutes: {
         id: 'glutes',
-        name: 'Glúteo & Cadena Posterior Pesada (Bret Contreras & John Meadows)',
-        shortName: 'Glúteo Pesado',
+        name: 'Glúteo & Cadena Posterior en Máquinas (John Meadows & Contreras)',
+        shortName: 'Glúteo en Máquinas',
         icon: '🍑',
         dayRecommendation: 'Jueves o Sábado',
         durationMinutes: 75,
-        focus: 'Hipertrofia de glúteo mayor, isquiotibiales y cadera con sobrecarga pesada',
+        focus: 'Hipertrofia de glúteo mayor, isquiotibiales y cadera con sobrecarga 100% en máquinas guiadas y poleas (No Híbrido)',
+        badge: '100% MÁQUINAS',
+        equipment: 'machine',
         blocks: [
           {
-            name: 'Bloque 1: Sobrecarga en Cadena Posterior (40 min)',
+            name: 'Bloque 1: Sobrecarga en Máquinas de Cadena Posterior (40 min)',
             icon: '🏋️‍♂️',
             exercises: [
               {
-                name: 'Peso Muerto Rumano con Barra Pesada (RDL)',
+                name: 'Prensa Inclinada a 45° Pies Altos y Abiertos (Glute-Biased Leg Press)',
                 sets: 4,
-                reps: '8 - 10 reps pesadas',
+                reps: '10 - 12 reps con pausa 2s abajo',
                 restSeconds: 120,
-                substitute: 'Peso Muerto Rumano con Mancuernas Pesadas',
-                note: 'Bisagra de cadera pura. Espalda neutra, estiramiento masivo en glúteos e isquiotibiales.'
+                equipment: 'machine',
+                substitute: 'Máquina Hack inversa o Prensa Horizontal guiada',
+                note: '100% Máquina: pies colocados en el borde superior de la plataforma para máxima flexión de cadera y activación de glúteo.'
               },
               {
-                name: 'Sentadilla Búlgara Inclinada (Glute-Biased Torso 45°)',
+                name: 'Hiperextensión en Banco a 45° con Enfoque en Glúteo',
                 sets: 4,
-                reps: '8 - 10 por pierna',
-                restSeconds: 90,
-                substitute: 'Zancadas caminando profundas con mancuernas',
-                note: 'Torso inclinado 45 grados para trasladar el 85% de la carga al glúteo mayor.'
+                reps: '12 - 15 reps con pausa arriba',
+                restSeconds: 75,
+                equipment: 'machine',
+                substitute: 'Hiperextensión horizontal en máquina guiada',
+                note: '100% Máquina/Banco guiado: puntas hacia afuera a 45°, espalda alta redondeada para anular lumbares y aislar glúteos.'
               },
               {
-                name: 'Puente de Glúteos en Suelo con Barra Acolchada / Banda Pesada',
-                sets: 4,
-                reps: '12 - 15 reps con pausa 2s',
-                restSeconds: 90,
-                substitute: 'Patadas de glúteo pesadas en polea baja',
-                note: 'Pausa isométrica de 2s en la cumbre con contracción voluntaria máxima.'
-              },
-              {
-                name: 'Hiperextensión a 45° con Enfoque en Glúteo Máximo',
-                sets: 3,
-                reps: '12 - 15 reps',
-                restSeconds: 60,
-                substitute: 'Good Mornings ligeros con barra',
-                note: 'Puntas de pie hacia afuera, barbilla al pecho, empuje con los talones.'
-              },
-              {
-                name: 'Curl Femoral Sentado o Acostado en Máquina',
+                name: 'Curl Femoral Sentado en Máquina (Seated Leg Curl)',
                 sets: 4,
                 reps: '10 - 12 reps con excéntrica de 3s',
                 restSeconds: 75,
-                substitute: 'Nordic curls asistidos en colchoneta',
-                note: 'Control excéntrico estricto para hipertrofia y prevención de desgarros.'
+                equipment: 'machine',
+                substitute: 'Curl femoral acostado en máquina',
+                note: '100% Máquina: sujeción firme con almohadilla para aislar isquiotibiales sin compensaciones.'
+              },
+              {
+                name: 'Máquina de Abducciones de Cadera (Abductor Machine)',
+                sets: 4,
+                reps: '15 - 20 reps con pausa 2s',
+                restSeconds: 60,
+                equipment: 'machine',
+                substitute: 'Patadas laterales en polea baja con tobillera',
+                note: '100% Máquina: reclutamiento de glúteo medio y superior para máxima rocosidad.'
+              },
+              {
+                name: 'Máquina Multicadera / Patada de Glúteo Guiada (Glute Kickback Machine)',
+                sets: 3,
+                reps: '12 por pierna con contracción de 1s',
+                restSeconds: 60,
+                equipment: 'machine',
+                substitute: 'Patada de glúteo en polea baja con tobillera',
+                note: '100% Máquina: aislamiento puro del glúteo mayor en posición totalmente extendida.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Circuito de Zona 2 (15 min)',
+            name: 'Bloque 2: Circuito Cardiovascular en Máquina Zona 2 (15 min)',
             icon: '🔥',
             exercises: [
               {
@@ -2866,7 +2892,8 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 sets: 1,
                 reps: '15 minutos continuos',
                 restSeconds: 0,
-                substitute: 'Bicicleta estática con resistencia',
+                equipment: 'machine',
+                substitute: 'Bicicleta estática en máquina o elíptica',
                 note: 'La inclinación activa glúteos y gemelos en cada paso sin impacto articular.'
               }
             ]
@@ -2974,12 +3001,12 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 note: 'Espalda 100% horizontal. Tirón explosivo hacia el ombligo.'
               },
               {
-                name: 'Sentadilla Trasera / Prensa de Piernas Pesada',
+                name: 'Press Militar Pesado con Barra o Mancuernas (Overhead Press)',
                 sets: 4,
-                reps: '6 - 8 reps',
+                reps: '6 - 8 reps pesadas',
                 restSeconds: 120,
-                substitute: 'Sentadilla Hack o Goblet Squat Pesada',
-                note: 'Estímulo sistémico de fuerza y testosterona.'
+                substitute: 'Press de hombros en máquina convergente guiada',
+                note: 'Empuje vertical estricto para hombros densos y estabilidad escapular.'
               }
             ]
           },
@@ -3120,62 +3147,78 @@ export const HYBRID_ATHLETE_SYSTEM = {
       },
       piernas: {
         id: 'piernas',
-        name: 'Piernas: Cuádriceps, Femorales & Gemelos (Dr. Mike Israetel SFR)',
-        shortName: 'Piernas / Cuádriceps',
+        name: 'Piernas 100% Máquinas: Cuádriceps, Femorales & Gemelos (Dr. Mike Israetel SFR)',
+        shortName: 'Piernas 100% Máquinas',
         icon: '🦵',
         dayRecommendation: 'Martes o Jueves',
         durationMinutes: 50,
-        focus: 'Hipertrofia de cuádriceps y femorales con respaldo completo y cero fatiga en la columna lumbar',
+        focus: '100% Máquinas de gimnasio: hipertrofia de cuádriceps, femorales y aductores con respaldo lumbar total y cero fatiga en la columna (No Híbrido)',
+        badge: '100% MÁQUINAS',
+        equipment: 'machine',
         blocks: [
           {
-            name: 'Bloque 1: Cuádriceps & Femorales con Apoyo Total (30 min)',
+            name: 'Bloque 1: Cuádriceps & Femorales 100% en Máquinas Guiadas (30 min)',
             icon: '🦵',
             exercises: [
               {
-                name: 'Prensa Inclinada de Piernas a 45° (Espalda 100% Apoyada)',
+                name: 'Prensa Inclinada de Piernas a 45° (Espalda 100% Apoyada en Respaldo)',
                 sets: 4,
                 reps: '10 - 12 reps controladas',
                 restSeconds: 90,
-                substitute: 'Prensa Horizontal con Pies Medios o Sentadilla Goblet Ligera',
-                note: 'Pies a media altura, cadera y lumbar completamente selladas contra el respaldo. Cero cizalla o arqueo en columna.'
+                equipment: 'machine',
+                substitute: 'Prensa Horizontal Guiada con Pies Medios',
+                note: '100% Máquina: pies a media altura, cadera y lumbar completamente selladas contra el respaldo. Cero cizalla o arqueo en columna.'
+              },
+              {
+                name: 'Sentadilla Hack Guiada con Respaldo Acolchado (Hack Squat Machine)',
+                sets: 3,
+                reps: '8 - 10 reps profundas y controladas',
+                restSeconds: 90,
+                equipment: 'machine',
+                substitute: 'Prensa Inclinada a 1 pierna con soporte lumbar total',
+                note: '100% Máquina: espalda completamente apoyada en el respaldo de la máquina Hack; máxima activación de cuádriceps sin carga en discos vertebrales.'
+              },
+              {
+                name: 'Extensiones de Cuádriceps en Máquina con Pausa 2s Arriba (Leg Extension)',
+                sets: 4,
+                reps: '12 - 15 reps',
+                restSeconds: 60,
+                equipment: 'machine',
+                substitute: 'Extensiones de cuádriceps unilaterales en máquina',
+                note: '100% Máquina: aislamiento puro de cuádriceps sin involucrar la columna ni fatiga lumbar.'
               },
               {
                 name: 'Curl Femoral Sentado en Máquina (Seated Leg Curl - Nippard Protocol)',
                 sets: 4,
                 reps: '12 reps con bajada lenta en 3s',
                 restSeconds: 75,
-                substitute: 'Curl femoral acostada en máquina',
-                note: 'Mayor hipertrofia de isquiotibiales por estiramiento de cadera, con soporte de muslos que elimina tensión en espalda baja.'
+                equipment: 'machine',
+                substitute: 'Curl femoral acostada en máquina guiada',
+                note: '100% Máquina: mayor hipertrofia de isquiotibiales por estiramiento de cadera, con soporte de muslos que elimina tensión en espalda baja.'
               },
               {
-                name: 'Extensiones de Cuádriceps en Máquina con Pausa 2s Arriba',
-                sets: 4,
-                reps: '12 - 15 reps',
-                restSeconds: 60,
-                substitute: 'Sentadillas al aire con talones elevados sobre disco',
-                note: 'Aislamiento puro de cuádriceps sin involucrar la columna ni fatiga lumbar.'
-              },
-              {
-                name: 'Sentadilla Búlgara en Máquina Smith con Mancuernas Bajas',
+                name: 'Máquina de Aductores de Cadera Sentada (Adductor Machine)',
                 sets: 3,
-                reps: '10 por pierna',
-                restSeconds: 75,
-                substitute: 'Zancadas estáticas controladas en suelo',
-                note: 'Carga unilateral en brazos colgando; espalda erguida sin barra sobre los hombros para proteger la columna.'
+                reps: '12 - 15 reps con pausa 2s cerrada',
+                restSeconds: 60,
+                equipment: 'machine',
+                substitute: 'Aductores en polea baja con tobillera',
+                note: '100% Máquina: fortalecimiento del aductor mayor y estabilidad pélvica con respaldo cómodo.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Gemelos & Retorno Venoso (20 min)',
+            name: 'Bloque 2: Gemelos en Máquina & Retorno Venoso (20 min)',
             icon: '🌿',
             exercises: [
               {
-                name: 'Elevación de Talones para Gemelos en Máquina Sentada / Escalón',
+                name: 'Elevación de Talones para Gemelos en Máquina Sentada / Prensa',
                 sets: 4,
-                reps: '15 reps con pausa abajo',
+                reps: '15 reps con pausa de 3s en máximo estiramiento abajo',
                 restSeconds: 60,
-                substitute: 'Gemelos de pie sobre escalón a una pierna',
-                note: 'Fortalecimiento del tríceps sural, salud del tendón de Aquiles y estabilidad de tobillo.'
+                equipment: 'machine',
+                substitute: 'Gemelos en máquina Smith guiada con escalón',
+                note: '100% Máquina: fortalecimiento del tríceps sural, salud del tendón de Aquiles y estabilidad de tobillo con cero impacto.'
               }
             ]
           }
@@ -3783,7 +3826,7 @@ export function analyzeWeeklyWorkoutBalance({ weeklyLogs = {}, profileId = 'andr
     // Andrés Hybrid logic
     if (legsCount === 0) {
       recommendedSplit = 'legs';
-      weeklySummaryText = '💡 Sugerencia Semanal: Empieza la semana con Piernas Pesado para disparar la producción hormonal y fuerza base.';
+      weeklySummaryText = '💡 Sugerencia Semanal: Empieza la semana con Piernas Pesado (100% Máquinas de Gimnasio · Cero Híbrido) para aislar cuádriceps y femorales con máxima estabilidad externa.';
     } else if (pullCount === 0 && pushCount === 0) {
       recommendedSplit = 'pull';
       weeklySummaryText = '💡 Sugerencia Semanal: Ya completaste Piernas el lunes. Para balancear tu torso y compensar lo que faltó la semana anterior, hoy se recomienda: 🦅 Espalda & Tracción Pesada + Front Lever.';

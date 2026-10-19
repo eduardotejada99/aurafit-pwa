@@ -30,6 +30,7 @@ describe('AuraFit Adaptive Workout Engine', () => {
   it('should prescribe hybrid athlete 3-block routine for Andrés with high readiness', () => {
     const prescription = getHybridWorkoutPrescription({
       profile: FAMILY_PROFILES.andres,
+      selectedSplit: 'full_upper',
       sleepHours: 8,
       sleepQuality: 'deep',
       recentHeavyDays: 0,
@@ -273,6 +274,61 @@ describe('AuraFit Adaptive Workout Engine', () => {
       assert.ok(!ex.name.toLowerCase().includes('sentadilla'), `Pull should not include squat: ${ex.name}`);
       assert.ok(!ex.name.toLowerCase().includes('búlgara'), `Pull should not include bulgarian split squat: ${ex.name}`);
     });
+  });
+
+  it('should ensure leg workouts are 100% gym machines with ZERO calisthenics or hybrid moves', () => {
+    // 1. Andrés Legs split
+    const andresLegs = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'legs' });
+    assert.ok(andresLegs.routineTitle.includes('100% Máquinas'));
+    assert.ok(andresLegs.focus.includes('100% Máquinas'));
+    
+    // Check that every single exercise in Andres legs is a gym machine
+    andresLegs.exercises.forEach(ex => {
+      assert.ok(!ex.name.toLowerCase().includes('pistol'), `Should not contain pistol squats: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('l-sit'), `Should not contain l-sit: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('calistenia'), `Should not contain calisthenics: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('salto'), `Should not contain jumps: ${ex.name}`);
+      assert.equal(ex.equipment, 'machine', `Exercise ${ex.name} must specify equipment: 'machine'`);
+    });
+
+    // Check specific required gym machines
+    assert.ok(andresLegs.exercises.some(e => e.name.toLowerCase().includes('prensa')), 'Must have Leg Press 45°');
+    assert.ok(andresLegs.exercises.some(e => e.name.toLowerCase().includes('hack')), 'Must have Hack Squat Machine');
+    assert.ok(andresLegs.exercises.some(e => e.name.toLowerCase().includes('extensi')), 'Must have Leg Extension Machine');
+    assert.ok(andresLegs.exercises.some(e => e.name.toLowerCase().includes('curl femoral')), 'Must have Seated/Lying Leg Curl Machine');
+    assert.ok(andresLegs.exercises.some(e => e.name.toLowerCase().includes('aductor')), 'Must have Adductor Machine');
+    assert.ok(andresLegs.exercises.some(e => e.name.toLowerCase().includes('pantorrilla') || e.name.toLowerCase().includes('calf')), 'Must have Calf Raise Machine');
+
+    // 2. Tania Piernas split
+    const taniaPiernas = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.pareja, selectedSplit: 'piernas' });
+    assert.ok(taniaPiernas.routineTitle.includes('100% Máquinas'));
+    taniaPiernas.exercises.forEach(ex => {
+      assert.ok(!ex.name.toLowerCase().includes('búlgara con mancuernas'), `Should not contain dumbbell bulgarian squats: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('calistenia'), `Should not contain calisthenics: ${ex.name}`);
+      assert.equal(ex.equipment, 'machine', `Exercise ${ex.name} must specify equipment: 'machine'`);
+    });
+    assert.ok(taniaPiernas.exercises.some(e => e.name.toLowerCase().includes('hack')), 'Tania must have Hack Squat with back support');
+    assert.ok(taniaPiernas.exercises.some(e => e.name.toLowerCase().includes('prensa')), 'Tania must have Leg Press');
+    assert.ok(taniaPiernas.exercises.some(e => e.name.toLowerCase().includes('extensi')), 'Tania must have Leg Extension');
+    assert.ok(taniaPiernas.exercises.some(e => e.name.toLowerCase().includes('curl femoral')), 'Tania must have Leg Curl');
+    assert.ok(taniaPiernas.exercises.some(e => e.name.toLowerCase().includes('aductor')), 'Tania must have Adductor machine');
+  });
+
+  it('should ensure upper body workouts remain fully hybrid with calisthenics mastery + weights', () => {
+    // 1. Andrés Push: Barbell/Dumbbell Bench Press + Handstand
+    const pushRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'push' });
+    assert.ok(pushRx.exercises.some(e => e.name.toLowerCase().includes('press')), 'Push must have heavy pressing');
+    assert.ok(pushRx.exercises.some(e => e.name.toLowerCase().includes('handstand')), 'Push must have Handstand calisthenics skill');
+
+    // 2. Andrés Pull: Heavy Rows + Front Lever
+    const pullRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'pull' });
+    assert.ok(pullRx.exercises.some(e => e.name.toLowerCase().includes('remo')), 'Pull must have heavy rowing');
+    assert.ok(pullRx.exercises.some(e => e.name.toLowerCase().includes('front lever')), 'Pull must have Front Lever calisthenics skill');
+    assert.ok(pullRx.exercises.some(e => e.name.toLowerCase().includes('dominadas')), 'Pull must have weighted pullups');
+
+    // 3. Andrés Core: Calisthenics compression (Toes to Bar, L-Sit) + McGill
+    const coreRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'core' });
+    assert.ok(coreRx.exercises.some(e => e.name.toLowerCase().includes('toes to bar') || e.name.toLowerCase().includes('l-sit')), 'Core must have calisthenics skills');
   });
 });
 
