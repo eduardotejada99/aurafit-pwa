@@ -194,21 +194,85 @@ describe('AuraFit Adaptive Workout Engine', () => {
   });
 
   it('should strictly exclude hip thrust from all of Tania routines and splits for lumbar protection', () => {
-    const parejaGym = getHybridWorkoutPrescription({
+    const parejaDefault = getHybridWorkoutPrescription({
       profile: FAMILY_PROFILES.pareja,
       context: 'gym'
     });
 
-    parejaGym.exercises.forEach(ex => {
-      // Must not be named Hip Thrust
+    // Check all exercises in default prescription
+    parejaDefault.exercises.forEach(ex => {
       assert.ok(!ex.name.toLowerCase().includes('hip thrust'), `Exercise ${ex.name} must not be Hip Thrust`);
     });
 
     // Verify floor bridge with bands is prescribed instead
-    assert.ok(parejaGym.exercises.some(e => e.name.toLowerCase().includes('puente de glúteos en suelo')));
+    assert.ok(parejaDefault.exercises.some(e => e.name.toLowerCase().includes('puente de glúteos en suelo')));
 
-    // Verify McGill Big 3 for lumbar core
-    assert.ok(parejaGym.exercises.some(e => e.name.toLowerCase().includes('mcgill') || e.name.toLowerCase().includes('bird-dog')));
+    // Verify McGill Big 3 for lumbar core in dedicated core split and routine
+    const parejaCore = getHybridWorkoutPrescription({
+      profile: FAMILY_PROFILES.pareja,
+      selectedSplit: 'core'
+    });
+    assert.ok(parejaCore.exercises.some(e => e.name.toLowerCase().includes('mcgill') || e.name.toLowerCase().includes('bird-dog')));
+
+    // Verify all splits of Tania exclude Hip Thrust
+    Object.entries(HYBRID_ATHLETE_SYSTEM.splits.pareja).forEach(([sKey, sObj]) => {
+      (sObj.blocks || []).forEach(b => {
+        (b.exercises || []).forEach(ex => {
+          assert.ok(!ex.name.toLowerCase().includes('hip thrust'), `Split ${sKey} has forbidden hip thrust: ${ex.name}`);
+        });
+      });
+    });
+  });
+
+  it('should provide dynamic isolated muscle group splits for Tania with pure focus', () => {
+    const splits = HYBRID_ATHLETE_SYSTEM.splits.pareja;
+    assert.ok(splits.glutes_legs, 'Tania must have Glúteo Aislado');
+    assert.ok(splits.piernas, 'Tania must have Piernas aisladas');
+    assert.ok(splits.espalda, 'Tania must have Espalda aislada');
+    assert.ok(splits.pecho, 'Tania must have Pecho / Tren Superior aislado');
+    assert.ok(splits.core, 'Tania must have Core & Blindaje Lumbar aislado');
+
+    // Verify Piernas is pure legs: NO pull/back exercises (jalones, remos, dominadas, pullover)
+    const piernasRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.pareja, selectedSplit: 'piernas' });
+    piernasRx.exercises.forEach(ex => {
+      assert.ok(!ex.name.toLowerCase().includes('jalón'), `Piernas should not include pull: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('remo'), `Piernas should not include row: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('dominada'), `Piernas should not include chin/pullup: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('pullover'), `Piernas should not include pullover: ${ex.name}`);
+    });
+
+    // Verify Espalda is pure back: NO quads or leg presses
+    const espaldaRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.pareja, selectedSplit: 'espalda' });
+    espaldaRx.exercises.forEach(ex => {
+      assert.ok(!ex.name.toLowerCase().includes('prensa'), `Espalda should not include leg press: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('sentadilla'), `Espalda should not include squat: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('cuádriceps'), `Espalda should not include quads: ${ex.name}`);
+    });
+  });
+
+  it('should provide dynamic isolated muscle group splits for Andrés with pure focus', () => {
+    const splits = HYBRID_ATHLETE_SYSTEM.splits.andres;
+    assert.ok(splits.legs, 'Andres must have Piernas pesado');
+    assert.ok(splits.push, 'Andres must have Pecho & Empuje con lastre');
+    assert.ok(splits.pull, 'Andres must have Espalda & Tracción con lastre');
+    assert.ok(splits.glutes, 'Andres must have Glúteo pesado');
+    assert.ok(splits.core, 'Andres must have Core & Calistenia estática');
+
+    // Verify Legs is pure legs: NO pull/back exercises
+    const legsRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'legs' });
+    legsRx.exercises.forEach(ex => {
+      assert.ok(!ex.name.toLowerCase().includes('dominadas'), `Legs should not include pullups: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('remo'), `Legs should not include rows: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('front lever'), `Legs should not include front lever: ${ex.name}`);
+    });
+
+    // Verify Pull is pure back: NO legs exercises
+    const pullRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'pull' });
+    pullRx.exercises.forEach(ex => {
+      assert.ok(!ex.name.toLowerCase().includes('prensa'), `Pull should not include leg press: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('sentadilla'), `Pull should not include squat: ${ex.name}`);
+      assert.ok(!ex.name.toLowerCase().includes('búlgara'), `Pull should not include bulgarian split squat: ${ex.name}`);
+    });
   });
 });
 

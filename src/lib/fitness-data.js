@@ -2792,6 +2792,148 @@ export const HYBRID_ATHLETE_SYSTEM = {
           }
         ]
       },
+      glutes: {
+        id: 'glutes',
+        name: 'Glúteo & Cadena Posterior Pesada (Bret Contreras & John Meadows)',
+        shortName: 'Glúteo Pesado',
+        icon: '🍑',
+        dayRecommendation: 'Jueves o Sábado',
+        durationMinutes: 75,
+        focus: 'Hipertrofia de glúteo mayor, isquiotibiales y cadera con sobrecarga pesada',
+        blocks: [
+          {
+            name: 'Bloque 1: Sobrecarga en Cadena Posterior (40 min)',
+            icon: '🏋️‍♂️',
+            exercises: [
+              {
+                name: 'Peso Muerto Rumano con Barra Pesada (RDL)',
+                sets: 4,
+                reps: '8 - 10 reps pesadas',
+                restSeconds: 120,
+                substitute: 'Peso Muerto Rumano con Mancuernas Pesadas',
+                note: 'Bisagra de cadera pura. Espalda neutra, estiramiento masivo en glúteos e isquiotibiales.'
+              },
+              {
+                name: 'Sentadilla Búlgara Inclinada (Glute-Biased Torso 45°)',
+                sets: 4,
+                reps: '8 - 10 por pierna',
+                restSeconds: 90,
+                substitute: 'Zancadas caminando profundas con mancuernas',
+                note: 'Torso inclinado 45 grados para trasladar el 85% de la carga al glúteo mayor.'
+              },
+              {
+                name: 'Puente de Glúteos en Suelo con Barra Acolchada / Banda Pesada',
+                sets: 4,
+                reps: '12 - 15 reps con pausa 2s',
+                restSeconds: 90,
+                substitute: 'Patadas de glúteo pesadas en polea baja',
+                note: 'Pausa isométrica de 2s en la cumbre con contracción voluntaria máxima.'
+              },
+              {
+                name: 'Hiperextensión a 45° con Enfoque en Glúteo Máximo',
+                sets: 3,
+                reps: '12 - 15 reps',
+                restSeconds: 60,
+                substitute: 'Good Mornings ligeros con barra',
+                note: 'Puntas de pie hacia afuera, barbilla al pecho, empuje con los talones.'
+              },
+              {
+                name: 'Curl Femoral Sentado o Acostado en Máquina',
+                sets: 4,
+                reps: '10 - 12 reps con excéntrica de 3s',
+                restSeconds: 75,
+                substitute: 'Nordic curls asistidos en colchoneta',
+                note: 'Control excéntrico estricto para hipertrofia y prevención de desgarros.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Circuito de Zona 2 (15 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'Caminata en Cinta con Pendiente Máxima (12-15%)',
+                sets: 1,
+                reps: '15 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Bicicleta estática con resistencia',
+                note: 'La inclinación activa glúteos y gemelos en cada paso sin impacto articular.'
+              }
+            ]
+          }
+        ]
+      },
+      core: {
+        id: 'core',
+        name: 'Core & Calistenia Estática (Dejan Stipke & Stuart McGill)',
+        shortName: 'Core & Calistenia',
+        icon: '🤸‍♂️',
+        dayRecommendation: 'Miércoles o Sábado',
+        durationMinutes: 50,
+        focus: 'Fuerza de compresión abdominal, anti-rotación y transferencia a habilidades estáticas',
+        blocks: [
+          {
+            name: 'Bloque 1: Compresión & Tensión de Calistenia (25 min)',
+            icon: '🤸‍♂️',
+            exercises: [
+              {
+                name: 'Elevaciones de Piernas a la Barra (Toes to Bar) Estrictas',
+                sets: 4,
+                reps: '10 - 12 reps estrictas',
+                restSeconds: 75,
+                substitute: 'Elevaciones de rodillas al pecho colgado en barra',
+                note: 'Cero inercia (cero kipping). Piernas completamente rectas, puntas a la barra.'
+              },
+              {
+                name: 'L-Sit Sostenido en Paralelas / Silla',
+                sets: 4,
+                reps: '25s continuos',
+                restSeconds: 60,
+                substitute: 'L-Sit Tuck con rodillas al pecho',
+                note: 'Compresión activa de psoas y abdominales inferiores con bloqueo de codos.'
+              },
+              {
+                name: 'Rueda Abdominal (Ab Wheel Rollout) en Suelo',
+                sets: 3,
+                reps: '8 - 10 reps controladas',
+                restSeconds: 75,
+                substitute: 'Hollow Body Rocks 40s estricto',
+                note: 'Anti-extensión lumbar pura. Mantén la pelvis en retroversión sin arquear la espalda.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Estabilidad de Columna McGill & Habilidades (25 min)',
+            icon: '🛡️',
+            exercises: [
+              {
+                name: 'McGill Bird-Dog Cruzado con Respiración Diafragmática',
+                sets: 3,
+                reps: '10 por lado lentos',
+                restSeconds: 45,
+                substitute: 'Deadbug con balón suizo',
+                note: 'Tensión abdominal coordinada y estabilidad intervertebral.'
+              },
+              {
+                name: 'Plancha Lateral con Elevación de Cadera / Pallof Press',
+                sets: 3,
+                reps: '35s por lado',
+                restSeconds: 45,
+                substitute: 'Plancha lateral con rodillas apoyadas',
+                note: 'Oblicuos y estabilizadores laterales de pelvis para blindar la zona media.'
+              },
+              {
+                name: 'Práctica de Handstand en Pared o Suelo',
+                sets: 5,
+                reps: '25s equilibrio',
+                restSeconds: 60,
+                substitute: 'Pike pushups en cajón',
+                note: 'Alineación de muñecas, hombros y core en una línea recta perfecta.'
+              }
+            ]
+          }
+        ]
+      },
       full_upper: {
         id: 'full_upper',
         name: 'Torso Híbrido Completo (Dejan Stipke Balance)',
@@ -2905,121 +3047,323 @@ export const HYBRID_ATHLETE_SYSTEM = {
     pareja: {
       glutes_legs: {
         id: 'glutes_legs',
-        name: 'Glúteos & Femoral (Cero Compresión Axial)',
-        shortName: 'Glúteos & Piernas',
+        name: 'Glúteo Aislado (Cero Cizalla Lumbar · Bret Contreras & Eugene Teo)',
+        shortName: 'Glúteo Aislado',
         icon: '🍑',
-        dayRecommendation: 'Inicio de Semana',
+        dayRecommendation: 'Lunes o Inicio de Semana',
         durationMinutes: 50,
-        focus: 'Glúteos, femoral y cadera con columna 100% protegida y descompresión',
+        focus: 'Hipertrofia máxima de glúteo mayor y medio sin carga axial ni cizalla sobre L4-L5/S1 (Cero Hip Thrust)',
         blocks: [
           {
-            name: 'Bloque 1: Cadena Posterior sin Carga Axial (25 min)',
-            icon: '🌸',
+            name: 'Bloque 1: Hipertrofia Pura de Glúteos sin Carga Axial (25 min)',
+            icon: '🍑',
             exercises: [
-              {
-                name: 'Prensa Inclinada de Piernas (Pies altos y separados)',
-                sets: 4,
-                reps: '10 - 12 reps',
-                restSeconds: 90,
-                substitute: 'Prensa Horizontal con Pies Altos o Step-Ups Bajos Asistidos',
-                note: 'Espalda 100% apoyada en el respaldo. Cero presión sobre la columna lumbar.'
-              },
-              {
-                name: 'Sentadilla Búlgara con Mancuernas a los Lados',
-                sets: 3,
-                reps: '10 por pierna',
-                restSeconds: 75,
-                substitute: 'Zancadas Estáticas en Máquina Smith guiada',
-                note: 'Mancuernas colgando a los costados para no cargar la columna vertebral.'
-              },
               {
                 name: 'Puente de Glúteos en Suelo con Banda Elástica (Cero Cizalla Lumbar)',
                 sets: 4,
-                reps: '15 reps (pausa 2s arriba)',
+                reps: '15 reps con pausa 2s arriba',
                 restSeconds: 60,
                 substitute: 'Patadas de Glúteo en Polea Baja / Cuadrupedia con Banda',
                 note: 'Espalda y columna 100% plana en colchoneta para proteger la zona lumbar con máxima activación de glúteo mayor (Reemplazo médico a Hip Thrust).'
+              },
+              {
+                name: 'Patadas de Glúteo en Polea Baja a 45° (Cable Kickbacks en Diagonal)',
+                sets: 4,
+                reps: '12 por pierna con pausa 1s',
+                restSeconds: 60,
+                substitute: 'Patadas en cuadrupedia con tobilleras lastradas',
+                note: 'Ligera rotación externa de punta de pie; torso firme con core apretado para no arquear la columna lumbar.'
+              },
+              {
+                name: 'Hiperextensión a 45° con Espalda Alta Redondeada (Glute-Biased 45° Hyper)',
+                sets: 3,
+                reps: '12 - 15 reps',
+                restSeconds: 75,
+                substitute: 'Puentes unilaterales de glúteo en suelo',
+                note: 'Cojín debajo de caderas, barbilla al pecho y espalda dorsal redondeada para anular erectores y sobrecargar glúteo sin compresión lumbar.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Tracción Atlética & Core Protector McGill (25 min)',
-            icon: '🧘‍♀️',
+            name: 'Bloque 2: Glúteo Medio & Bombeo Metabólico (25 min)',
+            icon: '🌸',
             exercises: [
               {
-                name: 'Jalón al Pecho Polea Alta (Agarre Neutro)',
+                name: 'Abducciones de Cadera en Máquina o Polea Sentada',
                 sets: 4,
-                reps: '10 - 12 reps',
-                restSeconds: 75,
-                substitute: 'Remo en Banco Inclinado con Pecho Apoyado',
-                note: 'Agarre neutro para cuidar hombros y alinear la columna.'
-              },
-              {
-                name: 'Remo con Mancuerna en Banco Inclinado (Pecho Apoyado)',
-                sets: 3,
-                reps: '12 reps',
+                reps: '15 - 20 reps con pausa 2s',
                 restSeconds: 60,
-                substitute: 'Remo en Polea Baja sentado',
-                note: 'El banco soporta todo el peso corporal; la lumbar queda libre de tensión.'
+                substitute: 'Clamshells (Almejas) acostada con banda elástica pesada',
+                note: 'Glúteo medio y estabilidad pélvica para blindar la espalda baja y dar forma redondeada.'
               },
               {
-                name: 'McGill Big 3 (Bird-Dog + Plancha Lateral)',
+                name: 'Frog Pumps en Suelo con Banda Elástica',
                 sets: 3,
-                reps: '8 por lado / 30s plancha',
+                reps: '20 reps continuas',
                 restSeconds: 45,
-                substitute: 'Deadbug con respiración diafragmática',
-                note: 'El protocolo clínico de oro para estabilidad lumbar permanente.'
+                substitute: 'Puente de glúteos isométrico 45s',
+                note: 'Congestión metabólica final de glúteos con espalda completamente apoyada y descompresiva.'
               }
             ]
           }
         ]
       },
-      back_posture: {
-        id: 'back_posture',
-        name: 'Espalda, Postura & McGill Core (Protección Lumbar)',
-        shortName: 'Espalda & Core',
-        icon: '🧘‍♀️',
-        dayRecommendation: 'Mediados de Semana',
-        durationMinutes: 45,
-        focus: 'Tracción estética y estabilidad lumbar profunda sin carga axial',
+      piernas: {
+        id: 'piernas',
+        name: 'Piernas: Cuádriceps, Femorales & Gemelos (Dr. Mike Israetel SFR)',
+        shortName: 'Piernas / Cuádriceps',
+        icon: '🦵',
+        dayRecommendation: 'Martes o Jueves',
+        durationMinutes: 50,
+        focus: 'Hipertrofia de cuádriceps y femorales con respaldo completo y cero fatiga en la columna lumbar',
         blocks: [
           {
-            name: 'Bloque 1: Tracción con Soporte de Banco Completo (25 min)',
-            icon: '🧘‍♀️',
+            name: 'Bloque 1: Cuádriceps & Femorales con Apoyo Total (30 min)',
+            icon: '🦵',
             exercises: [
               {
-                name: 'Remo en Banco Inclinado con Pecho Apoyado',
+                name: 'Prensa Inclinada de Piernas a 45° (Espalda 100% Apoyada)',
                 sets: 4,
-                reps: '10 - 12 reps',
-                restSeconds: 75,
-                substitute: 'Remo en Polea Baja Sentada con Agarre Neutro',
-                note: 'Cero tensión en la espalda baja; la fuerza se transmite a los dorsales.'
+                reps: '10 - 12 reps controladas',
+                restSeconds: 90,
+                substitute: 'Prensa Horizontal con Pies Medios o Sentadilla Goblet Ligera',
+                note: 'Pies a media altura, cadera y lumbar completamente selladas contra el respaldo. Cero cizalla o arqueo en columna.'
               },
               {
-                name: 'Jalón al Pecho con Agarre Neutro Cerrado',
+                name: 'Curl Femoral Sentado en Máquina (Seated Leg Curl - Nippard Protocol)',
                 sets: 4,
-                reps: '10 - 12 reps',
+                reps: '12 reps con bajada lenta en 3s',
                 restSeconds: 75,
-                substitute: 'Remo invertido en multipower',
-                note: 'Apertura de caja torácica y postura erguida.'
+                substitute: 'Curl femoral acostada en máquina',
+                note: 'Mayor hipertrofia de isquiotibiales por estiramiento de cadera, con soporte de muslos que elimina tensión en espalda baja.'
               },
               {
-                name: 'Face Pulls en Polea con Cuerda',
-                sets: 3,
-                reps: '15 reps',
+                name: 'Extensiones de Cuádriceps en Máquina con Pausa 2s Arriba',
+                sets: 4,
+                reps: '12 - 15 reps',
                 restSeconds: 60,
-                substitute: 'Pájaros con mancuernas ligeras apoyada en banco',
-                note: 'Corrige hombros adelantados y alivia trapecios tensos.'
+                substitute: 'Sentadillas al aire con talones elevados sobre disco',
+                note: 'Aislamiento puro de cuádriceps sin involucrar la columna ni fatiga lumbar.'
+              },
+              {
+                name: 'Sentadilla Búlgara en Máquina Smith con Mancuernas Bajas',
+                sets: 3,
+                reps: '10 por pierna',
+                restSeconds: 75,
+                substitute: 'Zancadas estáticas controladas en suelo',
+                note: 'Carga unilateral en brazos colgando; espalda erguida sin barra sobre los hombros para proteger la columna.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Protocolo Clínico McGill Big 3 (20 min)',
+            name: 'Bloque 2: Gemelos & Retorno Venoso (20 min)',
+            icon: '🌿',
+            exercises: [
+              {
+                name: 'Elevación de Talones para Gemelos en Máquina Sentada / Escalón',
+                sets: 4,
+                reps: '15 reps con pausa abajo',
+                restSeconds: 60,
+                substitute: 'Gemelos de pie sobre escalón a una pierna',
+                note: 'Fortalecimiento del tríceps sural, salud del tendón de Aquiles y estabilidad de tobillo.'
+              }
+            ]
+          }
+        ]
+      },
+      espalda: {
+        id: 'espalda',
+        name: 'Espalda Aislada con Pecho Apoyado (Cero Fatiga Lumbar · RP Maximum SFR)',
+        shortName: 'Espalda & Tracción',
+        icon: '🦅',
+        dayRecommendation: 'Miércoles',
+        durationMinutes: 45,
+        focus: 'Dorsales, romboides y postura erguida sin fatiga en erectores espinales (Dr. Mike Israetel SFR)',
+        blocks: [
+          {
+            name: 'Bloque 1: Tracción Pura con Respaldo y Pecho Apoyado (30 min)',
+            icon: '🦅',
+            exercises: [
+              {
+                name: 'Remo en Banco Inclinado con Pecho Apoyado (Chest-Supported Dumbbell Row)',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Remo en máquina con almohadilla de pecho',
+                note: 'El banco absorbe todo el peso; los erectores espinales y la lumbar quedan 100% libres de fatiga mientras el dorsal llega al fallo.'
+              },
+              {
+                name: 'Jalón al Pecho en Polea Alta con Agarre Neutro',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Jalón unilateral con agarre neutro cerrado',
+                note: 'Agarre neutro ergonómico para hombros y columna recta sin arqueo lumbar excesivo.'
+              },
+              {
+                name: 'Remo Unilateral en Polea Alta / Media Sentada',
+                sets: 3,
+                reps: '12 por lado',
+                restSeconds: 60,
+                substitute: 'Remo en polea baja con soporte de pies',
+                note: 'Tirón hacia la cadera con apoyo del brazo contrario para mantener la columna alineada y estable.'
+              },
+              {
+                name: 'Pullover en Polea Alta con Cuerda (Straight-Arm Pulldown)',
+                sets: 3,
+                reps: '15 reps controladas',
+                restSeconds: 60,
+                substitute: 'Pullover acostada sobre banco plano',
+                note: 'Aislamiento puro del dorsal ancho en su rango más alargado sin involucrar brazos ni espalda baja.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Postura Escapular & Deltoides Posterior (15 min)',
+            icon: '🧘‍♀️',
+            exercises: [
+              {
+                name: 'Face Pulls en Polea con Cuerda para Postura',
+                sets: 4,
+                reps: '15 reps con pausa 2s',
+                restSeconds: 60,
+                substitute: 'Pájaros con mancuernas ligeras apoyada en banco',
+                note: 'Manguito rotador y deltoides posterior para abrir el pecho y descomprimir la columna dorsal.'
+              }
+            ]
+          }
+        ]
+      },
+      pecho: {
+        id: 'pecho',
+        name: 'Pecho & Hombros Aislado: Tren Superior Empuje (Jeff Nippard & Meadows)',
+        shortName: 'Pecho & Tren Sup',
+        icon: '🛡️',
+        dayRecommendation: 'Viernes',
+        durationMinutes: 45,
+        focus: 'Hipertrofia estética de pectoral, hombros y tríceps con respaldo de banco y poleas guiadas',
+        blocks: [
+          {
+            name: 'Bloque 1: Empuje de Pecho & Hombros con Soporte (30 min)',
             icon: '🛡️',
             exercises: [
-              { name: 'Bird-Dog de Control Cruzado', sets: 3, reps: '8 por lado con pausa 3s', restSeconds: 45, substitute: 'Deadbug diafragmático', note: 'Estabilidad neuromuscular de la columna.' },
-              { name: 'Plancha Lateral Apoyando Rodillas', sets: 3, reps: '30s por lado', restSeconds: 45, substitute: 'Puente lateral suave', note: 'Fortalecimiento de cuadrado lumbar.' },
-              { name: 'Descompresión en Postura del Niño (Child Pose)', sets: 1, reps: '4 minutos', restSeconds: 0, substitute: 'Respiración diafragmática boca arriba', note: 'Alivio instantáneo de compresión.' }
+              {
+                name: 'Press Inclinado con Mancuernas en Banco a 30°',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Press Inclinado en Máquina Smith guiada',
+                note: 'Banco brinda apoyo dorsal completo; pies firmes en el suelo sin despegar la espalda baja ni hiperextender la columna.'
+              },
+              {
+                name: 'Press de Pecho en Máquina Convergente Sentada',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Flexiones en banco inclinado con manos elevadas',
+                note: 'Empuje guiado con respaldo ergonómico que neutraliza cualquier esfuerzo en la lumbar.'
+              },
+              {
+                name: 'Aperturas en Polea / Pec Deck con Énfasis en Estiramiento Profundo',
+                sets: 3,
+                reps: '12 - 15 reps',
+                restSeconds: 60,
+                substitute: 'Aperturas planas con mancuernas ligeras',
+                note: 'Tensión constante en fibras del pectoral mayor con control excéntrico de 2 segundos.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Deltoides & Brazos Estéticos (15 min)',
+            icon: '🌸',
+            exercises: [
+              {
+                name: 'Elevaciones Laterales en Polea o con Mancuernas',
+                sets: 4,
+                reps: '15 reps con control',
+                restSeconds: 60,
+                substitute: 'Elevaciones laterales sentada en banco',
+                note: 'Desarrollo del deltoides lateral para hombros redondos y silueta estética.'
+              },
+              {
+                name: 'Extensiones de Tríceps en Polea con Cuerda',
+                sets: 3,
+                reps: '12 - 15 reps',
+                restSeconds: 60,
+                substitute: 'Fondos suaves en banco con piernas flexionadas',
+                note: 'Aislamiento de tríceps con codos fijos y columna neutra sin torsión.'
+              }
+            ]
+          }
+        ]
+      },
+      core: {
+        id: 'core',
+        name: 'Core & Blindaje Lumbar Aislado (Protocolo Clínico Dr. Stuart McGill)',
+        shortName: 'Core McGill',
+        icon: '🧘‍♀️',
+        dayRecommendation: 'Miércoles o Sábado',
+        durationMinutes: 40,
+        focus: 'Rigidez de faja abdominal, anti-rotación y descompresión intervertebral sin flexiones de tronco',
+        blocks: [
+          {
+            name: 'Bloque 1: Protocolo Clínico McGill Big 3 (20 min)',
+            icon: '🛡️',
+            exercises: [
+              {
+                name: 'McGill Bird-Dog de Control Cruzado con Pausa 3s',
+                sets: 4,
+                reps: '8 por lado lentos',
+                restSeconds: 45,
+                substitute: 'Cat-Cow suave diafragmático',
+                note: 'Activación neuromuscular coordinada del core y glúteo sin ninguna presión sobre discos lumbares.'
+              },
+              {
+                name: 'Plancha Lateral con Apoyo de Rodillas o Pies',
+                sets: 3,
+                reps: '30 - 40s por lado',
+                restSeconds: 45,
+                substitute: 'Puente lateral suave con apoyo de antebrazo',
+                note: 'Fortalecimiento del cuadrado lumbar para prevenir dolor y estabilizar la pelvis.'
+              },
+              {
+                name: 'Curl-Up Modificado McGill con Manos Bajo la Lumbar',
+                sets: 3,
+                reps: '8 - 10 reps con pausa 2s',
+                restSeconds: 45,
+                substitute: 'Deadbug con respiración diafragmática',
+                note: 'Las manos preservan la curvatura neutra natural mientras se activa el recto abdominal sin compresión intervertebral.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Anti-Rotación & Descompresión Espinal (20 min)',
+            icon: '🌸',
+            exercises: [
+              {
+                name: 'Press Pallof Anti-Rotación en Polea o Elástico',
+                sets: 3,
+                reps: '12 reps con pausa 2s',
+                restSeconds: 45,
+                substitute: 'Plancha frontal isométrica en pared',
+                note: 'Fuerza isométrica pura contra fuerzas rotacionales para proteger la columna vertebral.'
+              },
+              {
+                name: 'Deadbug Diafragmático con Apoyo en Suelo',
+                sets: 3,
+                reps: '10 por lado lentos',
+                restSeconds: 45,
+                substitute: 'Respiración diafragmática 4-4 boca arriba',
+                note: 'Espalda pegada a la colchoneta con respiración profunda para reeducar la postura.'
+              },
+              {
+                name: 'Descompresión en Postura del Niño (Child Pose)',
+                sets: 1,
+                reps: '4 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Estiramiento suave de cadera en suelo',
+                note: 'Alivio instantáneo de compresión lumbar y relajación neuromuscular.'
+              }
             ]
           }
         ]
@@ -3239,6 +3583,20 @@ export const HYBRID_ATHLETE_SYSTEM = {
   }
 };
 
+// Aliases for backwards compatibility with previous tests & logs
+if (HYBRID_ATHLETE_SYSTEM.splits?.pareja) {
+  Object.defineProperty(HYBRID_ATHLETE_SYSTEM.splits.pareja, 'gluteos', {
+    get() { return this.glutes_legs; },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(HYBRID_ATHLETE_SYSTEM.splits.pareja, 'back_posture', {
+    get() { return this.espalda; },
+    enumerable: false,
+    configurable: true
+  });
+}
+
 /**
  * 11. Intelligent Hybrid Workout Auto-Regulation & Split Engine
  * Dynamically computes readiness based on sleep, fatigue, location, past volume, and selected split.
@@ -3259,6 +3617,11 @@ export function getHybridWorkoutPrescription({
 
   // Determine effective split
   let activeSplitKey = selectedSplit;
+  if (profileId === 'pareja') {
+    if (activeSplitKey === 'gluteos') activeSplitKey = 'glutes_legs';
+    if (activeSplitKey === 'back_posture') activeSplitKey = 'espalda';
+  }
+
   if (isMissedDay) {
     activeSplitKey = profileId === 'hermana' ? 'calm_break' : 'home_core';
   } else if (!activeSplitKey || !profileSplits[activeSplitKey]) {
@@ -3379,24 +3742,29 @@ export function analyzeWeeklyWorkoutBalance({ weeklyLogs = {}, profileId = 'andr
   const completed = logEntries.filter((l) => l && (l.done || l.status === 'completed'));
   const missed = logEntries.filter((l) => l && (l.status === 'missed' || l.isMissedDay));
 
-  const legsCount = completed.filter((l) => l.split === 'legs' || l.split === 'glutes_legs' || l.title?.toLowerCase().includes('piernas') || l.title?.toLowerCase().includes('glúteo')).length;
-  const pushCount = completed.filter((l) => l.split === 'push' || l.title?.toLowerCase().includes('pecho') || l.title?.toLowerCase().includes('empuje')).length;
-  const pullCount = completed.filter((l) => l.split === 'pull' || l.split === 'back_posture' || l.title?.toLowerCase().includes('espalda') || l.title?.toLowerCase().includes('tracción')).length;
-  const coreCount = completed.filter((l) => l.split === 'home_core' || l.title?.toLowerCase().includes('planchas') || l.title?.toLowerCase().includes('core')).length;
+  const glutesCount = completed.filter((l) => l.split === 'glutes_legs' || l.split === 'glutes' || l.split === 'gluteos' || l.title?.toLowerCase().includes('glúteo')).length;
+  const pureLegsCount = completed.filter((l) => (l.split === 'legs' || l.split === 'piernas') && !l.title?.toLowerCase().includes('glúteo')).length;
+  const legsCount = completed.filter((l) => l.split === 'legs' || l.split === 'glutes_legs' || l.split === 'piernas' || l.split === 'glutes' || l.split === 'gluteos' || l.title?.toLowerCase().includes('piernas') || l.title?.toLowerCase().includes('glúteo')).length;
+  const pushCount = completed.filter((l) => l.split === 'push' || l.split === 'pecho' || l.title?.toLowerCase().includes('pecho') || l.title?.toLowerCase().includes('empuje')).length;
+  const pullCount = completed.filter((l) => l.split === 'pull' || l.split === 'back_posture' || l.split === 'espalda' || l.title?.toLowerCase().includes('espalda') || l.title?.toLowerCase().includes('tracción')).length;
+  const coreCount = completed.filter((l) => l.split === 'home_core' || l.split === 'core' || l.title?.toLowerCase().includes('planchas') || l.title?.toLowerCase().includes('core')).length;
 
   let recommendedSplit = 'legs';
   let weeklySummaryText = '';
 
   if (profileId === 'pareja') {
-    if (legsCount === 0) {
+    if (glutesCount === 0 && legsCount === 0) {
       recommendedSplit = 'glutes_legs';
-      weeklySummaryText = '💡 Sugerencia Semanal: Inicia tu semana activando Glúteos & Femoral con cero compresión axial.';
+      weeklySummaryText = '💡 Sugerencia Semanal: Inicia tu semana activando Glúteo Aislado con cero compresión axial.';
     } else if (pullCount === 0) {
-      recommendedSplit = 'back_posture';
-      weeklySummaryText = '💡 Sugerencia Semanal: Ya trabajaste Glúteos. Hoy es ideal para Tracción, Postura y McGill Big 3.';
+      recommendedSplit = 'espalda';
+      weeklySummaryText = '💡 Sugerencia Semanal: Ya trabajaste Glúteos. Hoy es ideal para Espalda Aislada con Pecho Apoyado (cero fatiga lumbar).';
+    } else if (pushCount === 0) {
+      recommendedSplit = 'pecho';
+      weeklySummaryText = '💡 Sugerencia Semanal: Toca Pecho & Hombros Tren Superior con soporte ergonómico en banco.';
     } else {
-      recommendedSplit = 'glutes_legs';
-      weeklySummaryText = '💡 Sugerencia Semanal: Excelente balance semanal. Continúa esculpiendo glúteos de forma segura.';
+      recommendedSplit = 'piernas';
+      weeklySummaryText = '💡 Sugerencia Semanal: Excelente balance semanal. Toca Piernas (Cuádriceps & Femorales con respaldo completo).';
     }
   } else if (profileId === 'hermana') {
     recommendedSplit = 'mobility_gentle';
@@ -3417,13 +3785,15 @@ export function analyzeWeeklyWorkoutBalance({ weeklyLogs = {}, profileId = 'andr
       weeklySummaryText = '💡 Sugerencia Semanal: Ya hiciste Piernas y Espalda. Hoy toca: 🛡️ Pecho & Empuje Pesado + Handstand.';
     } else {
       recommendedSplit = 'full_upper';
-      weeklySummaryText = '💡 Sugerencia Semanal: Has cubierto los grandes pilares de fuerza. Hoy puedes hacer Torso Híbrido o practicar trucos de Calistenia.';
+      weeklySummaryText = '💡 Sugerencia Semanal: Has cubierto los grandes pilares de fuerza. Hoy puedes hacer Torso Híbrido, Glúteo Pesado o trucos de Calistenia.';
     }
   }
 
   return {
     completedCount: completed.length,
     missedCount: missed.length,
+    glutesCount,
+    pureLegsCount,
     legsCount,
     pushCount,
     pullCount,
@@ -3509,31 +3879,57 @@ export function calculateSystemicPillars({
       title: 'Sinergia Nutrición: Día de Descanso / Core',
       text: 'Al no haber sobrecarga pesada hoy, modera los carbohidratos peri-entreno. Prioriza 40g de proteína magra en cada comida y vegetales saciantes para maximizar la sensibilidad a la insulina sin ganar grasa.'
     });
-  } else if (selectedSplit === 'legs' || selectedSplit === 'glutes_legs') {
+  } else if (selectedSplit === 'glutes_legs' || selectedSplit === 'glutes' || selectedSplit === 'gluteos') {
+    synergies.push({
+      id: 'syn_glutes_fuel',
+      category: 'nutrition_workout',
+      icon: '🍑',
+      title: profileId === 'pareja' ? 'Sinergia Glúteo Aislado: Cero Cizalla' : 'Sinergia Glúteo Pesado: Fuerza de Cadera',
+      text: profileId === 'pareja'
+        ? 'Día de Glúteos sin compresión axial: Consume 30g de proteína limpia post-entreno y grasas saludables antiinflamatorias (aceite de oliva, palta) para nutrir la musculatura sin estrés en la columna lumbar.'
+        : 'Día de Glúteo Pesado & Cadena Posterior: Carga pesada en bisagra de cadera. Consume carbohidratos complejos 90 min antes para potencia máxima en peso muerto rumano.'
+    });
+  } else if (selectedSplit === 'legs' || selectedSplit === 'piernas') {
     synergies.push({
       id: 'syn_legs_fuel',
       category: 'nutrition_workout',
-      icon: '🥔',
-      title: profileId === 'pareja' ? 'Sinergia Glúteos: Síntesis Proteica' : 'Sinergia Piernas Pesado: Combustible Anabólico',
-      text: profileId === 'pareja' 
-        ? 'Día de Glúteos sin compresión axial: Consume 30g de proteína limpia post-entreno y alimentos antiinflamatorios (aceite de oliva, cúrcuma) para cuidar discos lumbares.'
+      icon: '🦵',
+      title: profileId === 'pareja' ? 'Sinergia Piernas Aislado: Cuádriceps & Femorales' : 'Sinergia Piernas Pesado: Combustible Anabólico',
+      text: profileId === 'pareja'
+        ? 'Día de Piernas con soporte total: Consume 30g de proteína y suficiente agua para optimizar la contracción de cuádriceps y femorales con cero fatiga en espalda baja.'
         : 'Día de Piernas Pesado: Necesitas glucógeno denso. Añade +40g de carbohidratos limpios (arroz o papa andina) en tu comida previa y satura 5g de creatina para máxima potencia en sentadilla y prensa.'
     });
-  } else if (selectedSplit === 'pull' || selectedSplit === 'back_posture') {
+  } else if (selectedSplit === 'pull' || selectedSplit === 'back_posture' || selectedSplit === 'espalda') {
     synergies.push({
       id: 'syn_pull_fuel',
       category: 'nutrition_workout',
       icon: '🦅',
       title: 'Sinergia Tracción & Espalda: Fuerza de Agarre',
-      text: 'Para transferir potencia a dominadas y Front Lever, consume tu comida 90 min antes para evitar pesadez estomacal y tener la máxima conexión neuromuscular en dorsales.'
+      text: 'Para transferir potencia a dominadas, remos con pecho apoyado o Front Lever, consume tu comida 90 min antes para evitar pesadez estomacal y tener la máxima conexión neuromuscular en dorsales.'
     });
-  } else {
+  } else if (selectedSplit === 'push' || selectedSplit === 'pecho') {
     synergies.push({
       id: 'syn_push_fuel',
       category: 'nutrition_workout',
       icon: '🛡️',
-      title: 'Sinergia Empuje & Handstand: Presión & Estabilidad',
-      text: 'Carga moderada de carbohidratos y buena hidratación celular para empuje vertical estable sin congestión gástrica.'
+      title: 'Sinergia Empuje & Pecho: Presión & Estabilidad',
+      text: 'Carga moderada de carbohidratos y buena hidratación celular para empuje horizontal/vertical estable sin congestión gástrica.'
+    });
+  } else if (selectedSplit === 'core') {
+    synergies.push({
+      id: 'syn_core_fuel',
+      category: 'nutrition_workout',
+      icon: '🧘‍♀️',
+      title: 'Sinergia Core & Blindaje Lumbar: Tensión Isométrica',
+      text: 'Control neuromuscular y respiración diafragmática. Hidrátate con electrolitos para sostener la rigidez de la faja abdominal sin calambres.'
+    });
+  } else {
+    synergies.push({
+      id: 'syn_upper_fuel',
+      category: 'nutrition_workout',
+      icon: '⚡',
+      title: 'Sinergia Torso Híbrido: Balance Total',
+      text: 'Distribuye tu proteína en 4 comidas homogéneas de 35-40g para mantener una tasa de síntesis proteica elevada durante todo el día.'
     });
   }
 

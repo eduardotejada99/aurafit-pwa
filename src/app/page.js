@@ -4141,8 +4141,8 @@ export default function HomePage() {
                     {currentProfile.id === 'hermana'
                       ? '🌸 Vitalidad Serena Diaria'
                       : currentProfile.id === 'pareja'
-                      ? `Glúteos: ${weeklyWorkoutBalance.legsCount || 0} · Espalda/Postura: ${weeklyWorkoutBalance.pullCount || 0}`
-                      : `Piernas: ${weeklyWorkoutBalance.legsCount || 0} · Empuje: ${weeklyWorkoutBalance.pushCount || 0} · Tracción: ${weeklyWorkoutBalance.pullCount || 0}`}
+                      ? `Glúteo: ${weeklyWorkoutBalance.glutesCount || 0} · Piernas: ${weeklyWorkoutBalance.pureLegsCount || 0} · Espalda: ${weeklyWorkoutBalance.pullCount || 0} · Pecho: ${weeklyWorkoutBalance.pushCount || 0}`
+                      : `Piernas: ${weeklyWorkoutBalance.pureLegsCount || 0} · Pecho: ${weeklyWorkoutBalance.pushCount || 0} · Espalda: ${weeklyWorkoutBalance.pullCount || 0} · Glúteo: ${weeklyWorkoutBalance.glutesCount || 0}`}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
