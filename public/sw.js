@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aurafit-v2.0.0-fitia-light';
+const CACHE_NAME = 'aurafit-v2.1.0-food-database-compensator';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -30,6 +30,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  // Never cache API routes
+  if (url.pathname.startsWith('/api/')) return;
 
   // Network-First for page navigation so users always see the latest deployed Fitia UI
   if (event.request.mode === 'navigate') {

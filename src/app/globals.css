@@ -783,3 +783,394 @@ button:active, .touchable:active {
   gap: 8px;
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
 }
+
+/* ==========================================================================
+   Compensador Inteligente Post-Snack (Chifles / Kekito Damage Control)
+   ========================================================================== */
+.compensator-card {
+  background: var(--bg-card);
+  border: 1.5px solid #F59E0B;
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.compensator-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #F59E0B, #10B981);
+}
+
+.compensator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dark-theme .compensator-badge {
+  color: #FBBF24;
+}
+
+.compensator-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  text-align: center;
+}
+
+.compensator-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.compensator-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.compensator-stat-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.compensator-stat-val.highlight {
+  color: var(--fitia-green);
+}
+
+.compensator-stat-val.warning {
+  color: #D97706;
+}
+
+.compensator-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compensator-option-item {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.compensator-option-item:hover {
+  border-color: var(--fitia-green);
+}
+
+.compensator-opt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.compensator-opt-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compensator-opt-macros {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--fitia-green);
+  background: var(--fitia-green-soft);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.compensator-opt-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.btn-add-compensatory {
+  background: var(--fitia-green);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.15s ease;
+}
+
+.btn-add-compensatory:active {
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   Food Search Modal (+2M Alimentos)
+   ========================================================================== */
+.food-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 440px) {
+  .food-modal-backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+}
+
+.food-modal-sheet {
+  background: var(--bg-card);
+  width: 100%;
+  max-width: 430px;
+  max-height: 90dvh;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.food-modal-header {
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.food-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.food-search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  pointer-events: none;
+  color: var(--text-muted);
+}
+
+.food-search-input {
+  width: 100%;
+  padding: 12px 14px 12px 42px !important;
+  background: var(--bg-card-subtle) !important;
+  border: 1.5px solid var(--border-subtle) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 15px !important;
+  font-weight: 600;
+  color: var(--text-main) !important;
+}
+
+.food-search-input:focus {
+  border-color: var(--fitia-green) !important;
+  box-shadow: 0 0 0 3px rgba(0, 192, 109, 0.15);
+}
+
+.food-filter-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.food-chip {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.food-chip.active {
+  background: var(--fitia-green-soft);
+  border-color: var(--fitia-green);
+  color: var(--fitia-green);
+}
+
+.food-results-scroll {
+  padding: 12px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.food-result-card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.food-result-card:hover {
+  border-color: var(--fitia-green);
+}
+
+.food-result-card.selected {
+  border-color: var(--fitia-green);
+  background: var(--fitia-green-soft);
+}
+
+.food-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.food-card-icon {
+  font-size: 24px;
+}
+
+.food-card-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.food-card-brand {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.food-card-macros {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  font-weight: 700;
+}
+
+.food-card-macros strong {
+  color: var(--text-main);
+}
+
+.food-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.food-kcal-badge {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.food-source-pill {
+  font-size: 9.5px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 192, 109, 0.12);
+  color: var(--fitia-green);
+  font-weight: 800;
+}
+
+.btn-add-meal-slot {
+  background: transparent;
+  border: 1.5px dashed var(--border-subtle);
+  color: var(--fitia-green);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 6px;
+}
+
+.btn-add-meal-slot:hover {
+  background: var(--fitia-green-soft);
+  border-color: var(--fitia-green);
+}
+
+.dish-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 4px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.dish-delete-btn:hover {
+  color: #EF4444;
+}
+

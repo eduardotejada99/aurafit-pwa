@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import BottomNav from './BottomNav';
 import {
   DEFAULT_HABITS,
@@ -11,6 +11,11 @@ import {
   WORKOUT_ROUTINES,
   calculateWeightAnalytics
 } from '@/lib/fitness-data';
+import {
+  CURATED_PERUVIAN_FOODS,
+  parseNaturalLanguageFood,
+  calculateCompensatoryRebalance
+} from '@/lib/food-database';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('nutrition'); // Fitia default
@@ -21,12 +26,53 @@ export default function HomePage() {
   const [streakDays, setStreakDays] = useState(213);
   const [showDamageControl, setShowDamageControl] = useState(false);
   const [showTextLogModal, setShowTextLogModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  // Daily Logged Foods State
+  const [loggedFoods, setLoggedFoods] = useState([
+    {
+      id: 'init-des-1',
+      name: 'Huevos revueltos con pan tostado integral',
+      brand: 'Casero',
+      mealSlot: 'desayuno',
+      servingDesc: '2 huevos + 1 pan',
+      grams: 180,
+      calories: 296,
+      protein: 21,
+      carbs: 16,
+      fat: 15,
+      icon: '🍳'
+    },
+    {
+      id: 'init-com-1',
+      name: 'Pollo a la plancha, brócoli y arroz',
+      brand: 'Casero',
+      mealSlot: 'comida',
+      servingDesc: '1 plato balanceado',
+      grams: 350,
+      calories: 732,
+      protein: 86,
+      carbs: 71,
+      fat: 10,
+      icon: '🍗'
+    }
+  ]);
+
+  // Food Search Modal (+2M Database)
+  const [showFoodSearchModal, setShowFoodSearchModal] = useState(false);
+  const [foodSearchQuery, setFoodSearchQuery] = useState('');
+  const [foodFilterCategory, setFoodFilterCategory] = useState('all');
+  const [foodSearchResults, setFoodSearchResults] = useState(CURATED_PERUVIAN_FOODS);
+  const [isSearchingFood, setIsSearchingFood] = useState(false);
+  const [targetMealSlot, setTargetMealSlot] = useState('snack');
+  const [selectedFoodToLog, setSelectedFoodToLog] = useState(null);
+  const [customGrams, setCustomGrams] = useState(50);
   
   // Nutrition & Pantry state (Fitia Coach)
   const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'pollo', 'arroz']);
   const [newIngredient, setNewIngredient] = useState('');
   const [meals, setMeals] = useState([]);
-  const [quickTextEntry, setQuickTextEntry] = useState('2 huevos\n1 rebanada de pan integral\n1 taza de leche con avena');
+  const [quickTextEntry, setQuickTextEntry] = useState('chifles y un kekito');
   
   // Workout state
   const [workoutMode, setWorkoutMode] = useState('gym');
@@ -75,10 +121,204 @@ export default function HomePage() {
 
       const savedWeights = localStorage.getItem('aurafit_weights');
       if (savedWeights) setWeightLogs(JSON.parse(savedWeights));
+
+      const savedLoggedFoods = localStorage.getItem('aurafit_logged_foods');
+      if (savedLoggedFoods) setLoggedFoods(JSON.parse(savedLoggedFoods));
     } catch (err) {
       console.warn('Storage sync err:', err);
     }
   }, []);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3800);
+  };
+
+  const persistLoggedFoods = (updater) => {
+    setLoggedFoods((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        localStorage.setItem('aurafit_logged_foods', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // Mathematical Totals & Rebalance Engine
+  const consumedTotals = useMemo(() => {
+    return loggedFoods.reduce(
+      (acc, item) => ({
+        calories: acc.calories + (Number(item.calories) || 0),
+        protein: acc.protein + (Number(item.protein) || 0),
+        carbs: acc.carbs + (Number(item.carbs) || 0),
+        fat: acc.fat + (Number(item.fat) || 0)
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+  }, [loggedFoods]);
+
+  const compensator = useMemo(() => {
+    return calculateCompensatoryRebalance({ loggedFoods, targets });
+  }, [loggedFoods, targets]);
+
+  const detectedInText = useMemo(() => {
+    return parseNaturalLanguageFood(quickTextEntry);
+  }, [quickTextEntry]);
+
+  // Food Search API Debounce
+  useEffect(() => {
+    let active = true;
+    if (!foodSearchQuery.trim()) {
+      setFoodSearchResults(CURATED_PERUVIAN_FOODS);
+      setIsSearchingFood(false);
+      return;
+    }
+
+    setIsSearchingFood(true);
+    const timer = setTimeout(() => {
+      fetch(`/api/food-search?q=${encodeURIComponent(foodSearchQuery.trim())}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (active && data.results) {
+            setFoodSearchResults(data.results);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            const q = foodSearchQuery.toLowerCase();
+            setFoodSearchResults(
+              CURATED_PERUVIAN_FOODS.filter(
+                (f) => f.name.toLowerCase().includes(q) || f.brand.toLowerCase().includes(q)
+              )
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setIsSearchingFood(false);
+        });
+    }, 280);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [foodSearchQuery]);
+
+  const handleRegisterFoodFromSearch = (food, slot = 'snack', grams = 50) => {
+    const scale = grams / (food.grams || 100);
+    const newEntry = {
+      id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      name: food.name,
+      brand: food.brand,
+      mealSlot: slot,
+      servingDesc: `${grams}g`,
+      grams: grams,
+      calories: Math.round((food.calories || 0) * scale),
+      protein: parseFloat(((food.protein || 0) * scale).toFixed(1)),
+      carbs: parseFloat(((food.carbs || 0) * scale).toFixed(1)),
+      fat: parseFloat(((food.fat || 0) * scale).toFixed(1)),
+      icon: food.icon || '🥗',
+      isSnack: food.isSnack || false,
+      isUltraProcessed: food.isUltraProcessed || false,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    persistLoggedFoods((prev) => [newEntry, ...prev]);
+    setShowFoodSearchModal(false);
+    setSelectedFoodToLog(null);
+    setFoodSearchQuery('');
+
+    if (newEntry.isSnack || newEntry.name.toLowerCase().includes('chifle') || newEntry.name.toLowerCase().includes('keke')) {
+      showToast(`¡${newEntry.name} registrado! ⚡ El Compensador Inteligente ha calculado tu pivote proteico.`);
+    } else {
+      showToast(`¡${newEntry.name} registrado en ${slot.toUpperCase()}!`);
+    }
+  };
+
+  const handleConfirmTextLog = (detectedList, slot = 'snack') => {
+    if (!detectedList || detectedList.length === 0) {
+      // Create fallback item from raw text
+      const rawEntry = {
+        id: `raw-${Date.now()}`,
+        name: quickTextEntry.slice(0, 40),
+        brand: 'Registro Manual',
+        mealSlot: slot,
+        servingDesc: 'Porción estimada',
+        grams: 100,
+        calories: 380,
+        protein: 15,
+        carbs: 45,
+        fat: 12,
+        icon: '✍️',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      persistLoggedFoods((prev) => [rawEntry, ...prev]);
+      setShowTextLogModal(false);
+      showToast('¡Alimentos registrados con éxito!');
+      return;
+    }
+
+    const newEntries = detectedList.map((item) => ({
+      id: `text-${Date.now()}-${item.id}`,
+      name: item.name,
+      brand: item.brand,
+      mealSlot: slot,
+      servingDesc: item.servingDesc,
+      grams: item.grams,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      icon: item.icon,
+      isSnack: item.isSnack,
+      isUltraProcessed: item.isUltraProcessed,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }));
+
+    persistLoggedFoods((prev) => [...newEntries, ...prev]);
+    setShowTextLogModal(false);
+
+    const hasSnack = newEntries.some((e) => e.isSnack || e.name.toLowerCase().includes('chifle') || e.name.toLowerCase().includes('keke'));
+    if (hasSnack) {
+      showToast(`¡${newEntries.map((e) => e.name).join(' + ')} registrados! ⚡ Compensador Inteligente activado.`);
+    } else {
+      showToast(`¡${newEntries.length} alimentos registrados en ${slot.toUpperCase()}!`);
+    }
+  };
+
+  const handleDeleteLoggedFood = (id) => {
+    persistLoggedFoods((prev) => prev.filter((item) => item.id !== id));
+    showToast('Alimento eliminado del plan diario.');
+  };
+
+  const handleAddCompensatoryMeal = (option) => {
+    const slot = option.mealSlot.toLowerCase().includes('cena') ? 'cena' : option.mealSlot.toLowerCase().includes('comida') ? 'comida' : 'snack';
+    const newItems = option.foodItemsToAdd.map((food, idx) => ({
+      id: `comp-${Date.now()}-${idx}`,
+      name: food.name,
+      brand: 'Pivote Proteico Fitia',
+      mealSlot: slot,
+      servingDesc: food.servingDesc,
+      grams: 150,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      icon: option.icon,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }));
+
+    persistLoggedFoods((prev) => [...newItems, ...prev]);
+    showToast(`¡${option.title.split(':')[0]} añadida a tu ${slot.toUpperCase()}! Balance de Lean Bulk asegurado.`);
+  };
+
+  const handleStartWalkTimer = (minutes = 15) => {
+    setActiveTimerSeconds(minutes * 60);
+    setTimerRunning(true);
+    showToast(`🚶‍♂️ ¡Temporizador de caminata de ${minutes} min activado! Reduciendo pico glucémico.`);
+  };
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
@@ -240,21 +480,38 @@ export default function HomePage() {
             <section className="fitia-hero-card">
               <span className="fitia-cal-label">kcal</span>
               <div className="fitia-cal-val">
-                2,004 <span>/ {targets.targetCalories}</span>
+                {consumedTotals.calories.toLocaleString()} <span>/ {targets.targetCalories}</span>
               </div>
 
               {/* Fitia Sweet-Spot Calorie Gauge */}
               <div className="fitia-gauge-wrap">
                 <div className="fitia-gauge-track">
-                  <div className="fitia-gauge-fill" style={{ width: '85%' }} />
-                  <div className="fitia-gauge-pin" style={{ left: '85%' }}>
-                    ✓
+                  <div
+                    className="fitia-gauge-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round((consumedTotals.calories / targets.targetCalories) * 100))}%`,
+                      background:
+                        consumedTotals.calories > targets.targetCalories + 350
+                          ? '#EF4444'
+                          : 'var(--fitia-green)'
+                    }}
+                  />
+                  <div
+                    className="fitia-gauge-pin"
+                    style={{
+                      left: `${Math.min(96, Math.max(4, Math.round((consumedTotals.calories / targets.targetCalories) * 100)))}%`
+                    }}
+                  >
+                    {consumedTotals.calories >= targets.targetCalories - 250 &&
+                    consumedTotals.calories <= targets.targetCalories + 250
+                      ? '✓'
+                      : '●'}
                   </div>
                 </div>
                 <div className="fitia-gauge-labels">
-                  <span>1,787</span>
-                  <span>Meta Lean Bulk</span>
-                  <span>2,185</span>
+                  <span>{targets.targetCalories - 250}</span>
+                  <span>Meta Lean Bulk (+300)</span>
+                  <span>{targets.targetCalories + 250}</span>
                 </div>
               </div>
 
@@ -263,28 +520,47 @@ export default function HomePage() {
                 <div className="fitia-macro-item">
                   <span className="fitia-macro-name">Proteínas</span>
                   <span className="fitia-macro-numbers">
-                    165 <span>/ {targets.macros.proteinGrams} g</span>
+                    {Math.round(consumedTotals.protein)} <span>/ {targets.macros.proteinGrams} g</span>
                   </span>
                   <div className="fitia-macro-bar-wrap">
-                    <div className="fitia-macro-bar-fill" style={{ width: '95%' }} />
+                    <div
+                      className="fitia-macro-bar-fill"
+                      style={{
+                        width: `${Math.min(100, Math.round((consumedTotals.protein / targets.macros.proteinGrams) * 100))}%`
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="fitia-macro-item">
                   <span className="fitia-macro-name">Carb.</span>
                   <span className="fitia-macro-numbers">
-                    194 <span>/ {targets.macros.carbsGrams} g</span>
+                    {Math.round(consumedTotals.carbs)} <span>/ {targets.macros.carbsGrams} g</span>
                   </span>
                   <div className="fitia-macro-bar-wrap">
-                    <div className="fitia-macro-bar-fill" style={{ width: '78%' }} />
+                    <div
+                      className="fitia-macro-bar-fill"
+                      style={{
+                        width: `${Math.min(100, Math.round((consumedTotals.carbs / targets.macros.carbsGrams) * 100))}%`
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="fitia-macro-item">
                   <span className="fitia-macro-name">Grasas</span>
                   <span className="fitia-macro-numbers">
-                    62 <span>/ {targets.macros.fatGrams} g</span>
+                    {Math.round(consumedTotals.fat)} <span>/ {targets.macros.fatGrams} g</span>
                   </span>
                   <div className="fitia-macro-bar-wrap">
-                    <div className="fitia-macro-bar-fill" style={{ width: '88%' }} />
+                    <div
+                      className="fitia-macro-bar-fill"
+                      style={{
+                        width: `${Math.min(100, Math.round((consumedTotals.fat / targets.macros.fatGrams) * 100))}%`,
+                        background:
+                          consumedTotals.fat > targets.macros.fatGrams
+                            ? '#F59E0B'
+                            : 'var(--fitia-orange)'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -307,7 +583,8 @@ export default function HomePage() {
                   fontWeight: 800,
                   fontSize: '13px',
                   boxShadow: 'var(--card-shadow)',
-                  color: 'var(--text-main)'
+                  color: 'var(--text-main)',
+                  cursor: 'pointer'
                 }}
                 onClick={() => setShowTextLogModal(true)}
               >
@@ -330,84 +607,214 @@ export default function HomePage() {
                   fontWeight: 800,
                   fontSize: '13px',
                   boxShadow: 'var(--card-shadow)',
-                  color: 'var(--text-main)'
+                  color: 'var(--text-main)',
+                  cursor: 'pointer'
                 }}
-                onClick={() => alert('Base de datos Fitia: +2 millones de alimentos verificados con macros oficiales.')}
+                onClick={() => {
+                  setTargetMealSlot('snack');
+                  setShowFoodSearchModal(true);
+                }}
               >
                 <span>🔍</span>
-                <span>Buscar Alimento</span>
+                <span>Buscar Alimento (+2M)</span>
               </button>
             </div>
 
-            {/* Meal Slots List (Screenshot 1 & 6) */}
+            {/* COMPENSADOR INTELIGENTE POST-SNACK (Chifles / Kekito Damage Control) */}
+            {compensator.isImbalanced && (
+              <section className="compensator-card">
+                <div className="compensator-badge">
+                  <span>⚡</span> Compensador Inteligente Activo
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    ¿Qué comer después para llegar a tus requerimientos?
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
+                    {compensator.snacksLogged.length > 0 ? (
+                      <>
+                        Detectamos el registro de <strong>{compensator.snacksLogged.map((s) => s.name).join(' y ')}</strong>. Aportaron carbohidratos y grasas rápidas con baja densidad proteica.
+                      </>
+                    ) : (
+                      <>
+                        Tus macros actuales muestran un consumo elevado de grasas/carbohidratos en relación a tu proteína diaria.
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                {/* Macro Rebalance Metrics */}
+                <div className="compensator-stats-grid">
+                  <div className="compensator-stat-item">
+                    <span className="compensator-stat-label">Kcal Restantes</span>
+                    <span className="compensator-stat-val highlight">
+                      {compensator.remaining.calories} kcal
+                    </span>
+                  </div>
+                  <div className="compensator-stat-item">
+                    <span className="compensator-stat-label">Proteína Requerida</span>
+                    <span className="compensator-stat-val highlight">
+                      +{Math.round(compensator.remaining.protein)} g
+                    </span>
+                  </div>
+                  <div className="compensator-stat-item">
+                    <span className="compensator-stat-label">Margen Grasa</span>
+                    <span className="compensator-stat-val warning">
+                      {Math.round(compensator.remaining.fat)} g máx
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3 Strategic Compensatory Meals */}
+                <div className="compensator-options-list">
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Selecciona tu Pivote Proteico Recomendado:
+                  </span>
+                  {compensator.options.map((opt) => (
+                    <div key={opt.id} className="compensator-option-item">
+                      <div className="compensator-opt-header">
+                        <span className="compensator-opt-title">
+                          <span>{opt.icon}</span> {opt.title.split(':')[0]}
+                        </span>
+                        <span className="compensator-opt-macros">
+                          +{opt.macrosProvided.protein}g Proteína
+                        </span>
+                      </div>
+                      <div className="compensator-opt-desc">
+                        {opt.description}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          🔥 {opt.macrosProvided.calories} kcal · {opt.macrosProvided.carbs}C · {opt.macrosProvided.fat}G
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-add-compensatory"
+                          onClick={() => handleAddCompensatoryMeal(opt)}
+                        >
+                          + Agregar a {opt.mealSlot}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Damage Control Fast Action Buttons */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      color: '#3B82F6',
+                      borderRadius: '12px',
+                      padding: '10px 8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleStartWalkTimer(15)}
+                  >
+                    <span>🚶‍♂️</span> Caminata 15m (GLUT-4)
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      color: 'var(--fitia-green)',
+                      borderRadius: '12px',
+                      padding: '10px 8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      addWater(500);
+                      showToast('💧 +500ml registrados. Amortiguando sodio del snack.');
+                    }}
+                  >
+                    <span>💧</span> +500ml Agua & Sal
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {/* Meal Slots List (Desayuno, Comida, Cena, Snacks) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Desayuno */}
-              <div className="fitia-meal-card">
-                <div className="fitia-meal-header">
-                  <span className="fitia-meal-title">Desayuno</span>
-                  <span className="fitia-meal-macro-pill">
-                    🔥 296 kcal · 21P · 16C · 15G
-                  </span>
-                </div>
-                <div className="fitia-dish-item">
-                  <div className="fitia-dish-thumb">🍳</div>
-                  <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Huevos revueltos y pan tostado integral</div>
-                    <div className="fitia-dish-meta">⏱️ 6 min · Verificado con nutricionista</div>
-                  </div>
-                </div>
-              </div>
+              {[
+                { key: 'desayuno', label: 'Desayuno', icon: '🍳', defaultTime: '08:30 AM' },
+                { key: 'comida', label: 'Comida / Almuerzo', icon: '🍗', defaultTime: '01:30 PM' },
+                { key: 'cena', label: 'Cena', icon: '🐟', defaultTime: '08:00 PM' },
+                { key: 'snack', label: 'Snacks & Colaciones', icon: '🍌', defaultTime: '05:00 PM' }
+              ].map((slot) => {
+                const slotFoods = loggedFoods.filter((f) => f.mealSlot === slot.key);
+                const slotKcal = slotFoods.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0);
+                const slotP = slotFoods.reduce((acc, curr) => acc + (Number(curr.protein) || 0), 0);
+                const slotC = slotFoods.reduce((acc, curr) => acc + (Number(curr.carbs) || 0), 0);
+                const slotG = slotFoods.reduce((acc, curr) => acc + (Number(curr.fat) || 0), 0);
 
-              {/* Comida / Almuerzo */}
-              <div className="fitia-meal-card">
-                <div className="fitia-meal-header">
-                  <span className="fitia-meal-title">Comida</span>
-                  <span className="fitia-meal-macro-pill">
-                    🔥 732 kcal · 86P · 71C · 10G
-                  </span>
-                </div>
-                <div className="fitia-dish-item">
-                  <div className="fitia-dish-thumb">🍗</div>
-                  <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Pollo a la plancha, brócoli al vapor y arroz</div>
-                    <div className="fitia-dish-meta">⏱️ 15 min · Volumen magro</div>
-                  </div>
-                </div>
-              </div>
+                return (
+                  <div key={slot.key} className="fitia-meal-card">
+                    <div className="fitia-meal-header">
+                      <span className="fitia-meal-title">{slot.label}</span>
+                      <span className="fitia-meal-macro-pill">
+                        🔥 {slotKcal} kcal · {Math.round(slotP)}P · {Math.round(slotC)}C · {Math.round(slotG)}G
+                      </span>
+                    </div>
 
-              {/* Cena */}
-              <div className="fitia-meal-card">
-                <div className="fitia-meal-header">
-                  <span className="fitia-meal-title">Cena</span>
-                  <span className="fitia-meal-macro-pill">
-                    🔥 512 kcal · 42P · 48C · 12G
-                  </span>
-                </div>
-                <div className="fitia-dish-item">
-                  <div className="fitia-dish-thumb">🐟</div>
-                  <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Filete de atún con papas al vapor y palta</div>
-                    <div className="fitia-dish-meta">⏱️ 10 min · Grasas esenciales</div>
-                  </div>
-                </div>
-              </div>
+                    {slotFoods.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {slotFoods.map((item) => (
+                          <div key={item.id} className="fitia-dish-item">
+                            <div className="fitia-dish-thumb">{item.icon || slot.icon}</div>
+                            <div className="fitia-dish-info">
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div className="fitia-dish-name">{item.name}</div>
+                                <button
+                                  type="button"
+                                  className="dish-delete-btn"
+                                  onClick={() => handleDeleteLoggedFood(item.id)}
+                                  title="Eliminar alimento"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <div className="fitia-dish-meta">
+                                {item.servingDesc || `${item.grams}g`} · 🔥 {item.calories} kcal · {item.protein}P · {item.carbs}C · {item.fat}G
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '8px 0', fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Ningún alimento registrado aún en este tiempo.
+                      </div>
+                    )}
 
-              {/* Snacks */}
-              <div className="fitia-meal-card">
-                <div className="fitia-meal-header">
-                  <span className="fitia-meal-title">Snack Post-Entreno</span>
-                  <span className="fitia-meal-macro-pill">
-                    🔥 310 kcal · 25P · 30C · 4G
-                  </span>
-                </div>
-                <div className="fitia-dish-item">
-                  <div className="fitia-dish-thumb">🥣</div>
-                  <div className="fitia-dish-info">
-                    <div className="fitia-dish-name">Yogur con granola crujiente y plátano</div>
-                    <div className="fitia-dish-meta">⏱️ 3 min · Con 5g de creatina</div>
+                    <button
+                      type="button"
+                      className="btn-add-meal-slot"
+                      onClick={() => {
+                        setTargetMealSlot(slot.key);
+                        setShowFoodSearchModal(true);
+                      }}
+                    >
+                      <span>+</span> Agregar alimento a {slot.label}
+                    </button>
                   </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
             {/* Fitia Coach / Asesoría Nutricional (Screenshot 5) */}
@@ -930,46 +1337,373 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Modal: Registro por Texto (Screenshot 4) */}
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 'calc(env(safe-area-inset-top, 14px) + 16px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(15, 23, 42, 0.94)',
+            color: '#FFFFFF',
+            padding: '12px 20px',
+            borderRadius: '999px',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+            zIndex: 200,
+            fontSize: '13px',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            maxWidth: '90%',
+            textAlign: 'center',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+        >
+          <span>🥑</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Modal: Registro Inteligente por Texto (Lenguaje Natural) */}
       {showTextLogModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '360px', boxShadow: 'var(--card-shadow)' }}>
+        <div className="food-modal-backdrop" onClick={() => setShowTextLogModal(false)}>
+          <div
+            className="food-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '85dvh', padding: '24px 20px calc(24px + var(--safe-bottom))' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Registro por Texto</h3>
-              <button type="button" onClick={() => setShowTextLogModal(false)} style={{ fontSize: '18px', color: 'var(--text-muted)' }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '22px' }}>✍️</span>
+                <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-main)' }}>
+                  Registro por Lenguaje Natural
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTextLogModal(false)}
+                style={{ fontSize: '20px', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Escribe los alimentos en lenguaje natural. Fitia calcula las calorías y macros automáticamente:
+
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.4 }}>
+              Escribe lo que comiste (ej. <em>"chifles y un kekito"</em>, <em>"2 huevos revueltos con avena"</em>). El motor detecta los macros y calcula el rebalanceo automático:
             </p>
+
             <textarea
-              rows={4}
+              rows={3}
               value={quickTextEntry}
               onChange={(e) => setQuickTextEntry(e.target.value)}
+              placeholder="Ej. comí una bolsa de chifles y un kekito en la tarde..."
               style={{
                 width: '100%',
                 background: 'var(--bg-card-subtle)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '14px',
-                padding: '12px',
+                border: '1.5px solid var(--border-subtle)',
+                borderRadius: '16px',
+                padding: '12px 14px',
                 fontSize: '14px',
                 fontWeight: 600,
                 color: 'var(--text-main)',
-                marginBottom: '16px'
+                marginBottom: '12px',
+                outline: 'none'
               }}
             />
-            <div style={{ background: 'var(--fitia-green-soft)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '12px', color: 'var(--text-main)' }}>
-              <strong>Estimación detectada:</strong> ~460 kcal · 32g Proteína · 52g Carbohidratos · 14g Grasas
+
+            {/* Real-time Detection Preview */}
+            <div style={{ background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '12px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Alimentos Identificados ({detectedInText.length}):
+              </div>
+
+              {detectedInText.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {detectedInText.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '12px',
+                        background: 'var(--bg-card)',
+                        padding: '8px 10px',
+                        borderRadius: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                        <span>{item.icon}</span>
+                        <span>{item.name}</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 800 }}>
+                        🔥 {item.calories} kcal · {item.protein}P · {item.carbs}C · {item.fat}G
+                      </span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
+                    Total: ~
+                    {detectedInText.reduce((acc, i) => acc + i.calories, 0)} kcal ·{' '}
+                    {detectedInText.reduce((acc, i) => acc + i.protein, 0).toFixed(1)}g Proteína ·{' '}
+                    {detectedInText.reduce((acc, i) => acc + i.carbs, 0).toFixed(1)}g Carbos ·{' '}
+                    {detectedInText.reduce((acc, i) => acc + i.fat, 0).toFixed(1)}g Grasas
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                  Escribe palabras como "chifles", "kekito", "huevo", "pechuga", "avena" para calcular.
+                </div>
+              )}
             </div>
+
+            {/* Destination Slot Picker */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              {['desayuno', 'comida', 'cena', 'snack'].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: '8px 4px',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    border: targetMealSlot === s ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                    background: targetMealSlot === s ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                    color: targetMealSlot === s ? 'var(--fitia-green)' : 'var(--text-muted)',
+                    textTransform: 'capitalize',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setTargetMealSlot(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               className="btn-primary"
-              onClick={() => {
-                alert('¡Alimentos registrados con éxito a tu plan diario!');
-                setShowTextLogModal(false);
-              }}
+              onClick={() => handleConfirmTextLog(detectedInText, targetMealSlot)}
             >
-              Confirmar & Agregar al Día
+              + Confirmar & Registrar Alimentos
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Buscador de Alimentos (+2 Millones de Alimentos - Base Global & Perú) */}
+      {showFoodSearchModal && (
+        <div className="food-modal-backdrop" onClick={() => setShowFoodSearchModal(false)}>
+          <div className="food-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            {/* Header con Buscador */}
+            <div className="food-modal-header">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    Buscar en +2M Alimentos
+                  </h3>
+                  <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 700 }}>
+                    Base Oficial Fitia / Open Food Facts · Verificada
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFoodSearchModal(false)}
+                  style={{ fontSize: '20px', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Input de Búsqueda */}
+              <div className="food-search-input-wrap">
+                <span className="food-search-icon">🔍</span>
+                <input
+                  type="text"
+                  className="food-search-input"
+                  placeholder="Buscar alimentos (ej. chifles, kekito, pollo, avena...)"
+                  value={foodSearchQuery}
+                  onChange={(e) => setFoodSearchQuery(e.target.value)}
+                  autoFocus
+                />
+                {isSearchingFood && (
+                  <span style={{ position: 'absolute', right: '14px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    ⌛
+                  </span>
+                )}
+              </div>
+
+              {/* Chips de Categorías Rápidas */}
+              <div className="food-filter-chips">
+                {[
+                  { key: 'all', label: 'Todos' },
+                  { key: 'chifles', label: '🍌 Chifles & Snacks', query: 'chifles' },
+                  { key: 'keke', label: '🧁 Kekitos & Dulces', query: 'keke' },
+                  { key: 'pollo', label: '🍗 Proteínas Magras', query: 'pechuga' },
+                  { key: 'arroz', label: '🍚 Carbohidratos', query: 'arroz' },
+                  { key: 'palta', label: '🥑 Grasas Saludables', query: 'palta' }
+                ].map((chip) => (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    className={`food-chip ${foodFilterCategory === chip.key ? 'active' : ''}`}
+                    onClick={() => {
+                      setFoodFilterCategory(chip.key);
+                      if (chip.query) setFoodSearchQuery(chip.query);
+                      else setFoodSearchQuery('');
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Lista de Resultados */}
+            <div className="food-results-scroll">
+              {foodSearchResults.length > 0 ? (
+                foodSearchResults.map((food) => {
+                  const isSelected = selectedFoodToLog?.id === food.id;
+
+                  return (
+                    <div
+                      key={food.id}
+                      className={`food-result-card ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedFoodToLog(food);
+                        setCustomGrams(food.grams || 50);
+                      }}
+                    >
+                      <div className="food-card-left">
+                        <span className="food-card-icon">{food.icon || '🥗'}</span>
+                        <div>
+                          <div className="food-card-name">{food.name}</div>
+                          <div className="food-card-brand">
+                            {food.brand} · {food.servingDesc || `${food.grams}g`}
+                          </div>
+                          <div className="food-card-macros">
+                            <strong>{food.protein}g</strong> P · <strong>{food.carbs}g</strong> C · <strong>{food.fat}g</strong> G
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="food-card-right">
+                        <div className="food-kcal-badge">🔥 {food.calories} kcal</div>
+                        <span className="food-source-pill">
+                          {food.source || (food.isSnack ? 'Snack' : 'Fitia Verified')}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔎</div>
+                  <div style={{ fontWeight: 800, fontSize: '14px' }}>No encontramos resultados exactos</div>
+                  <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                    Prueba buscando por "chifles", "kekito", "pechuga", "huevo" o "atún".
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Panel when food is selected */}
+            {selectedFoodToLog && (
+              <div
+                style={{
+                  background: 'var(--bg-card)',
+                  borderTop: '1px solid var(--border-subtle)',
+                  padding: '14px 18px calc(14px + var(--safe-bottom))',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>
+                    {selectedFoodToLog.name}
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--fitia-green)' }}>
+                    🔥 {Math.round((selectedFoodToLog.calories * customGrams) / (selectedFoodToLog.grams || 100))} kcal
+                  </span>
+                </div>
+
+                {/* Grams Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>Gramos:</span>
+                  {[30, 50, 100, 150].map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        border: customGrams === g ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        background: customGrams === g ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                        color: customGrams === g ? 'var(--fitia-green)' : 'var(--text-muted)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setCustomGrams(g)}
+                    >
+                      {g}g
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    value={customGrams}
+                    onChange={(e) => setCustomGrams(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    style={{
+                      width: '60px',
+                      padding: '4px 6px !important',
+                      fontSize: '12px !important',
+                      textAlign: 'center',
+                      borderRadius: '8px'
+                    }}
+                  />
+                </div>
+
+                {/* Meal Slot Selector */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {['desayuno', 'comida', 'cena', 'snack'].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '7px 4px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        border: targetMealSlot === s ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        background: targetMealSlot === s ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                        color: targetMealSlot === s ? 'var(--fitia-green)' : 'var(--text-muted)',
+                        textTransform: 'capitalize',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setTargetMealSlot(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ padding: '12px' }}
+                  onClick={() => handleRegisterFoodFromSearch(selectedFoodToLog, targetMealSlot, customGrams)}
+                >
+                  + Registrar en {targetMealSlot.toUpperCase()}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
