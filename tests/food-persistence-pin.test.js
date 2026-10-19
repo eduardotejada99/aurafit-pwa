@@ -77,6 +77,56 @@ describe('AuraFit Food Persistence & Admin PIN Management', () => {
     // Confirm biometrics and macros remain unaltered
     assert.strictEqual(nextProfiles.andres.weightKg, 92.0);
     assert.strictEqual(nextProfiles.andres.targetCalories, 2150);
-    assert.strictEqual(nextProfiles.pareja.targetCalories, 1950);
+    assert.strictEqual(nextProfiles.pareja.targetCalories, 1850);
+    assert.strictEqual(nextProfiles.pareja.weightKg, 58.0);
+    assert.strictEqual(nextProfiles.pareja.age, 21);
+    assert.strictEqual(nextProfiles.hermana.age, 19);
+    assert.strictEqual(nextProfiles.hermana.weightKg, 65.0);
+    assert.strictEqual(nextProfiles.hermana.heightCm, 155);
   });
 });
+
+describe('AuraFit Dynamic Nutritional Score Engine', () => {
+  it('should calculate initial score when no foods are logged yet', async () => {
+    const { calculateNutritionalScore } = await import('../src/lib/fitness-data.js');
+    const result = calculateNutritionalScore({
+      loggedFoods: [],
+      targets: { calories: 2150, protein: 195 },
+      waterMl: 1200,
+      waterTargetMl: 3400,
+      profile: { name: 'Andrés' }
+    });
+
+    assert.ok(result.score >= 60 && result.score <= 85);
+    assert.strictEqual(result.grade, 'Iniciando Día');
+    assert.ok(result.dashOffset > 0);
+    assert.ok(result.insights.length >= 1);
+  });
+
+  it('should dynamically reward high protein and caloric adherence without negative red alerts', async () => {
+    const { calculateNutritionalScore } = await import('../src/lib/fitness-data.js');
+    const foods = [
+      { id: 'f1', name: 'Huevos y Avena', calories: 520, protein: 35, mealSlot: 'desayuno' },
+      { id: 'f2', name: 'Pechuga con Arroz', calories: 650, protein: 55, mealSlot: 'comida' },
+      { id: 'f3', name: 'Atún con Papa', calories: 480, protein: 42, mealSlot: 'cena' },
+      { id: 'f4', name: 'Plátano y Maní', calories: 350, protein: 14, mealSlot: 'snack' }
+    ];
+
+    const result = calculateNutritionalScore({
+      loggedFoods: foods,
+      targets: { calories: 2000, protein: 140 },
+      waterMl: 2600,
+      waterTargetMl: 2600,
+      profile: { name: 'Andrés' }
+    });
+
+    assert.ok(result.score >= 85, `Score ${result.score} should be >= 85`);
+    assert.ok(result.grade === 'Excelente' || result.grade === 'Bueno');
+    // Ensure no red alerts exist in insight status
+    result.insights.forEach(ins => {
+      assert.notStrictEqual(ins.color, 'red');
+      assert.notStrictEqual(ins.status, 'Muy bajo');
+    });
+  });
+});
+

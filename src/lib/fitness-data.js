@@ -110,6 +110,193 @@ export function calculateProfileTargets({
   };
 }
 
+// Dynamic Nutritional Score Calculator
+export function calculateNutritionalScore({
+  loggedFoods = [],
+  targets = {},
+  waterMl = 0,
+  waterTargetMl = 2500,
+  profile = {}
+}) {
+  const totalCalories = loggedFoods.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0);
+  const totalProtein = loggedFoods.reduce((acc, curr) => acc + (Number(curr.protein) || 0), 0);
+  const totalCarbs = loggedFoods.reduce((acc, curr) => acc + (Number(curr.carbs) || 0), 0);
+  const totalFat = loggedFoods.reduce((acc, curr) => acc + (Number(curr.fat) || 0), 0);
+
+  const targetCals = targets.calories || 2000;
+  const targetProt = targets.protein || 140;
+
+  // Day starting state when no foods are logged yet
+  if (loggedFoods.length === 0) {
+    const defaultScore = 72;
+    return {
+      score: defaultScore,
+      grade: 'Iniciando Día',
+      color: '#3B82F6',
+      dashOffset: Math.round(251 * (1 - defaultScore / 100)),
+      breakdown: {
+        calories: { current: 0, target: targetCals, pct: 0 },
+        protein: { current: 0, target: targetProt, pct: 0 },
+        water: { current: waterMl, target: waterTargetMl, pct: Math.round((waterMl / waterTargetMl) * 100) }
+      },
+      insights: [
+        {
+          icon: '🥣',
+          title: 'Plan de Nutrición de Hoy',
+          status: 'Listo',
+          color: 'green',
+          text: `Todo listo para registrar tus comidas de hoy para ${profile.name || 'tu perfil'}.`,
+          tip: 'Comienza registrando tu desayuno o comida para ver tu avance en tiempo real.'
+        },
+        {
+          icon: '💧',
+          title: 'Hidratación',
+          status: 'En progreso',
+          color: 'blue',
+          text: `${waterMl} / ${waterTargetMl} ml de agua consumidos.`,
+          tip: 'Mantén un vaso o botella a mano para hidratar tus células de manera constante.'
+        }
+      ]
+    };
+  }
+
+  // 1. Caloric Adherence (30 pts max)
+  const calRatio = targetCals > 0 ? totalCalories / targetCals : 0;
+  let calPoints = 0;
+  if (calRatio >= 0.85 && calRatio <= 1.08) {
+    calPoints = 30;
+  } else if (calRatio >= 0.70 && calRatio <= 1.18) {
+    calPoints = 24;
+  } else if (calRatio >= 0.50 && calRatio <= 1.30) {
+    calPoints = 17;
+  } else {
+    calPoints = Math.max(6, Math.min(14, Math.round(calRatio * 25)));
+  }
+
+  // 2. Protein Adherence (35 pts max)
+  const protRatio = targetProt > 0 ? totalProtein / targetProt : 0;
+  let protPoints = 0;
+  if (protRatio >= 0.90) {
+    protPoints = 35;
+  } else if (protRatio >= 0.75) {
+    protPoints = 28;
+  } else if (protRatio >= 0.55) {
+    protPoints = 20;
+  } else if (protRatio >= 0.35) {
+    protPoints = 14;
+  } else {
+    protPoints = Math.max(5, Math.min(10, Math.round(protRatio * 35)));
+  }
+
+  // 3. Hydration (15 pts max)
+  const waterRatio = waterTargetMl > 0 ? waterMl / waterTargetMl : 0;
+  let waterPoints = 0;
+  if (waterRatio >= 0.85) {
+    waterPoints = 15;
+  } else if (waterRatio >= 0.60) {
+    waterPoints = 11;
+  } else if (waterRatio >= 0.35) {
+    waterPoints = 7;
+  } else {
+    waterPoints = Math.max(2, Math.round(waterRatio * 15));
+  }
+
+  // 4. Meal Distribution & Food Quality (20 pts max)
+  const distinctSlots = new Set(loggedFoods.map((f) => f.mealSlot || 'comida')).size;
+  const slotPoints = distinctSlots >= 3 ? 10 : distinctSlots === 2 ? 7 : 4;
+  const ultraProcessedCount = loggedFoods.filter((f) => f.isUltraProcessed).length;
+  const naturalRatio = loggedFoods.length > 0 ? (loggedFoods.length - ultraProcessedCount) / loggedFoods.length : 1;
+  const qualityPoints = Math.round(naturalRatio * 10);
+
+  const totalScore = Math.min(100, Math.max(25, calPoints + protPoints + waterPoints + slotPoints + qualityPoints));
+
+  let grade = 'En Progreso';
+  let gradeColor = '#00C06D';
+  if (totalScore >= 90) {
+    grade = 'Excelente';
+    gradeColor = '#00C06D';
+  } else if (totalScore >= 75) {
+    grade = 'Bueno';
+    gradeColor = '#10B981';
+  } else if (totalScore >= 60) {
+    grade = 'En Progreso';
+    gradeColor = '#3B82F6';
+  } else {
+    grade = 'Avanzando';
+    gradeColor = '#64748B';
+  }
+
+  const dashOffset = Math.round(251 * (1 - totalScore / 100));
+
+  const insights = [];
+
+  // Protein Insight
+  if (protRatio >= 0.85) {
+    insights.push({
+      icon: '🥩',
+      title: 'Proteína Diaria',
+      status: 'Óptima',
+      color: 'green',
+      text: `${Math.round(totalProtein)}g / ${targetProt}g · Excelente aporte para síntesis muscular.`,
+      tip: 'Tus músculos disponen de los aminoácidos para recuperarse y adaptarse.'
+    });
+  } else {
+    const pFalta = Math.max(0, Math.round(targetProt - totalProtein));
+    insights.push({
+      icon: '🥩',
+      title: 'Proteína Diaria',
+      status: 'Por completar',
+      color: 'blue',
+      text: `${Math.round(totalProtein)}g / ${targetProt}g · Te faltan ~${pFalta}g para tu requerimiento.`,
+      tip: 'Puedes sumar huevos, pollo, atún o queso fresco en tu siguiente comida.'
+    });
+  }
+
+  // Calorie Insight
+  if (calRatio >= 0.85 && calRatio <= 1.10) {
+    insights.push({
+      icon: '⚡',
+      title: 'Balance Calórico',
+      status: 'En Rango',
+      color: 'green',
+      text: `${totalCalories} / ${targetCals} kcal · Balance óptimo para tus metas.`,
+      tip: 'Mantienes tu energía estable sin picos ni déficits excesivos.'
+    });
+  } else if (calRatio < 0.85) {
+    const cFalta = Math.max(0, targetCals - totalCalories);
+    insights.push({
+      icon: '⚡',
+      title: 'Calorías del Día',
+      status: 'En progreso',
+      color: 'blue',
+      text: `${totalCalories} / ${targetCals} kcal · Te faltan ~${cFalta} kcal.`,
+      tip: 'Completa tus comidas para mantener tu rendimiento muscular y vitalidad.'
+    });
+  } else {
+    insights.push({
+      icon: '⚡',
+      title: 'Calorías del Día',
+      status: 'Superávit',
+      color: 'blue',
+      text: `${totalCalories} / ${targetCals} kcal registradas hoy.`,
+      tip: 'Un paseo agradable post-comida apoya la digestión y transporte de glucosa.'
+    });
+  }
+
+  return {
+    score: totalScore,
+    grade,
+    color: gradeColor,
+    dashOffset,
+    breakdown: {
+      calories: { current: totalCalories, target: targetCals, pct: Math.round(calRatio * 100) },
+      protein: { current: Math.round(totalProtein), target: targetProt, pct: Math.round(protRatio * 100) },
+      water: { current: waterMl, target: waterTargetMl, pct: Math.round(waterRatio * 100) }
+    },
+    insights
+  };
+}
+
 // 2. The 3 Distinct Family Profiles (Andrés, Pareja, Hermana)
 export const FAMILY_PROFILES = {
   andres: {
@@ -216,27 +403,27 @@ export const FAMILY_PROFILES = {
   pareja: {
     id: 'pareja',
     name: 'Mi Pareja',
-    role: 'Hipertrofia Limpia (Lean Bulk)',
+    role: 'Hipertrofia Limpia & Protección Lumbar',
     avatar: '🌸',
     pin: '5678',
     gender: 'female',
-    age: 26,
+    age: 21,
     heightCm: 162,
-    weightKg: 52.0,
-    targetWeightKg: 56.0,
+    weightKg: 58.0,
+    targetWeightKg: 60.0,
     goal: 'lean_bulk',
     activityLevel: 'moderate',
-    targetCalories: 1950,
+    targetCalories: 1850,
     macros: {
-      proteinGrams: 105,
-      fatGrams: 52,
-      carbsGrams: 265
+      proteinGrams: 120,
+      fatGrams: 50,
+      carbsGrams: 230
     },
     travelMode: true,
     location: 'Cajabamba / Trujillo',
     altitudeMeters: 2654,
-    waterDailyMl: 2200,
-    badgeText: '✨ Superávit Limpio (+300 kcal) · Enfoque Glúteos & Espalda',
+    waterDailyMl: 2400,
+    badgeText: '🌸 Hipertrofia & Salud Lumbar · Cero Compresión Axial',
     habits: [
       {
         id: 'creatine',
@@ -245,25 +432,25 @@ export const FAMILY_PROFILES = {
         completed: false,
         icon: '⚡',
         category: 'suplementacion',
-        note: 'Volumen muscular magro sin acumular grasa corporal'
+        note: 'Síntesis proteica y recuperación de masa muscular magra'
       },
       {
-        id: 'dense_snack',
-        name: 'Snack Nutritivo Denso (Frutos Secos / Batido)',
-        target: '1 al día',
+        id: 'lumbar_relief',
+        name: 'Descompresión Lumbar & Estiramiento Psoas',
+        target: '10 min diarios',
         completed: false,
-        icon: '🥜',
-        category: 'nutricion',
-        note: 'Asegurar calorías limpias para el superávit anabólico'
+        icon: '🧘‍♀️',
+        category: 'recuperacion',
+        note: 'Liberar tensión en la zona lumbar y estirar flexores de cadera'
       },
       {
         id: 'water_electrolytes',
-        name: 'Hidratación con Electrolitos en Cajabamba',
-        target: '2,200 ml',
+        name: 'Hidratación Intervertebral en Cajabamba',
+        target: '2,400 ml',
         completed: false,
         icon: '💧',
         category: 'biohacking',
-        note: 'Balance osmótico en altura de viaje'
+        note: 'Mantener hidratados los discos intervertebrales y balance en altura'
       },
       {
         id: 'sleep_growth',
@@ -272,33 +459,33 @@ export const FAMILY_PROFILES = {
         completed: false,
         icon: '🌙',
         category: 'recuperacion',
-        note: 'Fase de síntesis proteica donde el músculo se recupera y crece'
+        note: 'Fase de síntesis proteica donde el músculo se repara y crece'
       }
     ],
     workouts: {
       gym: {
-        title: 'Hipertrofia Glúteos, Pierna & Espalda Estética',
-        focus: 'Tensión mecánica para ganar volumen magro',
+        title: 'Hipertrofia Glúteos & Espalda (Protección Lumbar / McGill Core)',
+        focus: 'Sobrecarga progresiva en máquinas y poleas sin compresión en columna',
         durationMinutes: 45,
         exercises: [
-          { name: 'Hip Thrust con Barra en Banco', sets: 4, reps: '8-10 pesadas', restSeconds: 120, rir: 1 },
-          { name: 'Sentadilla Búlgara con Mancuernas', sets: 3, reps: '10-12 por pierna', restSeconds: 90, rir: 1 },
-          { name: 'Peso Muerto Rumano Mancuernas', sets: 4, reps: '10-12', restSeconds: 90, rir: 2 },
-          { name: 'Jalón al Pecho Polea (Espalda Estética)', sets: 3, reps: '10-12', restSeconds: 75, rir: 1 },
-          { name: 'Elevaciones Laterales Mancuernas', sets: 4, reps: '12-15', restSeconds: 60, rir: 0 },
-          { name: 'Curl Femoral Tumbada o Sentada', sets: 3, reps: '12-15', restSeconds: 60, rir: 1 }
+          { name: 'Hip Thrust en Banco Acolchado (Retroversión Pélvica)', sets: 4, reps: '10-12', restSeconds: 90, rir: 1 },
+          { name: 'Prensa Inclinada de Piernas (Espalda 100% pegada al respaldo)', sets: 4, reps: '10-12', restSeconds: 90, rir: 1 },
+          { name: 'Remo con Pecho Apoyado en Banco Inclinado (Chest-Supported Row)', sets: 4, reps: '10-12', restSeconds: 75, rir: 1 },
+          { name: 'Curl Femoral Acostada o Sentada en Máquina', sets: 3, reps: '12-15', restSeconds: 60, rir: 1 },
+          { name: 'Extensiones de Cuádriceps Controladas', sets: 3, reps: '12-15', restSeconds: 60, rir: 1 },
+          { name: 'Blindaje Lumbar: Bird-Dog + Plancha Lateral', sets: 3, reps: '30s por lado', restSeconds: 45, rir: 0 }
         ]
       },
       travel: {
-        title: 'Tonificación & Hipertrofia con Bandas / Silla',
-        focus: 'Glúteos y core sin fatiga excesiva',
-        durationMinutes: 30,
+        title: 'Movilidad Lumbar & Glúteos Cajabamba',
+        focus: 'Descompresión espinal, glúteo medio y alivio lumbar',
+        durationMinutes: 25,
         exercises: [
-          { name: 'Hip Thrust Unilateral en Sofá / Cama', sets: 4, reps: '15 por pierna', restSeconds: 60 },
-          { name: 'Sentadilla Goblet con Mochila', sets: 4, reps: '15 lentas', restSeconds: 60 },
-          { name: 'Patada de Glúteo en Cuadrupedia', sets: 3, reps: '20 por lado', restSeconds: 45 },
-          { name: 'Puente de Glúteos Isométrico (Pausa 3s)', sets: 3, reps: '15 reps', restSeconds: 45 },
-          { name: 'Plancha Lateral con Elevación de Pierna', sets: 3, reps: '30s por lado', restSeconds: 45 }
+          { name: 'Puente de Glúteos en Suelo con Pausa Isométrica', sets: 4, reps: '15 reps', restSeconds: 45 },
+          { name: 'Bird-Dog (Perro de Caza) con Respiración Diafragmática', sets: 3, reps: '10 por lado', restSeconds: 45 },
+          { name: 'Clamshells (Almeja) con Banda para Glúteo Medio', sets: 3, reps: '15 por lado', restSeconds: 45 },
+          { name: 'Estiramiento Profundo de Psoas / Cadera en Colchoneta', sets: 3, reps: '30s por lado', restSeconds: 30 },
+          { name: 'Descompresión en Postura del Niño (Child Pose)', sets: 1, reps: '5 minutos', restSeconds: 0 }
         ]
       }
     }
@@ -307,94 +494,83 @@ export const FAMILY_PROFILES = {
   hermana: {
     id: 'hermana',
     name: 'Mi Hermana',
-    role: 'Glucosa Estable & Post-Cirugía Oído',
+    role: 'Bienestar, Movilidad & Vitalidad',
     avatar: '🌿',
     pin: '9012',
     gender: 'female',
-    age: 22,
-    heightCm: 160,
-    weightKg: 64.0,
-    targetWeightKg: 58.0,
+    age: 19,
+    heightCm: 155,
+    weightKg: 65.0,
+    targetWeightKg: 60.0,
     goal: 'insulin_sensitivity',
     activityLevel: 'light',
     targetCalories: 1650,
     macros: {
       proteinGrams: 105,
-      fatGrams: 55,
-      carbsGrams: 180
+      fatGrams: 50,
+      carbsGrams: 195
     },
     travelMode: false,
-    location: 'Casa (Recuperación)',
-    waterDailyMl: 2300,
-    badgeText: '🩺 Protocolo Glucosa Estable · Cero Presión Cefálica',
-    medicalAlert: 'Post-Cirugía de Oído: PROHIBIDO cargar peso pesado, agacharse de golpe o hacer maniobra de Valsalva.',
+    location: 'Casa (Bienestar)',
+    waterDailyMl: 2100,
+    badgeText: '🌿 Bienestar & Movilidad Amable a tu Ritmo',
     habits: [
       {
-        id: 'glucose_order',
-        name: 'Regla del Plato: 1.Fibra -> 2.Proteína -> 3.Carbos',
-        target: 'En almuerzo y cena',
-        completed: false,
-        icon: '🥗',
-        category: 'salud_clinica',
-        note: 'La fibra crea una malla que reduce el pico de glucosa e insulina hasta un 40%'
-      },
-      {
-        id: 'dance_therapy',
-        name: 'Baile Suave / Terapia de Movimiento',
-        target: '15 min post-comida',
-        completed: false,
-        icon: '💃',
-        category: 'movimiento',
-        note: 'Activa transportadores GLUT-4 sin presión en el oído ni impacto'
-      },
-      {
-        id: 'vinegar_hack',
-        name: 'Shot de Vinagre de Manzana en Agua',
-        target: 'Antes de carbohidratos',
-        completed: false,
-        icon: '🍏',
-        category: 'salud_clinica',
-        note: '1 cda en 1 vaso de agua 10 min antes de comer (inhibe alfa-amilasa)'
-      },
-      {
-        id: 'meditation_healing',
-        name: 'Meditación Guiada 432Hz & Alivio',
-        target: '15 min tarde/noche',
-        completed: false,
-        icon: '🎧',
-        category: 'mente',
-        note: 'Disminuye el cortisol (el cortisol alto empeora la resistencia a la insulina)'
-      },
-      {
         id: 'post_meal_walk',
-        name: 'Caminata Suave en Casa o Jardín',
-        target: '10 min post-comida',
+        name: 'Paseo Suave o Movimiento a tu Ritmo',
+        target: '10-15 min',
         completed: false,
         icon: '🚶‍♀️',
-        category: 'movimiento',
-        note: 'Las contracciones del sóleo absorben glucosa directamente de la sangre'
+        category: 'bienestar',
+        note: 'Un paseo tranquilo para activar el cuerpo con calma y alegría.'
+      },
+      {
+        id: 'water_fresh',
+        name: 'Hidratación Refrescante',
+        target: '2,100 ml',
+        completed: false,
+        icon: '💧',
+        category: 'vitalidad',
+        note: 'Agua fresca o infusión relajante para sentirte ligera y con energía.'
+      },
+      {
+        id: 'glucose_order',
+        name: 'Regla del Plato Amable',
+        target: 'Almuerzo y cena',
+        completed: false,
+        icon: '🥗',
+        category: 'nutricion',
+        note: 'Empezar por ensalada o verduritas ricas para una digestión suave y liviana.'
+      },
+      {
+        id: 'relaxation_rest',
+        name: 'Momento de Calma & Música Relajante',
+        target: '15 min tarde',
+        completed: false,
+        icon: '🎧',
+        category: 'descanso',
+        note: 'Desconectar la mente, respirar suave y recargar vitalidad.'
       }
     ],
     workouts: {
       dance: {
-        title: 'Terapia de Baile Suave & GLUT-4 Reset',
-        focus: 'Sensibilidad a la insulina, estado de ánimo y cero impacto timpánico',
-        durationMinutes: 20,
+        title: 'Paseo & Movilidad Suave en Casa',
+        focus: 'Mover el cuerpo con música agradable, sin exigencias',
+        durationMinutes: 15,
         exercises: [
-          { name: 'Paso Básico de Salsa / Cumbia (Sin giros bruscos)', duration: '5 minutos', icon: '🎶', note: 'Movimiento fluido de cadera manteniendo la cabeza erguida.' },
-          { name: 'Paso Lateral con Brazos en Ritmo Suave', duration: '5 minutos', icon: '💃', note: 'Activación muscular de piernas para retirar glucosa de sangre.' },
-          { name: 'Merengue Marchando en el Lugar', duration: '5 minutos', icon: '✨', note: 'Ritmo constante sin saltos; respiración nasal profunda y relajada.' },
-          { name: 'Enfriamiento con Respiración Diafragmática Suave', duration: '5 minutos', icon: '🌸', note: 'Inhalar paz, cabeza nivelada, postura abierta y relajada.' }
+          { name: 'Paseo Agradable y Relajado a tu Ritmo', duration: '8 minutos', icon: '🚶‍♀️', note: 'Paso cómodo y suave en casa o jardín.' },
+          { name: 'Movilidad Suave de Hombros y Brazos', duration: '4 minutos', icon: '🌸', note: 'Círculos lentos y agradables para soltar tensión.' },
+          { name: 'Respiración Profunda y Calma', duration: '3 minutos', icon: '🕊️', note: 'Inhalar tranquilidad y exhalar liviana.' }
         ]
       },
       gentle_yoga: {
-        title: 'Movilidad de Pie (Cero Presión en Cabeza)',
-        focus: 'Circulación linfática y relajación sin agacharse',
+        title: 'Descanso, Estiramientos & Calma',
+        focus: 'Soltar tensiones en sillón o cama con total comodidad',
         durationMinutes: 15,
         exercises: [
-          { name: 'Estiramiento Lateral de Tronco de Pie', duration: '3 min', icon: '🧘‍♀️', note: 'Mantener la cabeza recta; no colgarla hacia abajo.' },
-          { name: 'Círculos de Hombros y Apertura de Pecho', duration: '3 min', icon: '🕊️', note: 'Libera tensión cervical acumulada por el reposo.' },
-          { name: 'Elevación de Talones Suave (Activación del Sóleo)', sets: 3, reps: '15 reps', icon: '🦵', note: 'El músculo sóleo es el motor metabólico más potente para captar glucosa.' }
+          { name: 'Estiramiento Suave de Espalda en Sillón', duration: '5 min', icon: '🧘‍♀️', note: 'Postura cómoda y respiración relajada.' },
+          { name: 'Movilidad de Tobillos y Piernas', duration: '5 min', icon: '✨', note: 'Movimientos circulares suaves sin esfuerzo.' },
+          { name: 'Relajación y Música de Paz', duration: '5 min', icon: '🎶', note: 'Descanso reparador y bienestar.' }
         ]
       }
     }

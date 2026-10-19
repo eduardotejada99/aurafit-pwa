@@ -11,7 +11,8 @@ import {
   generateMealsFromPantry,
   DAMAGE_CONTROL_PROTOCOL,
   WORKOUT_ROUTINES,
-  calculateWeightAnalytics
+  calculateWeightAnalytics,
+  calculateNutritionalScore
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -124,6 +125,17 @@ export default function HomePage() {
   // Daily Logged Foods State (persistent per profile)
   const [loggedFoods, setLoggedFoods] = useState([]);
 
+  // Dynamic Nutritional Score Engine (0-100 Scientific Fitia Algorithm)
+  const nutritionalScore = useMemo(() => {
+    return calculateNutritionalScore({
+      loggedFoods,
+      targets,
+      waterMl,
+      waterTargetMl: currentProfile.waterDailyMl || 2500,
+      profile: currentProfile
+    });
+  }, [loggedFoods, targets, waterMl, currentProfile]);
+
   // Food Search Modal (+2M Database)
   const [showFoodSearchModal, setShowFoodSearchModal] = useState(false);
   const [foodSearchQuery, setFoodSearchQuery] = useState('');
@@ -144,6 +156,20 @@ export default function HomePage() {
   const [selectedRecipeDetail, setSelectedRecipeDetail] = useState(null);
   const [recipeSlotToLog, setRecipeSlotToLog] = useState('comida');
   const [quickTextEntry, setQuickTextEntry] = useState('3 huevos fritos con jna cucharada de mantequilla');
+
+  // Interactive Recipe Portion Scaling State (Fitia Scaler)
+  const [recipePortionMultipliers, setRecipePortionMultipliers] = useState({});
+  const getRecipeMultiplier = (mealId) => recipePortionMultipliers[mealId] || 1.0;
+  const handleAdjustRecipeMultiplier = (mealId, delta) => {
+    setRecipePortionMultipliers((prev) => {
+      const current = prev[mealId] || 1.0;
+      const next = Math.min(2.5, Math.max(0.5, Math.round((current + delta) * 100) / 100));
+      return { ...prev, [mealId]: next };
+    });
+  };
+  const handleSetRecipeMultiplier = (mealId, val) => {
+    setRecipePortionMultipliers((prev) => ({ ...prev, [mealId]: val }));
+  };
   
   // Workout state
   const [workoutMode, setWorkoutMode] = useState('gym');
@@ -516,6 +542,61 @@ export default function HomePage() {
     }
   };
 
+  const handleRegisterCustomTypedFood = (typedName, slot = 'snack', customWeight = 100) => {
+    if (!typedName || !typedName.trim()) return;
+    const nameClean = typedName.trim();
+    const parsedList = parseNaturalLanguageFood(nameClean);
+
+    if (parsedList && parsedList.length > 0) {
+      const first = parsedList[0];
+      const newEntry = {
+        id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        name: first.name,
+        brand: 'Compendio Nutricional Fitia',
+        mealSlot: slot,
+        servingDesc: first.servingDesc || `${first.grams || customWeight}g`,
+        grams: first.grams || customWeight,
+        calories: first.calories || 220,
+        protein: first.protein || 12,
+        carbs: first.carbs || 25,
+        fat: first.fat || 8,
+        icon: first.icon || '🍽️',
+        isSnack: first.isSnack || slot === 'snack',
+        isUltraProcessed: first.isUltraProcessed || false,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      persistLoggedFoods((prev) => [newEntry, ...prev]);
+    } else {
+      const isSnackLike = /dulce|postre|snack|chocolate|torta|fritura|galleta|queque|keke|chifle|chifles/i.test(nameClean);
+      const estCals = isSnackLike ? 280 : 210;
+      const estP = isSnackLike ? 3.5 : 15.0;
+      const estC = isSnackLike ? 36.0 : 22.0;
+      const estF = isSnackLike ? 12.0 : 6.0;
+
+      const newEntry = {
+        id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        name: nameClean,
+        brand: 'Alimento Personalizado',
+        mealSlot: slot,
+        servingDesc: `1 porción (${customWeight}g)`,
+        grams: customWeight,
+        calories: estCals,
+        protein: estP,
+        carbs: estC,
+        fat: estF,
+        icon: isSnackLike ? '🍌' : '🍽️',
+        isSnack: isSnackLike || slot === 'snack',
+        isUltraProcessed: isSnackLike,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      persistLoggedFoods((prev) => [newEntry, ...prev]);
+    }
+
+    setShowFoodSearchModal(false);
+    setFoodSearchQuery('');
+    showToast(`✨ ¡"${nameClean}" registrado en ${slot.toUpperCase()}!`);
+  };
+
   const handleConfirmTextLog = (detectedList, slot = 'snack') => {
     if (!detectedList || detectedList.length === 0) {
       // Create fallback item from raw text
@@ -609,32 +690,40 @@ export default function HomePage() {
     });
   };
 
-  const handleRegisterRecipe = (meal, slot = null) => {
+  const handleRegisterRecipe = (meal, slot = null, customMultiplier = null) => {
     const targetSlot = slot || meal.suggestedSlot || recipeSlotToLog || 'comida';
+    const mult = customMultiplier !== null ? customMultiplier : (recipePortionMultipliers[meal.id] || 1.0);
     const mealTitle = meal.title || meal.name || 'Receta Casera Fitia';
-    const p = Number(meal.protein || meal.proteinG || 0);
-    const c = Number(meal.carbs || meal.carbsG || 0);
-    const f = Number(meal.fat || meal.fatG || 0);
-    const cal = Number(meal.calories || 0);
+    const baseP = Number(meal.protein || meal.proteinG || 0);
+    const baseC = Number(meal.carbs || meal.carbsG || 0);
+    const baseF = Number(meal.fat || meal.fatG || 0);
+    const baseCal = Number(meal.calories || 0);
+    const baseG = Number(meal.grams || 350);
+
+    const scaledP = Math.round(baseP * mult * 10) / 10;
+    const scaledC = Math.round(baseC * mult * 10) / 10;
+    const scaledF = Math.round(baseF * mult * 10) / 10;
+    const scaledCal = Math.round(baseCal * mult);
+    const scaledG = Math.round(baseG * mult);
 
     const newEntry = {
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      name: mealTitle,
+      name: mult !== 1.0 ? `${mealTitle} (${Math.round(mult * 100)}% porción)` : mealTitle,
       brand: 'Chef AuraFit Despensa',
       mealSlot: targetSlot,
-      servingDesc: '1 porción completa',
-      grams: 350,
-      calories: cal,
-      protein: p,
-      carbs: c,
-      fat: f,
+      servingDesc: `${scaledG}g (${Math.round(mult * 100)}% de receta)`,
+      grams: scaledG,
+      calories: scaledCal,
+      protein: scaledP,
+      carbs: scaledC,
+      fat: scaledF,
       icon: meal.icon || '🍲',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     persistLoggedFoods((prev) => [newEntry, ...prev]);
     setSelectedRecipeDetail(null);
-    showToast(`🍲 ¡${mealTitle} agregado a ${targetSlot.toUpperCase()}! 🔥 +${cal} kcal (+${p}g Proteína)`);
+    showToast(`🍲 ¡${newEntry.name} agregado a ${targetSlot.toUpperCase()}! 🔥 +${scaledCal} kcal (+${scaledP}g Proteína)`);
   };
 
   // Update meals whenever ingredients change, active profile changes, or meal slot filter changes
@@ -877,12 +966,12 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Medical Alert Banner if applicable (e.g. Sister's ear surgery) */}
-      {currentProfile.medicalAlert && (
+      {/* Wellness & Personal Focus Banner */}
+      {(currentProfile.gentleNotes || currentProfile.medicalAlert) && (
         <div className="medical-alert-banner">
-          <span style={{ fontSize: '18px' }}>🚨</span>
+          <span style={{ fontSize: '18px' }}>🌿</span>
           <div>
-            <strong>Cuidado Médico Activo:</strong> {currentProfile.medicalAlert}
+            <strong>Enfoque de Bienestar:</strong> {currentProfile.gentleNotes || currentProfile.medicalAlert}
           </div>
         </div>
       )}
@@ -1653,13 +1742,65 @@ export default function HomePage() {
                               </div>
                             </div>
 
-                            {/* Macros Numbers Row */}
-                            <div className="fitia-recipe-macros">
-                              <span style={{ color: 'var(--fitia-orange)' }}><strong>{prot}g</strong> Prot</span> ·{' '}
-                              <span style={{ color: 'var(--fitia-blue)' }}><strong>{carb}g</strong> Carb</span> ·{' '}
-                              <span style={{ color: 'var(--fitia-purple)' }}><strong>{fat}g</strong> Gras</span> ·{' '}
-                              <span style={{ color: 'var(--fitia-green)' }}>🔥 <strong>{cal}</strong> kcal</span>
-                            </div>
+                            {/* Interactive Portion Scaler (Solución al peso predefinido) */}
+                            {(() => {
+                              const mult = getRecipeMultiplier(meal.id);
+                              const displayCal = Math.round(Number(meal.calories || 0) * mult);
+                              const displayProt = Math.round(Number(meal.protein || meal.proteinG || 0) * mult * 10) / 10;
+                              const displayCarb = Math.round(Number(meal.carbs || meal.carbsG || 0) * mult * 10) / 10;
+                              const displayFat = Math.round(Number(meal.fat || meal.fatG || 0) * mult * 10) / 10;
+
+                              return (
+                                <>
+                                  <div className="recipe-portion-scaler-row">
+                                    <div className="portion-scaler-label">
+                                      <span>⚖️ Porción: <strong>{Math.round(mult * 100)}%</strong></span>
+                                      {mult !== 1.0 && <span className="portion-scaler-tag">Escala x{mult}</span>}
+                                    </div>
+                                    <div className="portion-scaler-controls">
+                                      <button
+                                        type="button"
+                                        className="btn-portion-step"
+                                        onClick={() => handleAdjustRecipeMultiplier(meal.id, -0.25)}
+                                        disabled={mult <= 0.5}
+                                        title="Menos cantidad"
+                                      >
+                                        −
+                                      </button>
+                                      <div className="portion-pills">
+                                        {[0.75, 1.0, 1.25, 1.5].map((val) => (
+                                          <button
+                                            key={val}
+                                            type="button"
+                                            className={`btn-portion-pill ${mult === val ? 'active' : ''}`}
+                                            onClick={() => handleSetRecipeMultiplier(meal.id, val)}
+                                          >
+                                            {val}x
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="btn-portion-step"
+                                        onClick={() => handleAdjustRecipeMultiplier(meal.id, 0.25)}
+                                        disabled={mult >= 2.5}
+                                        title="Más cantidad"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Macros Numbers Row */}
+                                  <div className="fitia-recipe-macros">
+                                    <span style={{ color: 'var(--fitia-orange)' }}><strong>{displayProt}g</strong> Prot</span> ·{' '}
+                                    <span style={{ color: 'var(--fitia-blue)' }}><strong>{displayCarb}g</strong> Carb</span> ·{' '}
+                                    <span style={{ color: 'var(--fitia-purple)' }}><strong>{displayFat}g</strong> Gras</span> ·{' '}
+                                    <span style={{ color: 'var(--fitia-green)' }}>🔥 <strong>{displayCal}</strong> kcal</span>
+                                  </div>
+                                </>
+                              );
+                            })()}
 
                             {/* Didactic Physiological Rationale Box */}
                             {meal.didacticWhy && (
@@ -1712,9 +1853,9 @@ export default function HomePage() {
                                   cursor: 'pointer',
                                   boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
                                 }}
-                                onClick={() => handleRegisterRecipe(meal, slot)}
+                                onClick={() => handleRegisterRecipe(meal, slot, getRecipeMultiplier(meal.id))}
                               >
-                                + Agregar a {slot.toUpperCase()}
+                                + Agregar ({Math.round(Number(meal.calories || 0) * getRecipeMultiplier(meal.id))} kcal)
                               </button>
                             </div>
                           </div>
@@ -1726,9 +1867,25 @@ export default function HomePage() {
               </div>
             </section>
 
-            {/* Puntaje Nutricional (Screenshot 2) */}
+            {/* Puntaje Nutricional Dinámico & Didáctico */}
             <section className="fitia-score-card">
-              <span className="fitia-cal-label">Tu puntaje nutricional</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <span className="fitia-cal-label">Tu puntaje nutricional</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    color: nutritionalScore.color,
+                    background: 'var(--bg-card-subtle)',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  {nutritionalScore.grade}
+                </span>
+              </div>
+
               <div className="fitia-gauge-circle-wrap">
                 <svg width="200" height="105" viewBox="0 0 200 105">
                   <path
@@ -1741,47 +1898,68 @@ export default function HomePage() {
                   <path
                     d="M 20 100 A 80 80 0 0 1 180 100"
                     fill="none"
-                    stroke="#00C06D"
+                    stroke={nutritionalScore.color}
                     strokeWidth="16"
                     strokeDasharray="251"
-                    strokeDashoffset="40"
+                    strokeDashoffset={nutritionalScore.dashOffset}
                     strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.5s ease' }}
                   />
                 </svg>
                 <div className="fitia-gauge-inner-val">
-                  <div className="fitia-score-big">85</div>
-                  <div className="fitia-score-grade">Bueno</div>
+                  <div className="fitia-score-big" style={{ color: nutritionalScore.color }}>{nutritionalScore.score}</div>
+                  <div className="fitia-score-grade" style={{ color: 'var(--text-muted)' }}>{nutritionalScore.grade}</div>
                 </div>
               </div>
 
-              {/* Floating Insight Card (Screenshot 2) */}
-              <div className="fitia-insight-card">
-                <div className="fitia-insight-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>🌾</span>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Fibra dietaria</strong>
+              {/* Dynamic Insights from the Algorithm */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '6px' }}>
+                {nutritionalScore.insights.map((ins, idx) => (
+                  <div key={idx} className="fitia-insight-card">
+                    <div className="fitia-insight-header">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{ins.icon}</span>
+                        <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{ins.title}</strong>
+                      </div>
+                      <span className={`fitia-insight-badge ${ins.color === 'green' ? 'fitia-badge-green' : 'fitia-badge-blue'}`}>
+                        {ins.status}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{ins.text}</div>
+                    {ins.tip && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-sub)', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', lineHeight: 1.35 }}>
+                        💡 {ins.tip}
+                      </div>
+                    )}
                   </div>
-                  <span className="fitia-insight-badge fitia-badge-red">Muy bajo</span>
-                </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Te faltan <strong>22 g</strong> para tu meta de 30 g.
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-sub)', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', lineHeight: 1.35 }}>
-                  Prueba cambiar el pan blanco por pan integral en tu próxima comida.
-                </div>
+                ))}
               </div>
 
-              <div className="fitia-insight-card" style={{ marginTop: '8px' }}>
-                <div className="fitia-insight-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>⚡</span>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Calorías</strong>
-                  </div>
-                  <span className="fitia-insight-badge fitia-badge-green">Excelente</span>
+              {/* Didactic Box: How is this calculated? */}
+              <div
+                style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  background: 'var(--bg-card-subtle)',
+                  borderRadius: '14px',
+                  border: '1px solid var(--border-subtle)',
+                  width: '100%',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  lineHeight: 1.45
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', color: 'var(--text-main)', fontWeight: 800 }}>
+                  <span>📐</span>
+                  <span>¿Cómo se calcula tu puntaje nutricional (0 a 100)?</span>
                 </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  2,150 / 2,200 kcal · Ritmo óptimo para superávit limpio.
-                </div>
+                <div>Algoritmo adaptativo en 4 pilares científicos:</div>
+                <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
+                  <li><strong>Adherencia Calórica (30 pts):</strong> Cercanía a tus calorías meta según tu objetivo actual.</li>
+                  <li><strong>Aporte Proteico (35 pts):</strong> Ratio de aminoácidos para síntesis muscular o recuperación.</li>
+                  <li><strong>Hidratación Diaria (15 pts):</strong> Ingesta de agua vs tu requerimiento metabólico.</li>
+                  <li><strong>Calidad & Variedad (20 pts):</strong> Frecuencia de alimentos naturales y distribución en tus comidas.</li>
+                </ul>
               </div>
             </section>
 
@@ -2350,15 +2528,42 @@ export default function HomePage() {
                 )}
               </div>
 
-              {/* Chips de Categorías Rápidas */}
-              <div className="food-filter-chips">
+              {/* Selector de Comida Destino */}
+              <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                {['desayuno', 'comida', 'cena', 'snack'].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: '6px 4px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      border: targetMealSlot === s ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                      background: targetMealSlot === s ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                      color: targetMealSlot === s ? 'var(--fitia-green)' : 'var(--text-muted)',
+                      textTransform: 'capitalize',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setTargetMealSlot(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+
+              {/* Chips del Compendio Nutricional */}
+              <div className="food-filter-chips" style={{ marginTop: '10px' }}>
                 {[
-                  { key: 'all', label: 'Todos' },
-                  { key: 'chifles', label: '🍌 Chifles & Snacks', query: 'chifles' },
-                  { key: 'keke', label: '🧁 Kekitos & Dulces', query: 'keke' },
-                  { key: 'pollo', label: '🍗 Proteínas Magras', query: 'pechuga' },
-                  { key: 'arroz', label: '🍚 Carbohidratos', query: 'arroz' },
-                  { key: 'palta', label: '🥑 Grasas Saludables', query: 'palta' }
+                  { key: 'all', label: '🌟 Todos' },
+                  { key: 'proteina', label: '🥩 Proteínas' },
+                  { key: 'carbohidrato', label: '🍚 Carbohidratos' },
+                  { key: 'grasa_saludable', label: '🥑 Grasas Buenas' },
+                  { key: 'snack', label: '🍌 Snacks & Chifles' },
+                  { key: 'plato_fuerte', label: '🍲 Criollos' },
+                  { key: 'fruta', label: '🍎 Frutas' },
+                  { key: 'vegetal', label: '🥦 Vegetales' }
                 ].map((chip) => (
                   <button
                     key={chip.key}
@@ -2366,8 +2571,7 @@ export default function HomePage() {
                     className={`food-chip ${foodFilterCategory === chip.key ? 'active' : ''}`}
                     onClick={() => {
                       setFoodFilterCategory(chip.key);
-                      if (chip.query) setFoodSearchQuery(chip.query);
-                      else setFoodSearchQuery('');
+                      setFoodSearchQuery('');
                     }}
                   >
                     {chip.label}
@@ -2376,52 +2580,98 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Lista de Resultados */}
-            <div className="food-results-scroll">
-              {foodSearchResults.length > 0 ? (
-                foodSearchResults.map((food) => {
-                  const isSelected = selectedFoodToLog?.id === food.id;
-
-                  return (
-                    <div
-                      key={food.id}
-                      className={`food-result-card ${isSelected ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedFoodToLog(food);
-                        setCustomGrams(food.grams || 50);
-                      }}
-                    >
-                      <div className="food-card-left">
-                        <span className="food-card-icon">{food.icon || '🥗'}</span>
-                        <div>
-                          <div className="food-card-name">{food.name}</div>
-                          <div className="food-card-brand">
-                            {food.brand} · {food.servingDesc || `${food.grams}g`}
-                          </div>
-                          <div className="food-card-macros">
-                            <strong>{food.protein}g</strong> P · <strong>{food.carbs}g</strong> C · <strong>{food.fat}g</strong> G
-                          </div>
-                        </div>
+            {/* Direct Registration Card for ANY typed text */}
+            {foodSearchQuery.trim().length > 0 && (
+              <div className="food-direct-add-card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '22px' }}>✨</span>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text-main)' }}>
+                        Registrar &quot;{foodSearchQuery.trim()}&quot; directamente
                       </div>
-
-                      <div className="food-card-right">
-                        <div className="food-kcal-badge">🔥 {food.calories} kcal</div>
-                        <span className="food-source-pill">
-                          {food.source || (food.isSnack ? 'Snack' : 'Fitia Verified')}
-                        </span>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        Agregar a {targetMealSlot.toUpperCase()} con cálculo inteligente
                       </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔎</div>
-                  <div style={{ fontWeight: 800, fontSize: '14px' }}>No encontramos resultados exactos</div>
-                  <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                    Prueba buscando por "chifles", "kekito", "pechuga", "huevo" o "atún".
                   </div>
+                  <button
+                    type="button"
+                    className="btn-quick-add-custom"
+                    onClick={() => handleRegisterCustomTypedFood(foodSearchQuery, targetMealSlot)}
+                  >
+                    + Registrar
+                  </button>
                 </div>
-              )}
+              </div>
+            )}
+
+            {/* Lista de Resultados del Compendio */}
+            <div className="food-results-scroll">
+              {(() => {
+                const listToDisplay = foodSearchQuery.trim().length > 0
+                  ? foodSearchResults
+                  : (foodFilterCategory === 'all'
+                      ? CURATED_PERUVIAN_FOODS
+                      : CURATED_PERUVIAN_FOODS.filter((f) => f.category === foodFilterCategory));
+
+                if (listToDisplay.length > 0) {
+                  return listToDisplay.map((food) => {
+                    const isSelected = selectedFoodToLog?.id === food.id;
+
+                    return (
+                      <div
+                        key={food.id}
+                        className={`food-result-card ${isSelected ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedFoodToLog(food);
+                          setCustomGrams(food.grams || 50);
+                        }}
+                      >
+                        <div className="food-card-left">
+                          <span className="food-card-icon">{food.icon || '🥗'}</span>
+                          <div>
+                            <div className="food-card-name">{food.name}</div>
+                            <div className="food-card-brand">
+                              {food.brand} · {food.servingDesc || `${food.grams}g`}
+                            </div>
+                            <div className="food-card-macros">
+                              <strong>{food.protein}g</strong> P · <strong>{food.carbs}g</strong> C · <strong>{food.fat}g</strong> G
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="food-card-right">
+                          <div className="food-kcal-badge">🔥 {food.calories} kcal</div>
+                          <span className="food-source-pill">
+                            {food.source || (food.isSnack ? 'Snack' : 'Fitia Verified')}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  });
+                }
+
+                return (
+                  <div style={{ textAlign: 'center', padding: '30px 14px', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>✍️</div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-main)' }}>
+                      Registrar &quot;{foodSearchQuery}&quot; en tu diario
+                    </div>
+                    <div style={{ fontSize: '12px', marginTop: '6px', marginBottom: '14px', lineHeight: 1.4 }}>
+                      No está en la búsqueda rápida pero puedes agregarlo de inmediato con estimación inteligente de macros.
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-quick-add-custom"
+                      style={{ padding: '10px 18px', fontSize: '13px' }}
+                      onClick={() => handleRegisterCustomTypedFood(foodSearchQuery, targetMealSlot)}
+                    >
+                      + Registrar &quot;{foodSearchQuery}&quot; en {targetMealSlot.toUpperCase()}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Bottom Panel when food is selected */}
@@ -2817,15 +3067,15 @@ export default function HomePage() {
                 />
               </div>
 
-              {editingProfile.medicalAlert !== undefined && (
+              {(editingProfile.medicalAlert !== undefined || editingProfile.gentleNotes !== undefined) && (
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>Restricción Médica / Quirúrgica</label>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--fitia-green)', textTransform: 'uppercase' }}>🌿 Enfoque de Bienestar y Recomendaciones Personales</label>
                   <textarea
                     rows={2}
-                    value={editingProfile.medicalAlert || ''}
-                    onChange={(e) => setEditingProfile({ ...editingProfile, medicalAlert: e.target.value })}
-                    placeholder="Ej. Sin maniobras de Valsalva, sin saltos..."
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.04)', color: 'var(--text-main)', fontWeight: 600, fontSize: '12px', marginTop: '4px' }}
+                    value={editingProfile.gentleNotes || editingProfile.medicalAlert || ''}
+                    onChange={(e) => setEditingProfile({ ...editingProfile, gentleNotes: e.target.value, medicalAlert: e.target.value })}
+                    placeholder="Ej. Caminatas suaves, ritmo amable, sin presiones..."
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.35)', background: 'rgba(16, 185, 129, 0.04)', color: 'var(--text-main)', fontWeight: 600, fontSize: '12px', marginTop: '4px' }}
                   />
                 </div>
               )}
@@ -3251,8 +3501,8 @@ export default function HomePage() {
                     </button>
                   </div>
 
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: 1.3 }}>
-                    💡 <em>PIN inicial: Andrés: <strong>1234</strong> · Pareja: <strong>5678</strong> · Hermana: <strong>9012</strong>. Puedes cambiarlos en Calibrar ⚙️ o con el escudo 🛡️.</em>
+                  <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: 1.35, textAlign: 'center' }}>
+                    🔒 <em>Acceso protegido por PIN individual (4 dígitos). Para gestionar o resetear claves de la familia, usa el modo Administrador 🛡️.</em>
                   </div>
                 </>
               );
@@ -3286,25 +3536,75 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Macros Breakdown Card */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center', background: 'var(--bg-card-subtle)', padding: '12px 6px', borderRadius: '14px', marginBottom: '16px', border: '1px solid var(--border-subtle)' }}>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-green)' }}>{selectedRecipeDetail.calories}</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>KCAL</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-orange)' }}>{selectedRecipeDetail.protein || selectedRecipeDetail.proteinG}g</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>PROTEÍNA</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-blue)' }}>{selectedRecipeDetail.carbs || selectedRecipeDetail.carbsG}g</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>CARBOS</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-purple)' }}>{selectedRecipeDetail.fat || selectedRecipeDetail.fatG}g</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>GRASAS</div>
-              </div>
-            </div>
+            {/* Interactive Portion Scaler & Scaled Macros Breakdown */}
+            {(() => {
+              const mult = getRecipeMultiplier(selectedRecipeDetail.id);
+              const mCal = Math.round(Number(selectedRecipeDetail.calories || 0) * mult);
+              const mP = Math.round(Number(selectedRecipeDetail.protein || selectedRecipeDetail.proteinG || 0) * mult * 10) / 10;
+              const mC = Math.round(Number(selectedRecipeDetail.carbs || selectedRecipeDetail.carbsG || 0) * mult * 10) / 10;
+              const mF = Math.round(Number(selectedRecipeDetail.fat || selectedRecipeDetail.fatG || 0) * mult * 10) / 10;
+
+              return (
+                <>
+                  <div className="recipe-portion-scaler-row" style={{ marginBottom: '14px' }}>
+                    <div className="portion-scaler-label">
+                      <span>⚖️ Ajustar tamaño de porción: <strong>{Math.round(mult * 100)}% ({Math.round(350 * mult)}g)</strong></span>
+                      {mult !== 1.0 && <span className="portion-scaler-tag">Escala x{mult}</span>}
+                    </div>
+                    <div className="portion-scaler-controls">
+                      <button
+                        type="button"
+                        className="btn-portion-step"
+                        onClick={() => handleAdjustRecipeMultiplier(selectedRecipeDetail.id, -0.25)}
+                        disabled={mult <= 0.5}
+                      >
+                        −
+                      </button>
+                      <div className="portion-pills">
+                        {[0.75, 1.0, 1.25, 1.5, 2.0].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            className={`btn-portion-pill ${mult === val ? 'active' : ''}`}
+                            onClick={() => handleSetRecipeMultiplier(selectedRecipeDetail.id, val)}
+                          >
+                            {val}x
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-portion-step"
+                        onClick={() => handleAdjustRecipeMultiplier(selectedRecipeDetail.id, 0.25)}
+                        disabled={mult >= 2.5}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Macros Breakdown Card with scaled values */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center', background: 'var(--bg-card-subtle)', padding: '12px 6px', borderRadius: '14px', marginBottom: '16px', border: '1px solid var(--border-subtle)' }}>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-green)' }}>{mCal}</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>KCAL</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-orange)' }}>{mP}g</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>PROTEÍNA</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-blue)' }}>{mC}g</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>CARBOS</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--fitia-purple)' }}>{mF}g</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>GRASAS</div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Description */}
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.4 }}>
@@ -3449,9 +3749,9 @@ export default function HomePage() {
                 type="button"
                 className="btn-primary"
                 style={{ width: '100%', padding: '14px', fontSize: '14px', background: 'var(--fitia-green)' }}
-                onClick={() => handleRegisterRecipe(selectedRecipeDetail, recipeSlotToLog || selectedRecipeDetail.suggestedSlot || 'comida')}
+                onClick={() => handleRegisterRecipe(selectedRecipeDetail, recipeSlotToLog || selectedRecipeDetail.suggestedSlot || 'comida', getRecipeMultiplier(selectedRecipeDetail.id))}
               >
-                + Registrar en {(recipeSlotToLog || selectedRecipeDetail.suggestedSlot || 'comida').toUpperCase()}
+                + Registrar {Math.round(Number(selectedRecipeDetail.calories || 0) * getRecipeMultiplier(selectedRecipeDetail.id))} kcal en {(recipeSlotToLog || selectedRecipeDetail.suggestedSlot || 'comida').toUpperCase()}
               </button>
             </div>
           </div>
