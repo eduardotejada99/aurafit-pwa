@@ -57,3 +57,59 @@ describe('AuraFit Pantry Meal Generator', () => {
     assert.ok(PANTRY_DATABASE.length >= 15, `PANTRY_DATABASE has ${PANTRY_DATABASE.length} recipes, expected >= 15`);
   });
 });
+
+describe('AuraFit Couple Kitchen & Shared Grocery Synchronization', () => {
+  it('should calculate scaled portions for Andrés (60%) and Pareja (40%) from single recipe', async () => {
+    const { calculateCouplePortions, PANTRY_DATABASE } = await import('../src/lib/fitness-data.js');
+    const baseMeal = PANTRY_DATABASE[0]; // Pancakes de avena
+
+    const couple = calculateCouplePortions(baseMeal);
+    assert.ok(couple);
+    assert.equal(couple.mealId, baseMeal.id);
+
+    // Andrés checks
+    assert.equal(couple.andres.profileName, 'Andrés');
+    assert.equal(couple.andres.servingRatio, '60%');
+    assert.ok(couple.andres.calories > baseMeal.calories);
+    assert.ok(couple.andres.protein > baseMeal.proteinG);
+    assert.equal(couple.andres.multiplier, 1.25);
+
+    // Pareja checks
+    assert.equal(couple.pareja.profileName, 'Mi Pareja');
+    assert.equal(couple.pareja.servingRatio, '40%');
+    assert.ok(couple.pareja.calories < baseMeal.calories);
+    assert.ok(couple.pareja.protein < couple.andres.protein);
+    assert.equal(couple.pareja.multiplier, 0.85);
+
+    // Batch cooking advice
+    assert.ok(couple.batchCookingTip.includes('1 sola'));
+    assert.ok(couple.batchCookingTip.includes('60%'));
+  });
+
+  it('should generate categorized couple grocery list for 7 days in Cajabamba', async () => {
+    const { generateCoupleGroceryList } = await import('../src/lib/fitness-data.js');
+    const list = generateCoupleGroceryList(7);
+
+    assert.ok(list.length >= 4, 'Should have at least 4 grocery categories');
+    
+    // Check protein items
+    const proteinCat = list.find((c) => c.category.includes('Proteínas'));
+    assert.ok(proteinCat);
+    assert.ok(proteinCat.items.some((i) => i.name.includes('Huevos')));
+    assert.ok(proteinCat.items.some((i) => i.name.includes('Pollo')));
+    assert.ok(proteinCat.items.some((i) => i.name.includes('Atún')));
+
+    // Check carbs items
+    const carbsCat = list.find((c) => c.category.includes('Carbohidratos'));
+    assert.ok(carbsCat);
+    assert.ok(carbsCat.items.some((i) => i.name.includes('Avena')));
+    assert.ok(carbsCat.items.some((i) => i.name.includes('Papa') || i.name.includes('Camote')));
+
+    // Check biohacking & altitude items for Cajabamba
+    const bioCat = list.find((c) => c.category.includes('Biohacking') || c.category.includes('Altitud'));
+    assert.ok(bioCat);
+    assert.ok(bioCat.items.some((i) => i.name.includes('Creatina')));
+    assert.ok(bioCat.items.some((i) => i.name.includes('Sal Marina')));
+  });
+});
+

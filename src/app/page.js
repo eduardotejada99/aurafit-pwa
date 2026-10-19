@@ -13,7 +13,9 @@ import {
   WORKOUT_ROUTINES,
   calculateWeightAnalytics,
   calculateNutritionalScore,
-  calculateDailyAuraScore
+  calculateDailyAuraScore,
+  calculateCouplePortions,
+  generateCoupleGroceryList
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -194,6 +196,34 @@ export default function HomePage() {
   };
   const handleSetRecipeMultiplier = (mealId, val) => {
     setRecipePortionMultipliers((prev) => ({ ...prev, [mealId]: val }));
+  };
+
+  // Couple Kitchen & Batch Cooking State (Andrés & Pareja)
+  const [showCoupleGroceryModal, setShowCoupleGroceryModal] = useState(false);
+  const [checkedGroceryItems, setCheckedGroceryItems] = useState({});
+  const [couplePortionsExpanded, setCouplePortionsExpanded] = useState({});
+  const coupleGroceryList = useMemo(() => generateCoupleGroceryList(7), []);
+
+  const handleToggleGroceryItem = (id) => {
+    setCheckedGroceryItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleCopyGroceryList = () => {
+    let text = `🛒 *LISTA DE COMPRAS COMPARTIDA: ANDRÉS & PAREJA*\n(Sincronizada para la semana / Viaje a Cajabamba)\n\n`;
+    coupleGroceryList.forEach((cat) => {
+      text += `*${cat.icon} ${cat.category.toUpperCase()}*\n`;
+      cat.items.forEach((item) => {
+        const mark = checkedGroceryItems[item.id] ? '✅' : '▫️';
+        text += `${mark} *${item.name}*: ${item.qty}\n   └ ${item.purpose}\n`;
+      });
+      text += '\n';
+    });
+    text += `💡 *Tip de Cocina en 1 Sola Sartén:*\nCocinan los mismos ingredientes juntos. Al servir: 60% para Andrés (recomposición) y 40% para su pareja (hipertrofia sin sobrecarga).`;
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      alert('¡Lista de compras copiada al portapapeles para enviar por WhatsApp!');
+    }
   };
   
   // Workout state
@@ -1597,6 +1627,30 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* Sincronización de Cocina en Pareja & Despensa Compartida */}
+              <div className="couple-kitchen-banner">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '18px' }}>👫</span>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                      Cocina en Pareja & Mismo Menú
+                    </strong>
+                  </div>
+                  <span className="couple-badge-synced">100% Ingredientes Compartidos</span>
+                </div>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  Compran y cocinan los mismos alimentos para ahorrar tiempo. Las porciones se modulan según el objetivo: <strong>Andrés (~125% / 60% de la olla)</strong> y <strong>su Pareja (~85% / 40% de la olla)</strong>.
+                </p>
+                <button
+                  type="button"
+                  className="btn-open-grocery-list"
+                  onClick={() => setShowCoupleGroceryModal(true)}
+                >
+                  <span>🛒</span>
+                  <span>Lista de Compras Compartida (Semana / Cajabamba)</span>
+                </button>
+              </div>
+
               {/* Paso 1: Selección Didáctica de Ingredientes por Categoría */}
               <div style={{ marginTop: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -1936,6 +1990,95 @@ export default function HomePage() {
                                 <strong>👨‍🍳 Tip Fitia:</strong> {meal.chefTip}
                               </div>
                             )}
+
+                            {/* Cocina en Pareja: Mismo Plato, 2 Porciones (Batch Cooking 1 Sartén) */}
+                            {(() => {
+                              const couple = calculateCouplePortions(meal);
+                              if (!couple) return null;
+                              const isExp = couplePortionsExpanded[meal.id];
+                              return (
+                                <div className="couple-portion-box">
+                                  <button
+                                    type="button"
+                                    className="btn-toggle-couple-portion"
+                                    onClick={() => setCouplePortionsExpanded((prev) => ({ ...prev, [meal.id]: !prev[meal.id] }))}
+                                  >
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span>👫</span>
+                                      <strong>Modo Pareja: 1 Sartén, 2 Porciones</strong>
+                                    </span>
+                                    <span style={{ fontSize: '11px', color: 'var(--fitia-blue)', fontWeight: 800 }}>
+                                      {isExp ? '▲ Ocultar' : '▼ Ver desglose'}
+                                    </span>
+                                  </button>
+
+                                  {isExp && (
+                                    <div className="couple-portion-details">
+                                      <div className="couple-batch-tip">
+                                        {couple.batchCookingTip}
+                                      </div>
+                                      <div className="couple-portion-grid">
+                                        {/* Columna Andrés */}
+                                        <div className="couple-portion-card andres">
+                                          <div className="couple-portion-header">
+                                            <span>🦁 {couple.andres.profileName}</span>
+                                            <span className="couple-ratio-badge">{couple.andres.servingRatio}</span>
+                                          </div>
+                                          <div className="couple-portion-macros">
+                                            <strong>{couple.andres.calories} kcal</strong> · {couple.andres.protein}g P · {couple.andres.carbs}g C
+                                          </div>
+                                          <div className="couple-portion-desc">
+                                            {couple.andres.portionDidactic}
+                                          </div>
+                                          <button
+                                            type="button"
+                                            className="btn-quick-log-couple andres"
+                                            onClick={() => handleAddFood({
+                                              name: `${meal.title || meal.name} (Porción Andrés 1.25x)`,
+                                              calories: couple.andres.calories,
+                                              protein: couple.andres.protein,
+                                              carbs: couple.andres.carbs,
+                                              fat: couple.andres.fat,
+                                              mealSlot: slot
+                                            })}
+                                          >
+                                            + Servir a Andrés
+                                          </button>
+                                        </div>
+
+                                        {/* Columna Pareja */}
+                                        <div className="couple-portion-card pareja">
+                                          <div className="couple-portion-header">
+                                            <span>🌸 {couple.pareja.profileName}</span>
+                                            <span className="couple-ratio-badge">{couple.pareja.servingRatio}</span>
+                                          </div>
+                                          <div className="couple-portion-macros">
+                                            <strong>{couple.pareja.calories} kcal</strong> · {couple.pareja.protein}g P · {couple.pareja.carbs}g C
+                                          </div>
+                                          <div className="couple-portion-desc">
+                                            {couple.pareja.portionDidactic}
+                                          </div>
+                                          <button
+                                            type="button"
+                                            className="btn-quick-log-couple pareja"
+                                            onClick={() => handleAddFood({
+                                              name: `${meal.title || meal.name} (Porción Pareja 0.85x)`,
+                                              calories: couple.pareja.calories,
+                                              protein: couple.pareja.protein,
+                                              carbs: couple.pareja.carbs,
+                                              fat: couple.pareja.fat,
+                                              mealSlot: slot
+                                            })}
+                                          >
+                                            + Servir a Pareja
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             {/* Action Buttons */}
                             <div className="fitia-recipe-btn-row">
@@ -3315,6 +3458,120 @@ export default function HomePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Lista de Compras Compartida (Andrés & Pareja) */}
+      {showCoupleGroceryModal && (
+        <div className="grocery-modal-backdrop" onClick={() => setShowCoupleGroceryModal(false)}>
+          <div className="grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '26px' }}>🛒</span>
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    Lista de Compras Compartida
+                  </h3>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Andrés (92kg) & Pareja (58kg) · Semana / Viaje Cajabamba
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '22px', cursor: 'pointer' }}
+                onClick={() => setShowCoupleGroceryModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Banner de Sincronización y Batch Cooking */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.1), rgba(59,130,246,0.1))', padding: '12px 14px', borderRadius: '16px', border: '1px solid rgba(236,72,153,0.25)', marginBottom: '16px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '3px' }}>
+                👫 ¿Por qué compran lo mismo?
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                Ahorran tiempo cocinando en <strong>1 sola sartén u olla</strong>. La diferencia no está en comprar comida separada, sino en <strong>la porción al servir</strong>: Andrés recibe el 60% (~125%) y su Pareja el 40% (~85%).
+              </div>
+            </div>
+
+            {/* List of Categories */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {coupleGroceryList.map((cat, idx) => (
+                <div key={idx} className="grocery-category-block">
+                  <div className="grocery-cat-header">
+                    <span>{cat.icon}</span>
+                    <span>{cat.category}</span>
+                  </div>
+                  <div>
+                    {cat.items.map((item) => {
+                      const isChecked = checkedGroceryItems[item.id];
+                      return (
+                        <div
+                          key={item.id}
+                          className={`grocery-item-row ${isChecked ? 'checked' : ''}`}
+                          onClick={() => handleToggleGroceryItem(item.id)}
+                        >
+                          <div className="grocery-item-check">
+                            {isChecked ? '✓' : ''}
+                          </div>
+                          <div className="grocery-item-info">
+                            <div className="grocery-item-name">{item.name}</div>
+                            <div className="grocery-item-qty">{item.qty}</div>
+                            <div className="grocery-item-purpose">{item.purpose}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  background: 'var(--fitia-green)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '12px',
+                  borderRadius: '14px',
+                  fontWeight: 900,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                }}
+                onClick={handleCopyGroceryList}
+              >
+                <span>📋</span>
+                <span>Copiar para WhatsApp</span>
+              </button>
+              <button
+                type="button"
+                style={{
+                  background: 'var(--bg-card-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-muted)',
+                  padding: '12px 16px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setShowCoupleGroceryModal(false)}
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

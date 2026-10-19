@@ -1301,3 +1301,110 @@ export function calculateWeightAnalytics(weightLogs = []) {
     logsCount: sorted.length
   };
 }
+
+/**
+ * 8. Shared Kitchen & Couple Meal Synchronization Engine
+ * Aligns meals between Andrés (92kg Recomposición) and Pareja (58kg Hipertrofia Limpia)
+ * using the SAME ingredients and single-pan batch cooking with scaled portions.
+ */
+export function calculateCouplePortions(meal) {
+  if (!meal) return null;
+
+  const baseCal = Number(meal.calories || 450);
+  const baseProt = Number(meal.protein || meal.proteinG || 30);
+  const baseCarb = Number(meal.carbs || meal.carbsG || 40);
+  const baseFat = Number(meal.fat || meal.fatG || 12);
+
+  // Andrés: 92kg, target 2150 kcal, 195g protein -> Higher protein density & ~1.25x volume
+  const andresMult = 1.25;
+  const andresCal = Math.round(baseCal * andresMult);
+  const andresProt = Math.round(baseProt * 1.3);
+  const andresCarb = Math.round(baseCarb * 1.2);
+  const andresFat = Math.round(baseFat * 1.15);
+
+  // Pareja: 58kg, target 1850 kcal, 120g protein -> Gentle portion, high nutrient density, ~0.85x volume
+  const parejaMult = 0.85;
+  const parejaCal = Math.round(baseCal * parejaMult);
+  const parejaProt = Math.round(baseProt * 0.85);
+  const parejaCarb = Math.round(baseCarb * 0.9);
+  const parejaFat = Math.round(baseFat * 0.85);
+
+  return {
+    mealId: meal.id,
+    mealTitle: meal.title || meal.name,
+    icon: meal.icon || '🍲',
+    batchCookingTip: '🍳 Tip 1 Sola Sartén: Cocinen la preparación combinada en 1 sola olla/sartén. Al servir, divide ~60% al plato de Andrés y ~40% al de tu pareja. ¡Mismo tiempo, macros exactos!',
+    andres: {
+      profileName: 'Andrés',
+      avatar: '🦁',
+      role: 'Recomposición (92kg)',
+      multiplier: andresMult,
+      calories: andresCal,
+      protein: andresProt,
+      carbs: andresCarb,
+      fat: andresFat,
+      servingRatio: '60%',
+      portionDidactic: `Porción Generosa (~125%): ${Math.round(andresProt)}g proteína, más saciedad y volumen.`
+    },
+    pareja: {
+      profileName: 'Mi Pareja',
+      avatar: '🌸',
+      role: 'Hipertrofia Limpia (58kg)',
+      multiplier: parejaMult,
+      calories: parejaCal,
+      protein: parejaProt,
+      carbs: parejaCarb,
+      fat: parejaFat,
+      servingRatio: '40%',
+      portionDidactic: `Porción Compacta (~85%): ${Math.round(parejaProt)}g proteína, fácil asimilación digestiva.`
+    }
+  };
+}
+
+/**
+ * 9. Unified Couple Grocery List Generator (Andrés + Pareja)
+ * Computes consolidated shopping list for 7 days or Cajabamba travel
+ */
+export function generateCoupleGroceryList(days = 7) {
+  return [
+    {
+      category: 'Proteínas Magras (Avícola & Pescadería)',
+      icon: '🍗',
+      items: [
+        { id: 'eggs', name: 'Huevos de Granja / Camperos', qty: `${days * 6} unidades (aprox. 3–4 docenas)`, purpose: 'Andrés (4/día) + Pareja (2/día). Proteína de alto valor biológico y colina.' },
+        { id: 'chicken', name: 'Pechuga de Pollo Fresca', qty: `${(days * 0.38).toFixed(1)} kg`, purpose: 'Andrés (~220g/día) + Pareja (~140g/día). Base anabólica sin grasa saturada.' },
+        { id: 'tuna', name: 'Latas de Atún en Agua', qty: '8–10 latas', purpose: 'Cenas express y comidas de viaje a Cajabamba con alto Omega-3.' },
+        { id: 'cheese', name: 'Queso Fresco Pasteurizado', qty: '500g', purpose: 'Acompañamiento rápido en omelettes y ensaladas.' }
+      ]
+    },
+    {
+      category: 'Carbohidratos Complejos & Tubérculos de Altura',
+      icon: '🥔',
+      items: [
+        { id: 'oats', name: 'Avena en Hojuelas Tradicional', qty: '1.5 kg', purpose: 'Desayunos de rendimiento y pancakes proteicos para ambos.' },
+        { id: 'rice', name: 'Arroz Integral o Blanco Superior', qty: '2.0 kg', purpose: 'Glucógeno limpio para energía y entrenamientos de fuerza.' },
+        { id: 'potato', name: 'Papa Amarilla / Camote Peruano', qty: '2.5 kg', purpose: 'Tubérculo de fácil asimilación gástrica en altura Cajabamba.' },
+        { id: 'banana', name: 'Plátanos Seda Maduros', qty: '14–16 unidades (2 manos)', purpose: 'Snack pre/post entreno y endulzante natural en batidos.' }
+      ]
+    },
+    {
+      category: 'Grasas Saludables & Vegetales Digestivos',
+      icon: '🥑',
+      items: [
+        { id: 'avocado', name: 'Paltas Fuertes o Hass', qty: '6–8 unidades', purpose: 'Ácidos grasos monoinsaturados para síntesis hormonal y saciedad.' },
+        { id: 'spinach', name: 'Espinacas Baby / Hojas Verdes', qty: '3 atados frescos', purpose: 'Magnesio, nitratos naturales y volumen digestivo sin calorías.' },
+        { id: 'tomato_onion', name: 'Tomates, Cebollas y Limón', qty: '1.5 kg surtido', purpose: 'Fibra soluble previa a las comidas y condimento natural.' },
+        { id: 'olive_oil', name: 'Aceite de Oliva Virgen Extra', qty: '1 botella (500ml)', purpose: 'Cocina a fuego medio y aderezo antiinflamatorio.' }
+      ]
+    },
+    {
+      category: 'Biohacking & Hidratación en Altitud (Cajabamba)',
+      icon: '🏔️',
+      items: [
+        { id: 'creatine', name: 'Creatina Monohidrato Creapure', qty: '1 bote (Andrés 5g/día)', purpose: 'Saturación de fosfocreatina para fuerza e hipertrofia.' },
+        { id: 'sea_salt', name: 'Sal Marina Integral / Electrolitos', qty: '1 frasco', purpose: 'Osmolaridad celular y retención hídrica óptima a 2,654 msnm.' }
+      ]
+    }
+  ];
+}
+
