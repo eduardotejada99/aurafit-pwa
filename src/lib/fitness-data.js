@@ -4030,5 +4030,257 @@ export function calculateSystemicPillars({
   };
 }
 
+// ============================================================================
+// 10. MENSTRUAL CYCLE & FEMALE HORMONAL TRAINING ENGINE (ADAPTIVE ATHLETICS)
+// ============================================================================
+
+export const DEFAULT_CYCLE_CONFIGS = {
+  pareja: {
+    enabled: true,
+    lastPeriodStartDate: '2026-10-06',
+    cycleLengthDays: 28,
+    periodDurationDays: 5
+  },
+  hermana: {
+    enabled: true,
+    lastPeriodStartDate: '2026-10-14',
+    cycleLengthDays: 29,
+    periodDurationDays: 5
+  },
+  andres: {
+    enabled: false,
+    lastPeriodStartDate: null,
+    cycleLengthDays: 28,
+    periodDurationDays: 5
+  }
+};
+
+export const MENSTRUAL_PHASES_METADATA = {
+  menstrual: {
+    id: 'menstrual',
+    name: 'Fase Menstrual',
+    shortName: 'Menstruación',
+    icon: '🩸',
+    color: '#F43F5E',
+    bgColor: 'rgba(244, 63, 94, 0.12)',
+    borderColor: 'rgba(244, 63, 94, 0.35)',
+    hormones: {
+      estrogen: 'Basal / Bajo',
+      progesterone: 'Basal / Bajo',
+      summary: 'Hormonas en niveles basales. Enfoque en descarga y reposición de hierro.'
+    }
+  },
+  follicular: {
+    id: 'follicular',
+    name: 'Fase Folicular',
+    shortName: 'Folicular',
+    icon: '🌿',
+    color: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    hormones: {
+      estrogen: 'En ascenso rápido',
+      progesterone: 'Bajo',
+      summary: 'Estrógenos en alza. Alta sensibilidad a la insulina y mayor capacidad de recuperación.'
+    }
+  },
+  ovulatory: {
+    id: 'ovulatory',
+    name: 'Fase Ovulatoria',
+    shortName: 'Ovulación',
+    icon: '✨',
+    color: '#8B5CF6',
+    bgColor: 'rgba(139, 92, 246, 0.12)',
+    borderColor: 'rgba(139, 92, 246, 0.35)',
+    hormones: {
+      estrogen: 'Pico Máximo',
+      progesterone: 'Iniciando elevación',
+      summary: 'Pico de fuerza neuromuscular. Ventana óptima para sobrecarga y récords controlados.'
+    }
+  },
+  luteal_early: {
+    id: 'luteal_early',
+    name: 'Fase Lútea Temprana',
+    shortName: 'Lútea Media',
+    icon: '🌙',
+    color: '#F59E0B',
+    bgColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+    hormones: {
+      estrogen: 'Moderado',
+      progesterone: 'Dominante / Alto',
+      summary: 'Progesterona termogénica (+0.5°C). Mayor oxidación de lípidos y cardio Zona 2.'
+    }
+  },
+  luteal_late: {
+    id: 'luteal_late',
+    name: 'Fase Premenstrual (Lútea Tardía)',
+    shortName: 'Premenstrual',
+    icon: '🛡️',
+    color: '#EC4899',
+    bgColor: 'rgba(236, 72, 153, 0.12)',
+    borderColor: 'rgba(236, 72, 153, 0.35)',
+    hormones: {
+      estrogen: 'Caída libre',
+      progesterone: 'Caída libre',
+      summary: 'Caída hormonal y de serotonina. Deload inteligente, magnesio y autocuidado.'
+    }
+  }
+};
+
+export function parseDateOnly(val) {
+  if (!val) return new Date();
+  if (val instanceof Date) {
+    return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+  }
+  const str = String(val).trim();
+  const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (match) {
+    return new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10));
+  }
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? new Date() : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+export function calculateMenstrualCyclePhase({
+  targetDate = new Date(),
+  lastPeriodStartDate = '2026-10-06',
+  cycleLengthDays = 28,
+  periodDurationDays = 5,
+  profileId = 'pareja'
+} = {}) {
+  const target = parseDateOnly(targetDate);
+  const start = parseDateOnly(lastPeriodStartDate || '2026-10-06');
+  
+  const cycleLen = Math.max(20, Math.min(45, Math.round(Number(cycleLengthDays) || 28)));
+  const periodDur = Math.max(2, Math.min(10, Math.round(Number(periodDurationDays) || 5)));
+  
+  const msPerDay = 86400000;
+  const utcTarget = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
+  const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const diffDays = Math.round((utcTarget - utcStart) / msPerDay);
+  
+  const modDays = ((diffDays % cycleLen) + cycleLen) % cycleLen;
+  const cycleDay = modDays + 1; // 1 to cycleLen
+  
+  // Predict next period
+  const daysUntilNextPeriod = cycleDay === 1 ? cycleLen : (cycleLen - cycleDay + 1);
+  const nextPeriodDate = new Date(target);
+  nextPeriodDate.setDate(target.getDate() + daysUntilNextPeriod);
+  const nextPeriodDateStr = getLocalDateKey(nextPeriodDate);
+
+  // Dynamic phase thresholds based on cycleLen
+  const estimatedOvulationDay = Math.max(periodDur + 2, Math.round(cycleLen - 14));
+  const ovulatoryStart = Math.max(periodDur + 1, estimatedOvulationDay - 2);
+  const ovulatoryEnd = Math.min(cycleLen - 5, estimatedOvulationDay + 2);
+  const lutealEarlyEnd = Math.min(cycleLen - 3, ovulatoryEnd + 6);
+  
+  let phaseId = 'follicular';
+  if (cycleDay <= periodDur) {
+    phaseId = 'menstrual';
+  } else if (cycleDay < ovulatoryStart) {
+    phaseId = 'follicular';
+  } else if (cycleDay <= ovulatoryEnd) {
+    phaseId = 'ovulatory';
+  } else if (cycleDay <= lutealEarlyEnd) {
+    phaseId = 'luteal_early';
+  } else {
+    phaseId = 'luteal_late';
+  }
+
+  const meta = MENSTRUAL_PHASES_METADATA[phaseId] || MENSTRUAL_PHASES_METADATA.follicular;
+  const isBleedingDay = cycleDay <= periodDur;
+
+  // Custom advice per profile and phase
+  let workoutAdvice = '';
+  let nutritionAdvice = '';
+  let phaseSubtitle = '';
+
+  if (phaseId === 'menstrual') {
+    phaseSubtitle = isBleedingDay
+      ? `Sangrado Activo (Día ${cycleDay}) · Descarga Articular`
+      : 'Fin del flujo · Movilidad suave';
+    nutritionAdvice = 'Priorizar hierro hémico (sangrecita, hígado o carne roja magra) + vitamina C (camu camu/limón) para absorción. Magnesio para mitigar espasmos e hidratación con sales.';
+    if (profileId === 'pareja') {
+      workoutAdvice = '🛡️ Cero compresión lumbar. Prensa con peso moderado (RIR 3-4), Bird-Dog, estiramientos de psoas y caminata Zona 1. Si hay cólicos, opta por movilidad en colchoneta.';
+    } else if (profileId === 'hermana') {
+      workoutAdvice = '🌿 Días de descanso compasivo. Paseo muy suave o ejercicios de respiración en alfombra sin exigencias.';
+    } else {
+      workoutAdvice = 'Deload activo: movilidad articular, estiramientos y caminata suave. Evitar cargas axiales pesadas.';
+    }
+  } else if (phaseId === 'follicular') {
+    phaseSubtitle = 'Sensibilidad a la Insulina Alta · Sobrecarga Progresiva';
+    nutritionAdvice = 'Excelente utilización de carbohidratos complejos (avena, arroz, papa andina). Mantén tu meta de proteína para apoyar la síntesis proteica de masa magra.';
+    if (profileId === 'pareja') {
+      workoutAdvice = '🔥 Ventana anabólica: Estrógenos en ascenso mejoran la recuperación. Buen momento para sobrecarga progresiva en máquinas (prensa inclinada, remos con pecho apoyado).';
+    } else if (profileId === 'hermana') {
+      workoutAdvice = '🌱 Mayor vitalidad: excelente momento para tus paseos diarios de 15 minutos y sesiones de activación corporal.';
+    } else {
+      workoutAdvice = 'Fase óptima para sobrecarga progresiva. El cuerpo asimila altos volúmenes de trabajo de fuerza con menor fatiga.';
+    }
+  } else if (phaseId === 'ovulatory') {
+    phaseSubtitle = 'Pico de Fuerza del Mes · Récords Personales';
+    nutritionAdvice = 'Antioxidantes (frutos rojos, verduras frescas) y grasas saludables (palta, frutos secos) para equilibrar el pico hormonal de LH y estrógenos.';
+    if (profileId === 'pareja') {
+      workoutAdvice = '✨ ¡Pico de fuerza del mes! Estrógeno al máximo. Excelente para series pesadas en prensa y poleas de glúteos. Mantén abdomen activo para blindar la espalda.';
+    } else if (profileId === 'hermana') {
+      workoutAdvice = '✨ Tu día de mayor energía y vitalidad del mes. Disfruta moverte a tu ritmo con ánimo y frescura.';
+    } else {
+      workoutAdvice = 'Pico de fuerza y potencia neuromuscular. Ideal para buscar PRs o series efectivas manteniendo buena técnica.';
+    }
+  } else if (phaseId === 'luteal_early') {
+    phaseSubtitle = 'Progesterona Dominante · Hipertrofia & Zona 2';
+    nutritionAdvice = 'La progesterona favorece la quema de lípidos. Prioriza grasas de calidad (palta, aceite de oliva) y fibra soluble para mantener saciedad estable.';
+    if (profileId === 'pareja') {
+      workoutAdvice = '🌙 Hipertrofia controlada a 10-15 reps en máquina con descansos de 75-90s. Buen bombeo muscular sin estrés sobre la columna.';
+    } else if (profileId === 'hermana') {
+      workoutAdvice = '🌙 Ritmo sereno y constante. Paseo continuo y buena hidratación con agua fresca.';
+    } else {
+      workoutAdvice = 'Hipertrofia a repeticiones moderadas y cardio en Zona 2 (cinta inclinada o elíptica). Temperatura basal +0.5°C.';
+    }
+  } else {
+    // luteal_late
+    phaseSubtitle = 'Deload Inteligente · Autocuidado & Magnesio';
+    nutritionAdvice = 'Admite +100 a +150 kcal limpias si hay apetito. Magnesio bisglicinato por la noche, chocolate negro 70%+ (serotonina) y alimentos con potasio para la retención hídrica.';
+    if (profileId === 'pareja') {
+      workoutAdvice = '🛡️ Deload preventivo (-25% volumen). No fuerces récords; prioriza salud lumbar con Bird-Dog, movilidad pélvica y series ligeras de prensa con tempo lento (3s bajada).';
+    } else if (profileId === 'hermana') {
+      workoutAdvice = '🌸 Días de consentimiento y ternura corporal: paseos breves, descanso prioritario y cero sobreexigencia.';
+    } else {
+      workoutAdvice = 'Semana de descarga (Deload). Reducir intensidad un 20-30%, evitar fatigar el sistema nervioso central y priorizar movilidad.';
+    }
+  }
+
+  // Generate timeline segments
+  const allPhasesTimeline = [
+    { id: 'menstrual', name: 'Menstrual', startDay: 1, endDay: periodDur, color: '#F43F5E', icon: '🩸' },
+    { id: 'follicular', name: 'Folicular', startDay: periodDur + 1, endDay: ovulatoryStart - 1, color: '#10B981', icon: '🌿' },
+    { id: 'ovulatory', name: 'Ovulatoria', startDay: ovulatoryStart, endDay: ovulatoryEnd, color: '#8B5CF6', icon: '✨' },
+    { id: 'luteal_early', name: 'Lútea Media', startDay: ovulatoryEnd + 1, endDay: lutealEarlyEnd, color: '#F59E0B', icon: '🌙' },
+    { id: 'luteal_late', name: 'Premenstrual', startDay: lutealEarlyEnd + 1, endDay: cycleLen, color: '#EC4899', icon: '🛡️' }
+  ];
+
+  return {
+    cycleDay,
+    cycleLengthDays: cycleLen,
+    periodDurationDays: periodDur,
+    daysUntilNextPeriod,
+    nextPeriodDateStr,
+    phaseId,
+    phaseName: meta.name,
+    phaseShortName: meta.shortName,
+    phaseSubtitle,
+    icon: meta.icon,
+    color: meta.color,
+    bgColor: meta.bgColor,
+    borderColor: meta.borderColor,
+    isBleedingDay,
+    hormones: meta.hormones,
+    workoutAdvice,
+    nutritionAdvice,
+    allPhasesTimeline
+  };
+}
+
 
 

@@ -20,7 +20,10 @@ import {
   getHybridWorkoutPrescription,
   analyzeWeeklyWorkoutBalance,
   calculateSystemicPillars,
-  getLocalDateKey
+  getLocalDateKey,
+  calculateMenstrualCyclePhase,
+  DEFAULT_CYCLE_CONFIGS,
+  MENSTRUAL_PHASES_METADATA
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -184,6 +187,17 @@ export default function HomePage() {
   // Active Date Key for 100% Dynamic Day Tracking (Local Timezone safe for Peru / UTC-5)
   const [selectedDateKey, setSelectedDateKey] = useState(() => getLocalDateKey());
   const [waterByDate, setWaterByDate] = useState({});
+
+  // Menstrual Cycle & Female Hormonal Adaptive Training State
+  const [cycleConfigs, setCycleConfigs] = useState(() => ({ ...DEFAULT_CYCLE_CONFIGS }));
+  const [showCycleConfigModal, setShowCycleConfigModal] = useState(false);
+  const [isCycleExpanded, setIsCycleExpanded] = useState(false);
+  const [cycleForm, setCycleForm] = useState({
+    enabled: true,
+    lastPeriodStartDate: '2026-10-06',
+    cycleLengthDays: 28,
+    periodDurationDays: 5
+  });
 
   const activeDateKey = selectedDateKey || getLocalDateKey();
   const todayDateKey = getLocalDateKey();
@@ -428,6 +442,7 @@ export default function HomePage() {
     Boolean(editingHabit) ||
     showDamageControl ||
     showNotificationModal ||
+    showCycleConfigModal ||
     selectedRecipeDetail ||
     detailReaderModal ||
     isLocked
@@ -497,6 +512,18 @@ export default function HomePage() {
       }
       const notifStatus = checkNotificationSupport();
       setNotificationPermission(notifStatus.permission);
+
+      // Load Menstrual Cycle Configs from LocalStorage
+      const loadedCycles = { ...DEFAULT_CYCLE_CONFIGS };
+      ['pareja', 'hermana', 'andres'].forEach((pk) => {
+        const raw = localStorage.getItem(`aurafit_cycle_${pk}`);
+        if (raw) {
+          try {
+            loadedCycles[pk] = { ...loadedCycles[pk], ...JSON.parse(raw) };
+          } catch (e) {}
+        }
+      });
+      setCycleConfigs(loadedCycles);
     } catch (err) {
       console.warn('Storage sync err:', err);
     }
@@ -2093,6 +2120,87 @@ export default function HomePage() {
 
   const completedHabitsCount = habits.filter((h) => h.completed).length;
 
+  // 100% Dynamic Menstrual Cycle Calculation for Active Profile
+  const activeCycleConfig = useMemo(() => {
+    return cycleConfigs[activeProfileId] || DEFAULT_CYCLE_CONFIGS[activeProfileId] || {
+      enabled: currentProfile.gender === 'female',
+      lastPeriodStartDate: '2026-10-06',
+      cycleLengthDays: 28,
+      periodDurationDays: 5
+    };
+  }, [cycleConfigs, activeProfileId, currentProfile.gender]);
+
+  const activeCycleInfo = useMemo(() => {
+    if (!activeCycleConfig?.enabled && currentProfile.gender !== 'female') {
+      return null;
+    }
+    return calculateMenstrualCyclePhase({
+      targetDate: activeDateKey,
+      lastPeriodStartDate: activeCycleConfig?.lastPeriodStartDate || '2026-10-06',
+      cycleLengthDays: activeCycleConfig?.cycleLengthDays || 28,
+      periodDurationDays: activeCycleConfig?.periodDurationDays || 5,
+      profileId: activeProfileId
+    });
+  }, [activeCycleConfig, activeDateKey, currentProfile.gender, activeProfileId]);
+
+  const weekCycleMap = useMemo(() => {
+    if (!activeCycleConfig?.enabled && currentProfile.gender !== 'female') {
+      return {};
+    }
+    const map = {};
+    weekDays.forEach((item) => {
+      map[item.dateKey] = calculateMenstrualCyclePhase({
+        targetDate: item.dateKey,
+        lastPeriodStartDate: activeCycleConfig?.lastPeriodStartDate || '2026-10-06',
+        cycleLengthDays: activeCycleConfig?.cycleLengthDays || 28,
+        periodDurationDays: activeCycleConfig?.periodDurationDays || 5,
+        profileId: activeProfileId
+      });
+    });
+    return map;
+  }, [activeCycleConfig, currentProfile.gender, weekDays, activeProfileId]);
+
+  const handleMarkPeriodStartedToday = () => {
+    const todayStr = getLocalDateKey();
+    const updated = {
+      ...activeCycleConfig,
+      enabled: true,
+      lastPeriodStartDate: todayStr
+    };
+    const nextConfigs = { ...cycleConfigs, [activeProfileId]: updated };
+    setCycleConfigs(nextConfigs);
+    try {
+      localStorage.setItem(`aurafit_cycle_${activeProfileId}`, JSON.stringify(updated));
+    } catch (e) {}
+    showToast(`🩸 Periodo registrado: Día 1 iniciado hoy (${todayStr})`);
+  };
+
+  const handleOpenCycleModal = () => {
+    setCycleForm({
+      enabled: activeCycleConfig.enabled !== false,
+      lastPeriodStartDate: activeCycleConfig.lastPeriodStartDate || getLocalDateKey(),
+      cycleLengthDays: activeCycleConfig.cycleLengthDays || 28,
+      periodDurationDays: activeCycleConfig.periodDurationDays || 5
+    });
+    setShowCycleConfigModal(true);
+  };
+
+  const handleSaveCycleConfig = () => {
+    const updated = {
+      enabled: Boolean(cycleForm.enabled),
+      lastPeriodStartDate: cycleForm.lastPeriodStartDate || getLocalDateKey(),
+      cycleLengthDays: Math.max(20, Math.min(45, Number(cycleForm.cycleLengthDays) || 28)),
+      periodDurationDays: Math.max(2, Math.min(10, Number(cycleForm.periodDurationDays) || 5))
+    };
+    const nextConfigs = { ...cycleConfigs, [activeProfileId]: updated };
+    setCycleConfigs(nextConfigs);
+    try {
+      localStorage.setItem(`aurafit_cycle_${activeProfileId}`, JSON.stringify(updated));
+    } catch (e) {}
+    setShowCycleConfigModal(false);
+    showToast('🌸 Configuración de ciclo actualizada exitosamente');
+  };
+
   return (
     <div className={`mobile-shell ${isDarkMode ? 'dark-theme' : ''}`}>
       {/* 1. Fitia Top Header */}
@@ -2275,6 +2383,7 @@ export default function HomePage() {
       <section className="fitia-week-strip" suppressHydrationWarning>
         {weekDays.map((item) => {
           const isSelected = selectedDateKey ? selectedDateKey === item.dateKey : selectedDay === item.num;
+          const dayCycle = weekCycleMap[item.dateKey];
           return (
             <div
               key={item.dateKey}
@@ -2283,15 +2392,181 @@ export default function HomePage() {
                 setSelectedDay(item.num);
                 setSelectedDateKey(item.dateKey);
               }}
-              title={`${item.dateKey}${item.isToday ? ' (Hoy)' : ''}`}
+              title={`${item.dateKey}${item.isToday ? ' (Hoy)' : ''}${dayCycle ? ` · ${dayCycle.phaseName} (Día ${dayCycle.cycleDay})` : ''}`}
             >
               <span className="fitia-day-name">{item.day}</span>
               <div className="fitia-day-number" style={{ fontWeight: item.isToday ? 900 : 700 }}>{item.num}</div>
               <div className={`fitia-day-dot ${item.done ? '' : 'empty'}`} />
+              {dayCycle && (
+                <span
+                  className="fitia-cycle-micro-dot"
+                  style={{
+                    background: dayCycle.bgColor,
+                    color: dayCycle.color,
+                    border: `1px solid ${dayCycle.borderColor}`
+                  }}
+                  title={`Día ${dayCycle.cycleDay}: ${dayCycle.phaseName}`}
+                >
+                  {dayCycle.icon}
+                </span>
+              )}
             </div>
           );
         })}
       </section>
+
+      {/* 2.5. MENSTRUAL CYCLE & FEMALE HORMONAL EXPANSION CARD (CONFIGURABLE & ADAPTIVE) */}
+      {activeCycleInfo && (currentProfile.gender === 'female' || activeCycleConfig?.enabled) && (
+        <section
+          className={`cycle-tracker-card ${activeCycleInfo.isBleedingDay ? 'active-glow' : ''}`}
+          style={{
+            border: `1.5px solid ${activeCycleInfo.borderColor}`,
+            background: `linear-gradient(135deg, ${activeCycleInfo.bgColor} 0%, var(--bg-card) 60%)`
+          }}
+        >
+          <div className="cycle-header-row">
+            <div
+              className="cycle-phase-tag"
+              style={{
+                background: activeCycleInfo.bgColor,
+                color: activeCycleInfo.color,
+                border: `1px solid ${activeCycleInfo.borderColor}`
+              }}
+            >
+              <span>{activeCycleInfo.icon}</span>
+              <span>Día {activeCycleInfo.cycleDay} de {activeCycleInfo.cycleLengthDays} · {activeCycleInfo.phaseName}</span>
+            </div>
+            <button
+              type="button"
+              className="cycle-config-btn"
+              onClick={handleOpenCycleModal}
+              title="Configurar duración y fecha de inicio de tu ciclo"
+            >
+              <span>⚙️</span>
+              <span>Ajustar Ciclo</span>
+            </button>
+          </div>
+
+          <div className="cycle-sub-info">
+            <div className="cycle-sub-title">
+              {activeCycleInfo.phaseSubtitle}
+            </div>
+            <div className="cycle-sub-meta">
+              <span>📅 Próximo periodo estimado: <strong>{activeCycleInfo.nextPeriodDateStr}</strong></span>
+              <span>•</span>
+              <span style={{ color: activeCycleInfo.daysUntilNextPeriod <= 3 ? '#F43F5E' : 'inherit', fontWeight: activeCycleInfo.daysUntilNextPeriod <= 3 ? 800 : 600 }}>
+                {activeCycleInfo.daysUntilNextPeriod === 1
+                  ? '¡Inicia mañana!'
+                  : `en ~${activeCycleInfo.daysUntilNextPeriod} días`}
+              </span>
+            </div>
+          </div>
+
+          {/* 1-Tap Quick Action & Expand Toggle */}
+          <div className="cycle-actions-strip">
+            <button
+              type="button"
+              className={`cycle-quick-btn ${activeCycleInfo.cycleDay === 1 ? 'active-day-one' : ''}`}
+              onClick={handleMarkPeriodStartedToday}
+            >
+              <span>🩸</span>
+              <span>{activeCycleInfo.cycleDay === 1 ? '✓ Periodo iniciado hoy (Día 1)' : 'Inició mi periodo hoy'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="cycle-toggle-details-btn"
+              onClick={() => setIsCycleExpanded(!isCycleExpanded)}
+            >
+              <span>{isCycleExpanded ? 'Ocultar Estrategia' : 'Ver Mapa Hormonal & Entrenamiento'}</span>
+              <span>{isCycleExpanded ? '▴' : '▾'}</span>
+            </button>
+          </div>
+
+          {/* Expanded Details: Timeline Map & Adapted Training / Nutrition Guidance */}
+          {isCycleExpanded && (
+            <div className="cycle-expanded-details">
+              {/* Visual 28-day Segment Bar */}
+              <div className="cycle-timeline-wrapper">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                  <span>Mapa del Ciclo ({activeCycleInfo.cycleLengthDays} días)</span>
+                  <span style={{ color: activeCycleInfo.color }}>Pin: Día {activeCycleInfo.cycleDay}</span>
+                </div>
+
+                <div className="cycle-timeline-track">
+                  {activeCycleInfo.allPhasesTimeline.map((seg) => {
+                    const segDays = seg.endDay - seg.startDay + 1;
+                    const widthPct = (segDays / activeCycleInfo.cycleLengthDays) * 100;
+                    return (
+                      <div
+                        key={seg.id}
+                        className="cycle-timeline-segment"
+                        style={{
+                          width: `${widthPct}%`,
+                          background: seg.color,
+                          opacity: activeCycleInfo.phaseId === seg.id ? 0.95 : 0.45
+                        }}
+                        title={`${seg.name} (Días ${seg.startDay}-${seg.endDay})`}
+                      />
+                    );
+                  })}
+
+                  {/* Glowing pin on current day */}
+                  <div
+                    className="cycle-day-marker-pin"
+                    style={{
+                      left: `${Math.min(98, Math.max(2, ((activeCycleInfo.cycleDay - 0.5) / activeCycleInfo.cycleLengthDays) * 100))}%`,
+                      borderColor: activeCycleInfo.color,
+                      boxShadow: `0 0 10px ${activeCycleInfo.color}`
+                    }}
+                  />
+                </div>
+
+                <div className="cycle-timeline-legend">
+                  <span>🩸 Menstrual (1-{activeCycleInfo.periodDurationDays}d)</span>
+                  <span>🌿 Folicular</span>
+                  <span>✨ Ovulación</span>
+                  <span>🌙 Lútea</span>
+                  <span>🛡️ Premenstrual</span>
+                </div>
+              </div>
+
+              {/* Strategy Grid */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="cycle-strategy-box workout" style={{ borderLeftColor: activeCycleInfo.color }}>
+                  <span className="cycle-box-label">
+                    <span>🏋️‍♀️</span>
+                    <span>Entrenamiento Adaptado ({activeCycleInfo.phaseName})</span>
+                  </span>
+                  <p className="cycle-box-text">
+                    {activeCycleInfo.workoutAdvice}
+                  </p>
+                </div>
+
+                <div className="cycle-strategy-box nutrition" style={{ borderLeftColor: '#10B981' }}>
+                  <span className="cycle-box-label">
+                    <span>🥑</span>
+                    <span>Nutrición & Biohacking</span>
+                  </span>
+                  <p className="cycle-box-text">
+                    {activeCycleInfo.nutritionAdvice}
+                  </p>
+                </div>
+
+                <div className="cycle-strategy-box hormones" style={{ borderLeftColor: '#F59E0B' }}>
+                  <span className="cycle-box-label">
+                    <span>🧬</span>
+                    <span>Clave Hormonal</span>
+                  </span>
+                  <p className="cycle-box-text">
+                    <strong>Estrógeno:</strong> {activeCycleInfo.hormones.estrogen} · <strong>Progesterona:</strong> {activeCycleInfo.hormones.progesterone}. {activeCycleInfo.hormones.summary}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* MAIN TAB VIEWPORT */}
       <main className="fitia-content">
@@ -4379,6 +4654,29 @@ export default function HomePage() {
                     Rutina diseñada con soporte completo de espalda (prensa inclinada, sentadilla búlgara con mancuernas a los lados y estabilización McGill Big 3). Glúteos y femoral al máximo sin tocar la columna.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* HORMONAL CYCLE TRAINING ADAPTATION BANNER */}
+            {activeCycleInfo && (currentProfile.gender === 'female' || activeCycleConfig?.enabled) && (
+              <div
+                className="cycle-workout-banner"
+                style={{
+                  borderLeft: `4px solid ${activeCycleInfo.color}`,
+                  background: `linear-gradient(135deg, ${activeCycleInfo.bgColor} 0%, var(--bg-card) 60%)`
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: activeCycleInfo.color, letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    {activeCycleInfo.icon} Sinergia Ciclo & Entrenamiento · Día {activeCycleInfo.cycleDay} ({activeCycleInfo.phaseName})
+                  </span>
+                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                    {activeCycleInfo.phaseSubtitle}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, margin: 0 }}>
+                  {activeCycleInfo.workoutAdvice}
+                </p>
               </div>
             )}
 
@@ -8898,6 +9196,221 @@ export default function HomePage() {
             >
               ✓ Guardar y Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL DE CONFIGURACIÓN DEL CICLO MENSTRUAL & ADAPTACIÓN HORMONAL
+          =================================================================== */}
+      {showCycleConfigModal && (
+        <div
+          className="cycle-modal-overlay"
+          onClick={() => setShowCycleConfigModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="cycle-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#EC4899', letterSpacing: '0.5px' }}>
+                  🌸 Calendario & Hormonas
+                </span>
+                <h3 style={{ fontSize: '18px', fontWeight: 900, margin: '2px 0 0 0' }}>
+                  Ajustes de Ciclo ({currentProfile.name})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCycleConfigModal(false)}
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Enable / Disable Toggle */}
+            <div style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '16px',
+              padding: '12px 14px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <strong style={{ fontSize: '13px', color: 'var(--text-main)', display: 'block' }}>
+                  Seguimiento Activo
+                </strong>
+                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                  Mostrar fases hormonales en calendario y rutinas
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={cycleForm.enabled}
+                onChange={(e) => setCycleForm({ ...cycleForm, enabled: e.target.checked })}
+                style={{ width: '20px', height: '20px', accentColor: '#EC4899', cursor: 'pointer' }}
+              />
+            </div>
+
+            {/* Form Fields */}
+            <div className="cycle-form-group">
+              <label className="cycle-form-label">
+                🩸 Fecha de inicio del último periodo:
+              </label>
+              <input
+                type="date"
+                className="cycle-form-input"
+                value={cycleForm.lastPeriodStartDate || ''}
+                onChange={(e) => setCycleForm({ ...cycleForm, lastPeriodStartDate: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setCycleForm({ ...cycleForm, lastPeriodStartDate: getLocalDateKey() })}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EC4899',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  padding: '2px 0'
+                }}
+              >
+                + Marcar Hoy como fecha de inicio
+              </button>
+            </div>
+
+            {/* Cycle Length Stepper */}
+            <div className="cycle-form-group">
+              <label className="cycle-form-label">
+                🔄 Duración promedio de tu ciclo completo:
+              </label>
+              <div className="cycle-stepper-row">
+                <button
+                  type="button"
+                  className="cycle-stepper-btn"
+                  onClick={() => setCycleForm({ ...cycleForm, cycleLengthDays: Math.max(20, (Number(cycleForm.cycleLengthDays) || 28) - 1) })}
+                >
+                  -
+                </button>
+                <div className="cycle-stepper-val">
+                  {cycleForm.cycleLengthDays} días
+                </div>
+                <button
+                  type="button"
+                  className="cycle-stepper-btn"
+                  onClick={() => setCycleForm({ ...cycleForm, cycleLengthDays: Math.min(45, (Number(cycleForm.cycleLengthDays) || 28) + 1) })}
+                >
+                  +
+                </button>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                  (Normal: 24 a 35 días)
+                </span>
+              </div>
+            </div>
+
+            {/* Period Duration Stepper */}
+            <div className="cycle-form-group">
+              <label className="cycle-form-label">
+                🩸 Días de sangrado / menstruación:
+              </label>
+              <div className="cycle-stepper-row">
+                <button
+                  type="button"
+                  className="cycle-stepper-btn"
+                  onClick={() => setCycleForm({ ...cycleForm, periodDurationDays: Math.max(2, (Number(cycleForm.periodDurationDays) || 5) - 1) })}
+                >
+                  -
+                </button>
+                <div className="cycle-stepper-val">
+                  {cycleForm.periodDurationDays} días
+                </div>
+                <button
+                  type="button"
+                  className="cycle-stepper-btn"
+                  onClick={() => setCycleForm({ ...cycleForm, periodDurationDays: Math.min(10, (Number(cycleForm.periodDurationDays) || 5) + 1) })}
+                >
+                  +
+                </button>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                  (Normal: 3 a 7 días)
+                </span>
+              </div>
+            </div>
+
+            {/* Informative Tip */}
+            <div style={{
+              background: 'rgba(236, 72, 153, 0.08)',
+              border: '1px solid rgba(236, 72, 153, 0.25)',
+              borderRadius: '14px',
+              padding: '10px 12px',
+              fontSize: '11.5px',
+              color: 'var(--text-main)',
+              lineHeight: 1.45
+            }}>
+              💡 <strong>Inteligencia Hormonal:</strong> AuraFit calculará automáticamente tus fases (Menstrual, Folicular, Ovulación, Lútea y Premenstrual) sugiriéndote la carga ideal y cuidando tu bienestar.
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setShowCycleConfigModal(false)}
+                style={{
+                  flex: 1,
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-muted)',
+                  borderRadius: '14px',
+                  padding: '12px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCycleConfig}
+                style={{
+                  flex: 2,
+                  background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                  border: 'none',
+                  color: '#ffffff',
+                  borderRadius: '14px',
+                  padding: '12px',
+                  fontSize: '13px',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(236, 72, 153, 0.35)'
+                }}
+              >
+                ✓ Guardar Configuración
+              </button>
+            </div>
           </div>
         </div>
       )}
