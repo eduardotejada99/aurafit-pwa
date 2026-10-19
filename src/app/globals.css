@@ -2646,6 +2646,70 @@ button:active, .touchable:active {
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
 }
 
+/* ===================================================================
+   CLOUD SYNC & MULTI-DEVICE UPDATE STYLES
+   =================================================================== */
+@keyframes spinSync {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.header-sync-btn {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.header-sync-btn:hover {
+  transform: scale(1.05);
+}
+
+.header-sync-btn.syncing {
+  animation: spinSync 1s linear infinite;
+}
+
+.update-available-banner {
+  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+  color: #FFFFFF;
+  padding: 10px 14px;
+  border-radius: 14px;
+  margin: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.update-available-banner:active {
+  transform: scale(0.98);
+}
+
+.update-available-banner .update-btn-pill {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+
 
 
 

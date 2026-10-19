@@ -26,6 +26,14 @@ import {
   parseNaturalLanguageFood,
   calculateCompensatoryRebalance
 } from '@/lib/food-database';
+import {
+  SYNC_KEYS,
+  queueCloudSync,
+  flushCloudSync,
+  pullCloudData,
+  getLocalSyncBundle,
+  mergeCloudIntoLocalStorage
+} from '@/lib/cloud-sync';
 
 export const PANTRY_CATEGORIES = [
   {
@@ -341,8 +349,15 @@ export default function HomePage() {
 
   const weightAnalytics = calculateWeightAnalytics(weightLogs);
 
-  // Load local storage if available on mount
+  // Multi-Device Cloud Synchronization State
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState('syncing'); // 'synced' | 'syncing' | 'local'
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  // Load local storage if available on mount & initiate bidirectional cloud sync
   useEffect(() => {
+    let activeKey = 'andres';
     try {
       const savedTheme = localStorage.getItem('aurafit_theme');
       if (savedTheme === 'dark') setIsDarkMode(true);
@@ -362,7 +377,7 @@ export default function HomePage() {
       }
 
       const savedActiveProfile = localStorage.getItem('aurafit_active_profile');
-      const activeKey = savedActiveProfile && FAMILY_PROFILES[savedActiveProfile] ? savedActiveProfile : 'andres';
+      activeKey = savedActiveProfile && FAMILY_PROFILES[savedActiveProfile] ? savedActiveProfile : 'andres';
       setActiveProfileId(activeKey);
       loadProfileData(activeKey);
 
@@ -376,13 +391,167 @@ export default function HomePage() {
     } catch (err) {
       console.warn('Storage sync err:', err);
     }
+
+    // PWA Service Worker Update Listeners
+    const onUpdateReady = () => setUpdateAvailable(true);
+    const onUpdated = () => {
+      setUpdateAvailable(false);
+      showToast('✨ ¡App actualizada a la última versión!');
+    };
+    window.addEventListener('aurafit_update_ready', onUpdateReady);
+    window.addEventListener('aurafit_updated', onUpdated);
+
+    // Initial Cloud Pull & Sync from Neon PostgreSQL
+    const doInitialCloudSync = async () => {
+      setIsSyncing(true);
+      setCloudStatus('syncing');
+      try {
+        const res = await pullCloudData(activeKey);
+        if (res && res.ok && res.items && Object.keys(res.items).length > 0) {
+          // Merge cloud data into localStorage
+          mergeCloudIntoLocalStorage(res.items);
+
+          if (res.items[SYNC_KEYS.FAMILY_PROFILES]) {
+            const parsedProfiles = res.items[SYNC_KEYS.FAMILY_PROFILES];
+            const merged = { ...FAMILY_PROFILES };
+            Object.keys(parsedProfiles).forEach((k) => {
+              merged[k] = {
+                ...FAMILY_PROFILES[k],
+                ...parsedProfiles[k],
+                pin: (parsedProfiles[k].pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
+              };
+            });
+            setFamilyProfiles(merged);
+          }
+
+          if (res.items[SYNC_KEYS.COUPLE_MODE] !== undefined) {
+            setCoupleModeEnabled(Boolean(res.items[SYNC_KEYS.COUPLE_MODE]));
+          }
+
+          if (res.items[SYNC_KEYS.INGREDIENTS] && Array.isArray(res.items[SYNC_KEYS.INGREDIENTS])) {
+            setSelectedIngredients(res.items[SYNC_KEYS.INGREDIENTS]);
+          }
+
+          // Reload active profile data with merged cloud items
+          loadProfileData(activeKey);
+          setCloudStatus('synced');
+          setLastSyncTime(new Date());
+        } else if (res && res.ok) {
+          // Database was empty: Seed initial cloud database with local state!
+          const localBundle = getLocalSyncBundle(Object.keys(FAMILY_PROFILES));
+          if (Object.keys(localBundle).length > 0) {
+            await fetch('/api/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ bundle: localBundle, updatedBy: 'initial-seed' })
+            });
+          }
+          setCloudStatus('synced');
+          setLastSyncTime(new Date());
+        } else {
+          setCloudStatus('local');
+        }
+      } catch (err) {
+        console.warn('Initial cloud sync error:', err);
+        setCloudStatus('local');
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    doInitialCloudSync();
+
+    // Auto-pull when user returns to app
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        pullCloudData(activeKey).then((res) => {
+          if (res && res.ok && res.items && Object.keys(res.items).length > 0) {
+            mergeCloudIntoLocalStorage(res.items);
+            loadProfileData(activeKey);
+            setCloudStatus('synced');
+            setLastSyncTime(new Date());
+          }
+        }).catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('aurafit_update_ready', onUpdateReady);
+      window.removeEventListener('aurafit_updated', onUpdated);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    setCloudStatus('syncing');
+    showToast('🔄 Conectando con la nube Neon PostgreSQL...');
+    try {
+      // 1. Push any local state to cloud
+      const localBundle = getLocalSyncBundle(Object.keys(familyProfiles));
+      await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bundle: localBundle, updatedBy: activeProfileId })
+      });
+
+      // 2. Pull latest state from cloud
+      const pullRes = await pullCloudData(activeProfileId);
+      if (pullRes && pullRes.ok && pullRes.items) {
+        mergeCloudIntoLocalStorage(pullRes.items);
+        if (pullRes.items[SYNC_KEYS.FAMILY_PROFILES]) {
+          const merged = { ...FAMILY_PROFILES };
+          Object.keys(pullRes.items[SYNC_KEYS.FAMILY_PROFILES]).forEach((k) => {
+            merged[k] = {
+              ...FAMILY_PROFILES[k],
+              ...pullRes.items[SYNC_KEYS.FAMILY_PROFILES][k],
+              pin: (pullRes.items[SYNC_KEYS.FAMILY_PROFILES][k].pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
+            };
+          });
+          setFamilyProfiles(merged);
+        }
+        if (pullRes.items[SYNC_KEYS.COUPLE_MODE] !== undefined) {
+          setCoupleModeEnabled(Boolean(pullRes.items[SYNC_KEYS.COUPLE_MODE]));
+        }
+        if (pullRes.items[SYNC_KEYS.INGREDIENTS]) {
+          setSelectedIngredients(pullRes.items[SYNC_KEYS.INGREDIENTS]);
+        }
+        loadProfileData(activeProfileId);
+        setCloudStatus('synced');
+        setLastSyncTime(new Date());
+        showToast('☁️ ¡Sincronizado! Todos los celulares tienen los mismos datos.');
+      }
+    } catch (err) {
+      console.warn('Manual sync err:', err);
+      setCloudStatus('local');
+      showToast('⚠️ No se pudo conectar a la nube. Operando en modo local.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleForceUpdateApp = () => {
+    showToast('🚀 Actualizando versión y limpiando caché...');
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'PURGE_AND_UPDATE' });
+    }
+    setTimeout(() => {
+      if (typeof caches !== 'undefined') {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+      window.location.reload(true);
+    }, 600);
+  };
 
   const handleToggleCoupleMode = () => {
     setCoupleModeEnabled((prev) => {
       const next = !prev;
       if (typeof window !== 'undefined') {
         localStorage.setItem('aurafit_couple_mode_enabled', next ? 'true' : 'false');
+        queueCloudSync('aurafit_couple_mode_enabled', next, activeProfileId);
       }
       return next;
     });
@@ -677,6 +846,7 @@ export default function HomePage() {
       };
       try {
         localStorage.setItem('aurafit_family_profiles', JSON.stringify(next));
+        queueCloudSync('aurafit_family_profiles', next, 'andres');
       } catch (e) {}
       return next;
     });
@@ -689,6 +859,7 @@ export default function HomePage() {
       const next = { ...prev, [updatedProfile.id]: updatedProfile };
       try {
         localStorage.setItem('aurafit_family_profiles', JSON.stringify(next));
+        queueCloudSync('aurafit_family_profiles', next, activeProfileId);
       } catch (e) {}
       return next;
     });
@@ -696,9 +867,10 @@ export default function HomePage() {
     try {
       localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods));
       localStorage.setItem('aurafit_logged_foods', JSON.stringify(loggedFoods));
+      queueCloudSync(`aurafit_foods_${activeProfileId}`, loggedFoods, activeProfileId);
     } catch (e) {}
     setShowProfileModal(false);
-    showToast(`✅ Perfil de ${updatedProfile.name} actualizado. Tus comidas y registros se mantienen intactos.`);
+    showToast(`✅ Perfil de ${updatedProfile.name} actualizado y sincronizado en la nube.`);
   };
 
   const showToast = (msg) => {
@@ -715,6 +887,7 @@ export default function HomePage() {
         localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem('aurafit_logged_foods', JSON.stringify(next));
         localStorage.setItem('aurafit_backup_last_logged', JSON.stringify(next));
+        queueCloudSync(`aurafit_foods_${activeProfileId}`, next, activeProfileId);
       } catch (e) {
         console.warn('Storage save err:', e);
       }
@@ -1089,6 +1262,7 @@ export default function HomePage() {
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
+        queueCloudSync(`aurafit_habits_${activeProfileId}`, next, activeProfileId);
       } catch (e) {}
       recordActivityToday();
       return next;
@@ -1115,6 +1289,7 @@ export default function HomePage() {
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
+        queueCloudSync(`aurafit_habits_${activeProfileId}`, next, activeProfileId);
       } catch (e) {}
       return next;
     });
@@ -1131,6 +1306,7 @@ export default function HomePage() {
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
+        queueCloudSync(`aurafit_habits_${activeProfileId}`, next, activeProfileId);
       } catch (e) {}
       return next;
     });
@@ -1183,6 +1359,7 @@ export default function HomePage() {
         const updatedByDate = { ...waterByDate, [targetKey]: updated };
         setWaterByDate(updatedByDate);
         localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+        queueCloudSync(`aurafit_water_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
       } catch (e) {}
       recordActivityToday();
       return targetKey === todayKey ? updated : prev;
@@ -1202,6 +1379,7 @@ export default function HomePage() {
         localStorage.setItem(`aurafit_water_${activeProfileId}`, '0');
       }
       localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+      queueCloudSync(`aurafit_water_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
     } catch (e) {}
     showToast('💧 Contador de agua reiniciado a 0 ml.');
   };
@@ -1212,6 +1390,7 @@ export default function HomePage() {
       try {
         const todayKey = new Date().toISOString().split('T')[0];
         localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: next, quality: sleepQuality }));
+        queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayKey, hours: next, quality: sleepQuality }, activeProfileId);
       } catch (e) {}
       return next;
     });
@@ -1222,6 +1401,7 @@ export default function HomePage() {
     try {
       const todayKey = new Date().toISOString().split('T')[0];
       localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: sleepHours, quality: qual }));
+      queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayKey, hours: sleepHours, quality: qual }, activeProfileId);
     } catch (e) {}
     showToast(`💤 Calidad de descanso registrada como ${qual === 'deep' ? 'Profunda & Reparadora' : qual === 'normal' ? 'Normal' : 'Ligera'}.`);
   };
@@ -1232,6 +1412,7 @@ export default function HomePage() {
       const todayKey = new Date().toISOString().split('T')[0];
       try {
         localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: next, minutes: workoutDurationMins }));
+        queueCloudSync(`aurafit_workout_${activeProfileId}`, { date: todayKey, done: next, minutes: workoutDurationMins }, activeProfileId);
       } catch (e) {}
 
       // Dynamically record in weekly workout logs for balance analytics and week strip dots!
@@ -1249,6 +1430,7 @@ export default function HomePage() {
       setWeeklyWorkoutLogs(updatedWeek);
       try {
         localStorage.setItem(`aurafit_workout_week_${activeProfileId}`, JSON.stringify(updatedWeek));
+        queueCloudSync(`aurafit_workout_week_${activeProfileId}`, updatedWeek, activeProfileId);
       } catch (e) {}
 
       if (next) recordActivityToday();
@@ -1263,6 +1445,7 @@ export default function HomePage() {
     try {
       localStorage.setItem(`aurafit_selected_split_${activeProfileId}`, splitId);
       localStorage.removeItem(`aurafit_missed_day_${activeProfileId}`);
+      queueCloudSync(`aurafit_selected_split_${activeProfileId}`, splitId, activeProfileId);
     } catch (e) {}
     const splitObj = HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[splitId];
     const splitTitle = splitObj?.shortName || splitObj?.name || splitId;
@@ -1322,6 +1505,7 @@ export default function HomePage() {
       const updated = exists ? prev.filter((i) => i !== lower) : [...prev, lower];
       try {
         localStorage.setItem('aurafit_ingredients', JSON.stringify(updated));
+        queueCloudSync('aurafit_ingredients', updated, activeProfileId);
       } catch (e) {}
       return updated;
     });
@@ -1344,6 +1528,7 @@ export default function HomePage() {
     setWeightLogs(updated);
     try {
       localStorage.setItem(`aurafit_weights_${activeProfileId}`, JSON.stringify(updated));
+      queueCloudSync(`aurafit_weights_${activeProfileId}`, updated, activeProfileId);
     } catch (e) {}
     setNewWeightInput('');
     setShowWeightModal(false);
@@ -1419,6 +1604,20 @@ export default function HomePage() {
           </button>
           <button
             type="button"
+            className={`header-sync-btn ${isSyncing ? 'syncing' : ''}`}
+            onClick={handleManualSync}
+            title={
+              cloudStatus === 'synced'
+                ? `☁️ Sincronizado en la Nube (${lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Neon'}). Toca para sincronizar.`
+                : isSyncing
+                ? '🔄 Sincronizando datos con la nube...'
+                : '📱 Modo Local. Toca para sincronizar con la nube.'
+            }
+          >
+            {isSyncing ? '🔄' : cloudStatus === 'synced' ? '☁️' : '📱'}
+          </button>
+          <button
+            type="button"
             className="theme-toggle-btn"
             onClick={toggleTheme}
             title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
@@ -1437,6 +1636,21 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* Update Available Banner for installed PWAs and mobile browsers */}
+      {updateAvailable && (
+        <div className="update-available-banner" onClick={handleForceUpdateApp}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>🚀</span>
+            <div style={{ fontSize: '12px', fontWeight: 800 }}>
+              ¡Nueva versión disponible con sincronización y mejoras!
+            </div>
+          </div>
+          <button type="button" className="update-btn-pill">
+            Actualizar
+          </button>
+        </div>
+      )}
 
       {/* Multi-Profile Selector Dock */}
       <div className="profile-switcher-dock">
@@ -5439,6 +5653,93 @@ export default function HomePage() {
                 >
                   {coupleModeEnabled ? 'Activado ✓' : 'Desactivado'}
                 </button>
+              </div>
+
+              {/* Cloud Synchronization & Multi-Device Settings */}
+              <div style={{
+                background: 'var(--bg-card-subtle)',
+                border: '1.5px solid rgba(59, 130, 246, 0.35)',
+                borderRadius: '14px',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '20px' }}>☁️</span>
+                    <div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 900, color: 'var(--text-main)' }}>
+                        Sincronización en la Nube Multidispositivo
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        Neon PostgreSQL · Comparte perfiles y despensa entre celulares
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    background: cloudStatus === 'synced' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                    color: cloudStatus === 'synced' ? 'var(--fitia-green)' : 'var(--fitia-orange)',
+                    border: '1px solid ' + (cloudStatus === 'synced' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)')
+                  }}>
+                    {cloudStatus === 'synced' ? 'En Línea ✓' : isSyncing ? 'Sincronizando...' : 'Modo Local'}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.35 }}>
+                  Todos los celulares de la familia (Andrés, Pareja y Anicka) comparten automáticamente los perfiles, despensa y registros en tiempo real.
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '2px' }}>
+                  <button
+                    type="button"
+                    onClick={handleManualSync}
+                    disabled={isSyncing}
+                    style={{
+                      background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '10px',
+                      padding: '10px 8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>{isSyncing ? '🔄' : '☁️'}</span>
+                    <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Datos'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleForceUpdateApp}
+                    style={{
+                      background: 'var(--bg-card)',
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '10px',
+                      padding: '10px 8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>🚀</span>
+                    <span>Forzar Actualizar App</span>
+                  </button>
+                </div>
               </div>
 
               {/* Dynamic Target Preview */}

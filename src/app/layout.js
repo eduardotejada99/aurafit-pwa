@@ -45,8 +45,39 @@ export default function RootLayout({ children }) {
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').catch(err => {
+                  navigator.serviceWorker.register('/sw.js').then((reg) => {
+                    // Force an update check on startup
+                    reg.update().catch(() => {});
+
+                    // Check for updates every 5 minutes
+                    setInterval(() => {
+                      reg.update().catch(() => {});
+                    }, 5 * 60 * 1000);
+
+                    // Check on visibility change (when user returns to app)
+                    document.addEventListener('visibilitychange', () => {
+                      if (document.visibilityState === 'visible') {
+                        reg.update().catch(() => {});
+                      }
+                    });
+
+                    // Listen for new worker installed
+                    reg.addEventListener('updatefound', () => {
+                      const newWorker = reg.installing;
+                      if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            window.dispatchEvent(new CustomEvent('aurafit_update_ready'));
+                          }
+                        });
+                      }
+                    });
+                  }).catch(err => {
                     console.log('SW registration error:', err);
+                  });
+
+                  navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    window.dispatchEvent(new CustomEvent('aurafit_updated'));
                   });
                 });
               }
