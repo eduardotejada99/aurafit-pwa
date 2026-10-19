@@ -1523,5 +1523,119 @@ button:active, .touchable:active {
   border-color: #EF4444;
 }
 
+/* ==========================================================================
+   Fitia Smart Chef & Pantry Recipes
+   ========================================================================== */
+.fitia-recipes-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 8px 4px 14px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fitia-recipes-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.fitia-recipe-card {
+  min-width: 250px;
+  max-width: 270px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fitia-recipe-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+  border-color: var(--fitia-green);
+}
+
+.fitia-recipe-thumb {
+  height: 95px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.1) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 46px;
+  user-select: none;
+}
+
+.fitia-recipe-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #FFFFFF;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+.fitia-recipe-match-pill {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: var(--fitia-green);
+  color: #FFFFFF;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.fitia-recipe-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fitia-recipe-title {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.3;
+  margin-bottom: 5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fitia-recipe-macros {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.fitia-recipe-desc {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.35;
+  margin-bottom: 10px;
+  flex: 1;
+}
+
+.fitia-recipe-btn-row {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+}
+
+
 
 

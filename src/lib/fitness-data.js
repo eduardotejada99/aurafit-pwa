@@ -448,90 +448,206 @@ export const DAMAGE_CONTROL_PROTOCOL = {
 export const PANTRY_DATABASE = [
   {
     id: 'meal-1',
-    name: 'Pancake Proteico Hipercalórico con Avena y Plátano',
+    name: 'Pancakes Proteicos de Avena y Plátano',
+    title: 'Pancakes Proteicos de Avena y Plátano',
+    icon: '🥞',
     requiredIngredients: ['huevos', 'avena', 'platano'],
     prepMinutes: 10,
     calories: 520,
+    protein: 28,
     proteinG: 28,
+    carbs: 68,
     carbsG: 68,
+    fat: 14,
     fatG: 14,
-    description: 'Licúa 3 huevos, 60g de avena en hojuelas y 1 plátano maduro. Cocina a la sartén con fuego medio 3 min por lado.',
-    tags: ['desayuno', 'lean bulk', 'rapido']
+    suggestedSlot: 'desayuno',
+    description: '3 huevos enteros, 60g de avena en hojuelas y 1 plátano maduro.',
+    instructions: [
+      'Licúa los 3 huevos con 60g de avena, el plátano y una pizca de canela.',
+      'Calienta una sartén antiadherente a fuego medio con unas gotas de aceite de oliva.',
+      'Vierte la mezcla y cocina 3 minutos por lado hasta dorar.'
+    ],
+    tags: ['desayuno', 'lean_bulk', 'recomposition']
   },
   {
     id: 'meal-2',
     name: 'Bowl Atún Power con Arroz y Espinacas',
-    requiredIngredients: ['atun', 'arroz', 'espinaca', 'aceite de oliva'],
+    title: 'Bowl Atún Power con Arroz y Espinacas',
+    icon: '🥣',
+    requiredIngredients: ['atun', 'arroz', 'espinaca'],
     prepMinutes: 8,
     calories: 560,
+    protein: 42,
     proteinG: 42,
+    carbs: 62,
     carbsG: 62,
+    fat: 15,
     fatG: 15,
-    description: '1 lata de atún escurrido, 200g de arroz cocido y un puñado generoso de espinacas salteadas con 1 cda de aceite de oliva.',
-    tags: ['almuerzo', 'alta proteina', 'rapido']
+    suggestedSlot: 'comida',
+    description: '1 lata de atún escurrido, 180g de arroz cocido y espinacas salteadas.',
+    instructions: [
+      'Saltea las espinacas en sartén durante 2 minutos con sal y limón.',
+      'Sirve el arroz caliente en un bowl como base.',
+      'Añade el atún escurrido encima junto a las espinacas y rocía 1 cda de aceite de oliva.'
+    ],
+    tags: ['comida', 'alta_proteina', 'recomposition']
   },
   {
     id: 'meal-3',
     name: 'Tortilla Española Fitness de Pollo y Papa',
+    title: 'Tortilla Española Fitness de Pollo y Papa',
+    icon: '🍳',
     requiredIngredients: ['pollo', 'papa', 'huevos'],
     prepMinutes: 15,
     calories: 580,
+    protein: 48,
     proteinG: 48,
+    carbs: 52,
     carbsG: 52,
+    fat: 16,
     fatG: 16,
-    description: '150g de pechuga de pollo picada, 1 papa cocida en rodajas doradas y 2 huevos batidos a fuego lento.',
-    tags: ['cena', 'volumen limpio']
+    suggestedSlot: 'cena',
+    description: '150g de pechuga de pollo picada, 1 papa cocida en rodajas doradas y 3 huevos.',
+    instructions: [
+      'Dora los cubitos de pollo y las rodajas de papa cocida en sartén con gotas de aceite.',
+      'Bate los 3 huevos con sal marina y orégano.',
+      'Vierte los huevos sobre el pollo y la papa, tapa y cocina 4 minutos a fuego lento. Voltea y dora 2 min.'
+    ],
+    tags: ['cena', 'volumen_limpio', 'recomposition']
   },
   {
     id: 'meal-4',
-    name: 'Batido Anabólico Express de Avena y Leche',
+    name: 'Batido Anabólico de Avena, Leche y Plátano',
+    title: 'Batido Anabólico de Avena, Leche y Plátano',
+    icon: '🥛',
     requiredIngredients: ['leche', 'avena', 'platano'],
     prepMinutes: 3,
     calories: 490,
+    protein: 22,
     proteinG: 22,
+    carbs: 75,
     carbsG: 75,
+    fat: 10,
     fatG: 10,
-    description: '300ml de leche fresca, 50g de avena y 1 plátano. Licuar por 45 segundos con cubos de hielo.',
-    tags: ['snack', 'pre-workout']
+    suggestedSlot: 'snack',
+    description: '300ml de leche fresca, 50g de avena en hojuelas y 1 plátano.',
+    instructions: [
+      'Agrega la leche, la avena en hojuelas y el plátano a la licuadora.',
+      'Añade cubos de hielo y licúa durante 45 segundos hasta obtener textura cremosa.'
+    ],
+    tags: ['snack', 'pre_workout', 'lean_bulk']
   },
   {
     id: 'meal-5',
-    name: 'Omelette Campestre con Huevos, Queso y Espinaca',
+    name: 'Omelette Campestre de Espinaca, Queso y Huevos',
+    title: 'Omelette Campestre de Espinaca, Queso y Huevos',
+    icon: '🍳',
     requiredIngredients: ['huevos', 'queso', 'espinaca'],
     prepMinutes: 7,
     calories: 410,
-    proteinG: 32,
+    protein: 34,
+    proteinG: 34,
+    carbs: 6,
     carbsG: 6,
-    fatG: 28,
-    description: '3 huevos enteros, 40g de queso fresco y espinacas tiernas dobladas en sartén antiadherente.',
-    tags: ['desayuno', 'keto-friendly', 'alta proteina']
+    fat: 26,
+    fatG: 26,
+    suggestedSlot: 'desayuno',
+    description: '3 huevos enteros, 40g de queso fresco y espinacas tiernas.',
+    instructions: [
+      'Bate los huevos con una pizca de sal marina.',
+      'Vierte en la sartén caliente, añade las espinacas frescas y los dados de queso.',
+      'Dobla por la mitad cuando la base esté cuajada y deja fundir el queso 1 minuto.'
+    ],
+    tags: ['desayuno', 'keto_friendly', 'insulin_sensitivity', 'recomposition']
+  },
+  {
+    id: 'meal-6',
+    name: 'Pechuga a la Plancha con Arroz y Brócoli al Vapor',
+    title: 'Pechuga a la Plancha con Arroz y Brócoli al Vapor',
+    icon: '🍗',
+    requiredIngredients: ['pollo', 'arroz', 'brocoli'],
+    prepMinutes: 12,
+    calories: 530,
+    protein: 52,
+    proteinG: 52,
+    carbs: 58,
+    carbsG: 58,
+    fat: 9,
+    fatG: 9,
+    suggestedSlot: 'comida',
+    description: '180g de pechuga magra a la plancha, 1 taza de arroz y floretes de brócoli.',
+    instructions: [
+      'Sazona la pechuga con sal, ajo y pimienta; dórala 4 min por lado a fuego medio-alto.',
+      'Hierve o cuece al vapor el brócoli por 4 minutos para mantener sus nutrientes crujientes.',
+      'Sirve con el arroz blanco o integral caliente.'
+    ],
+    tags: ['comida', 'recomposition', 'alta_proteina']
+  },
+  {
+    id: 'meal-7',
+    name: 'Ensalada Glucosa Estable de Atún, Palta y Espinaca',
+    title: 'Ensalada Glucosa Estable de Atún, Palta y Espinaca',
+    icon: '🥗',
+    requiredIngredients: ['atun', 'espinaca', 'palta'],
+    prepMinutes: 5,
+    calories: 390,
+    protein: 38,
+    proteinG: 38,
+    carbs: 7,
+    carbsG: 7,
+    fat: 22,
+    fatG: 22,
+    suggestedSlot: 'cena',
+    description: '1 lata de atún, espinacas baby, 1/2 palta hass y chorrito de vinagre de manzana.',
+    instructions: [
+      'Coloca una base abundante de espinacas en un plato hondo.',
+      'Agrega el atún desmenuzado y media palta en láminas.',
+      'Aliña con 1 cucharada de vinagre de manzana y limón para aplanar la curva glucémica.'
+    ],
+    tags: ['cena', 'insulin_sensitivity', 'recomposition']
   }
 ];
 
-export function generateMealsFromPantry(availableIngredients = []) {
+export function generateMealsFromPantry(availableIngredients = [], goal = 'recomposition') {
   if (!availableIngredients || availableIngredients.length === 0) {
-    return PANTRY_DATABASE.slice(0, 3);
+    return PANTRY_DATABASE.slice(0, 3).map((m) => ({
+      ...m,
+      title: m.title || m.name,
+      protein: m.proteinG || m.protein,
+      carbs: m.carbsG || m.carbs,
+      fat: m.fatG || m.fat,
+      matchCount: 0,
+      matchRate: 0
+    }));
   }
 
-  const normalized = availableIngredients.map(i => i.toLowerCase().trim());
-  
+  const normalized = availableIngredients.map((i) => i.toLowerCase().trim());
+
   // Score meals based on matching ingredients
-  const scored = PANTRY_DATABASE.map(meal => {
+  const scored = PANTRY_DATABASE.map((meal) => {
     let matches = 0;
-    meal.requiredIngredients.forEach(req => {
-      if (normalized.some(ing => ing.includes(req) || req.includes(ing))) {
+    (meal.requiredIngredients || []).forEach((req) => {
+      if (normalized.some((ing) => ing.includes(req) || req.includes(ing))) {
         matches++;
       }
     });
+
+    const isGoalFit = meal.tags ? meal.tags.some((t) => t.includes(goal) || goal.includes(t)) : true;
+
     return {
       ...meal,
+      title: meal.title || meal.name,
+      protein: meal.proteinG || meal.protein,
+      carbs: meal.carbsG || meal.carbs,
+      fat: meal.fatG || meal.fat,
       matchCount: matches,
-      matchRate: matches / meal.requiredIngredients.length
+      matchRate: matches / (meal.requiredIngredients?.length || 1),
+      isGoalFit
     };
   });
 
-  // Sort by highest match rate
-  scored.sort((a, b) => b.matchRate - a.matchRate || b.matchCount - a.matchCount);
+  // Sort by highest match rate first, then goal fit
+  scored.sort((a, b) => (b.matchRate - a.matchRate) || (b.matchCount - a.matchCount));
   return scored;
 }
 
