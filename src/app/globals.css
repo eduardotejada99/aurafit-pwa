@@ -2509,12 +2509,49 @@ button:active, .touchable:active {
   cursor: pointer;
   font-size: 14px;
   opacity: 0.45;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   padding: 4px;
 }
 
 .btn-delete-habit:hover {
   opacity: 1;
+  transform: scale(1.15);
+}
+
+.btn-edit-habit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.50;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  padding: 4px;
+}
+
+.btn-edit-habit:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.btn-restore-habits {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-restore-habits:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--fitia-blue);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .quick-template-chip {

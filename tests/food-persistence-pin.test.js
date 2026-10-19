@@ -276,6 +276,59 @@ describe('AuraFit Holistic Daily Lifestyle Engine (calculateDailyAuraScore)', ()
     const afterDelete = nextHabits.filter(h => h.id !== 'custom_123456789');
     assert.strictEqual(afterDelete.length, initialCount);
   });
+
+  it('should allow user to edit any default habit and delete non-desired habits with full AuraScore integration', async () => {
+    const { calculateDailyAuraScore } = await import('../src/lib/fitness-data.js');
+    let routine = [...FAMILY_PROFILES.andres.habits];
+    const initialCount = routine.length;
+
+    // 1. Edit a default habit (e.g. modify creatine target and note)
+    const creatineHabit = routine.find(h => h.id === 'creatine');
+    assert.ok(creatineHabit, 'Creatine habit should exist by default');
+
+    routine = routine.map(h => {
+      if (h.id === 'creatine') {
+        return {
+          ...h,
+          name: 'Creatina Creapure 5g',
+          target: '5g post-almuerzo con carbohidratos',
+          note: 'Optimizado con 300ml de agua y zumo de naranja'
+        };
+      }
+      return h;
+    });
+
+    const updatedCreatine = routine.find(h => h.id === 'creatine');
+    assert.strictEqual(updatedCreatine.name, 'Creatina Creapure 5g');
+    assert.strictEqual(updatedCreatine.target, '5g post-almuerzo con carbohidratos');
+    assert.strictEqual(updatedCreatine.note, 'Optimizado con 300ml de agua y zumo de naranja');
+
+    // 2. Delete a default habit if user does not want to do it (e.g. wimhof)
+    routine = routine.filter(h => h.id !== 'wimhof');
+    assert.strictEqual(routine.length, initialCount - 1);
+    assert.strictEqual(routine.some(h => h.id === 'wimhof'), false, 'Wim Hof habit successfully removed');
+
+    // 3. Mark remaining habits as completed and calculate AuraScore
+    const completedCount = routine.length;
+    const auraResult = calculateDailyAuraScore({
+      nutritionScore: 85,
+      workoutDone: true,
+      workoutMinutes: 50,
+      sleepHours: 7.5,
+      sleepQuality: 'deep',
+      completedHabits: completedCount,
+      totalHabits: routine.length,
+      profile: FAMILY_PROFILES.andres
+    });
+
+    assert.strictEqual(auraResult.pillars.habits.points, 25, 'All customized habits completed yields full 25 habit points');
+
+    // 4. Test Restore Default Habits
+    const restored = (FAMILY_PROFILES.andres.habits || []).map(h => ({ ...h, completed: false, time: null }));
+    assert.strictEqual(restored.length, initialCount);
+    assert.strictEqual(restored.some(h => h.id === 'wimhof'), true, 'Restores original Wim Hof habit');
+  });
 });
+
 
 

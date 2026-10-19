@@ -389,6 +389,7 @@ export default function HomePage() {
 
   // Custom Habits Modal State
   const [showAddHabitModal, setShowAddHabitModal] = useState(false);
+  const [editingHabit, setEditingHabit] = useState(null);
   const [newHabitForm, setNewHabitForm] = useState({
     name: '',
     target: '',
@@ -424,6 +425,7 @@ export default function HomePage() {
     showCoupleGroceryModal ||
     showWeightModal ||
     showAddHabitModal ||
+    Boolean(editingHabit) ||
     showDamageControl ||
     showNotificationModal ||
     selectedRecipeDetail ||
@@ -1738,6 +1740,49 @@ export default function HomePage() {
     showToast(`✨ Hábito "${habitToAdd.name}" agregado con éxito.`);
     setShowAddHabitModal(false);
     setNewHabitForm({ name: '', target: '', icon: '🧘', category: 'bienestar', note: '' });
+  };
+
+  const handleUpdateHabit = (form) => {
+    if (!form || !form.name || !form.name.trim()) return;
+    setHabits((prev) => {
+      const next = prev.map((h) => {
+        if (h.id === form.id) {
+          return {
+            ...h,
+            name: form.name.trim(),
+            target: form.target ? form.target.trim() : (h.target || '1 vez al día'),
+            icon: form.icon ? form.icon.trim() : (h.icon || '⭐'),
+            category: form.category || h.category || 'bienestar',
+            note: form.note !== undefined ? form.note.trim() : (h.note || '')
+          };
+        }
+        return h;
+      });
+      try {
+        const todayKey = getLocalDateKey();
+        localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
+        localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
+        localStorage.setItem('aurafit_habits', JSON.stringify(next));
+        queueCloudSync(`aurafit_habits_${activeProfileId}`, next, activeProfileId);
+      } catch (e) {}
+      return next;
+    });
+    showToast(`✏️ Hábito "${form.name.trim()}" actualizado.`);
+    setEditingHabit(null);
+  };
+
+  const handleResetDefaultHabits = () => {
+    if (!confirm(`¿Restaurar los hábitos predeterminados de ${currentProfile.name}? Se restablecerán a la rutina original recomendada.`)) return;
+    const defaultHabits = (currentProfile.habits || []).map((h) => ({ ...h, completed: false, time: null }));
+    setHabits(defaultHabits);
+    try {
+      const todayKey = getLocalDateKey();
+      localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(defaultHabits));
+      localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
+      localStorage.setItem('aurafit_habits', JSON.stringify(defaultHabits));
+      queueCloudSync(`aurafit_habits_${activeProfileId}`, defaultHabits, activeProfileId);
+    } catch (e) {}
+    showToast(`🔄 Hábitos de ${currentProfile.name} restaurados por defecto.`);
   };
 
   const handleDeleteHabit = (habitId) => {
@@ -3901,14 +3946,22 @@ export default function HomePage() {
                 CHECKLIST DE HÁBITOS DIARIOS ADAPTATIVOS
                 =================================================================== */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                   Hábitos Diarios ({currentProfile.name})
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-green)' }}>
                     {completedHabitsCount} / {habits.length}
                   </span>
+                  <button
+                    type="button"
+                    className="btn-restore-habits"
+                    onClick={handleResetDefaultHabits}
+                    title="Restaurar lista de hábitos predeterminados de este perfil"
+                  >
+                    🔄 Restaurar
+                  </button>
                   <button
                     type="button"
                     className="btn-add-habit-trigger"
@@ -3922,6 +3975,34 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
+              {habits.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '24px 16px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px dashed var(--border-subtle)' }}>
+                  <div style={{ fontSize: '30px', marginBottom: '6px' }}>🌱</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)' }}>No tienes hábitos en tu rutina</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '12px' }}>
+                    Agrega hábitos que se adapten a tu día a día o restaura los recomendados para {currentProfile.name}.
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn-add-habit-trigger"
+                      onClick={() => {
+                        setNewHabitForm({ name: '', target: '', icon: '🧘', category: 'bienestar', note: '' });
+                        setShowAddHabitModal(true);
+                      }}
+                    >
+                      + Crear Hábito
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-restore-habits"
+                      onClick={handleResetDefaultHabits}
+                    >
+                      🔄 Restaurar Originales
+                    </button>
+                  </div>
+                </div>
+              )}
               {habits.map((habit) => (
                 <div
                   key={habit.id}
@@ -4045,22 +4126,38 @@ export default function HomePage() {
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {habit.isCustom && (
-                      <button
-                        type="button"
-                        title="Eliminar este hábito"
-                        className="btn-delete-habit"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`¿Eliminar el hábito "${habit.name}"?`)) {
-                            handleDeleteHabit(habit.id);
-                          }
-                        }}
-                      >
-                        🗑️
-                      </button>
-                    )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      type="button"
+                      title={`Editar hábito "${habit.name}"`}
+                      className="btn-edit-habit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingHabit({
+                          id: habit.id,
+                          name: habit.name || '',
+                          target: habit.target || '',
+                          icon: habit.icon || '⭐',
+                          category: habit.category || 'bienestar',
+                          note: habit.note || ''
+                        });
+                      }}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      title={`Eliminar hábito "${habit.name}"`}
+                      className="btn-delete-habit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`¿Eliminar el hábito "${habit.name}" de tu rutina diaria?`)) {
+                          handleDeleteHabit(habit.id);
+                        }
+                      }}
+                    >
+                      🗑️
+                    </button>
                     <div
                       style={{
                         width: '30px',
@@ -6889,6 +6986,204 @@ export default function HomePage() {
                   }}
                 >
                   ✨ Guardar Hábito
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar Hábito */}
+      {editingHabit && (
+        <div
+          className="modal-backdrop grocery-modal-backdrop"
+          onClick={() => setEditingHabit(null)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div className="modal-sheet grocery-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '24px' }}>{editingHabit.icon || '✏️'}</span>
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text-main)' }}>
+                    Editar Hábito
+                  </h3>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Personaliza este hábito para la rutina de {currentProfile.name}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '22px', cursor: 'pointer' }}
+                onClick={() => setEditingHabit(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!editingHabit.name || !editingHabit.name.trim()) {
+                  alert('Por favor ingresa un nombre para tu hábito.');
+                  return;
+                }
+                handleUpdateHabit(editingHabit);
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+            >
+              {/* Name input */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                  Nombre del Hábito *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Tomar creatina, Respiración..."
+                  value={editingHabit.name}
+                  onChange={(e) => setEditingHabit((prev) => ({ ...prev, name: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    color: 'var(--text-main)',
+                    fontSize: '14px',
+                    fontWeight: 700
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              {/* Icon selector & Target */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                    Emoji / Icono
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      value={editingHabit.icon}
+                      onChange={(e) => setEditingHabit((prev) => ({ ...prev, icon: e.target.value }))}
+                      style={{
+                        width: '54px',
+                        textAlign: 'center',
+                        fontSize: '22px',
+                        background: 'var(--bg-card-subtle)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '12px',
+                        padding: '8px'
+                      }}
+                    />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '80px' }}>
+                      {['☀️', '🧘', '📖', '🍵', '💧', '🚶‍♂️', '❄️', '🧠', '🫁', '⚡', '💊'].map((em) => (
+                        <button
+                          key={em}
+                          type="button"
+                          style={{
+                            background: editingHabit.icon === em ? 'var(--fitia-blue-soft)' : 'var(--bg-card-subtle)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            padding: '2px 4px'
+                          }}
+                          onClick={() => setEditingHabit((prev) => ({ ...prev, icon: em }))}
+                        >
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                    Meta / Frecuencia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 15 min diarios, 5g con agua..."
+                    value={editingHabit.target}
+                    onChange={(e) => setEditingHabit((prev) => ({ ...prev, target: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg-card-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      color: 'var(--text-main)',
+                      fontSize: '13px',
+                      fontWeight: 700
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Note / Purpose */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                  Nota o Beneficio Fisiológico (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Mejora la absorción y potencia el rendimiento cognitivo"
+                  value={editingHabit.note}
+                  onChange={(e) => setEditingHabit((prev) => ({ ...prev, note: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    color: 'var(--text-main)',
+                    fontSize: '13px',
+                    fontWeight: 500
+                  }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-muted)',
+                    padding: '12px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setEditingHabit(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1.5,
+                    background: 'var(--fitia-blue)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '12px',
+                    borderRadius: '14px',
+                    fontWeight: 900,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(59, 130, 246, 0.3)'
+                  }}
+                >
+                  ✓ Guardar Cambios
                 </button>
               </div>
             </form>
