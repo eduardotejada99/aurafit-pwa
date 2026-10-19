@@ -34,6 +34,14 @@ import {
   getLocalSyncBundle,
   mergeCloudIntoLocalStorage
 } from '@/lib/cloud-sync';
+import {
+  DEFAULT_NOTIFICATION_CONFIG,
+  checkNotificationSupport,
+  requestNotificationPermission,
+  sendCreatineNotification,
+  sendWaterNotification,
+  evaluateReminders
+} from '@/lib/notifications';
 
 export const PANTRY_CATEGORIES = [
   {
@@ -355,6 +363,11 @@ export default function HomePage() {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
+  // Smart Notifications State (Creatine & Water Reminders)
+  const [notificationConfig, setNotificationConfig] = useState(DEFAULT_NOTIFICATION_CONFIG);
+  const [notificationPermission, setNotificationPermission] = useState('default');
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+
   // Load local storage if available on mount & initiate bidirectional cloud sync
   useEffect(() => {
     let activeKey = 'andres';
@@ -388,6 +401,13 @@ export default function HomePage() {
       if (savedCouple !== null) {
         setCoupleModeEnabled(savedCouple === 'true');
       }
+
+      const savedNotifs = localStorage.getItem('aurafit_notifications_config');
+      if (savedNotifs) {
+        try { setNotificationConfig(JSON.parse(savedNotifs)); } catch (e) {}
+      }
+      const notifStatus = checkNotificationSupport();
+      setNotificationPermission(notifStatus.permission);
     } catch (err) {
       console.warn('Storage sync err:', err);
     }
@@ -430,6 +450,10 @@ export default function HomePage() {
 
           if (res.items[SYNC_KEYS.INGREDIENTS] && Array.isArray(res.items[SYNC_KEYS.INGREDIENTS])) {
             setSelectedIngredients(res.items[SYNC_KEYS.INGREDIENTS]);
+          }
+
+          if (res.items.aurafit_notifications_config) {
+            setNotificationConfig(res.items.aurafit_notifications_config);
           }
 
           // Reload active profile data with merged cloud items
@@ -555,6 +579,144 @@ export default function HomePage() {
       }
       return next;
     });
+  };
+
+  // Auto-Evaluation Loop for Creatine and Water Reminders
+  useEffect(() => {
+    if (!notificationConfig || !notificationConfig.enabled) return;
+
+    const checkReminders = async () => {
+      const isCreatineDone = Boolean(habits.find((h) => h.id === 'creatine')?.completed);
+      const waterTarget = currentProfile.waterDailyMl || 3000;
+
+      const { triggerWater, triggerCreatine } = evaluateReminders(notificationConfig, {
+        creatineDone: isCreatineDone,
+        waterMl,
+        waterTargetMl: waterTarget
+      });
+
+      if (triggerWater) {
+        await sendWaterNotification(waterMl, waterTarget);
+        setNotificationConfig((prev) => {
+          const updated = { ...prev, lastWaterNotified: Date.now() };
+          try {
+            localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+            queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+          } catch (e) {}
+          return updated;
+        });
+      }
+
+      if (triggerCreatine) {
+        await sendCreatineNotification();
+        const todayKey = new Date().toISOString().split('T')[0];
+        setNotificationConfig((prev) => {
+          const updated = { ...prev, lastCreatineNotifiedDate: todayKey };
+          try {
+            localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+            queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+          } catch (e) {}
+          return updated;
+        });
+      }
+    };
+
+    checkReminders();
+    const interval = setInterval(checkReminders, 45 * 1000);
+    return () => clearInterval(interval);
+  }, [notificationConfig, habits, waterMl, currentProfile.waterDailyMl, activeProfileId]);
+
+  const handleRequestNotificationPermission = async () => {
+    const res = await requestNotificationPermission();
+    setNotificationPermission(res);
+    if (res === 'granted') {
+      const updated = { ...notificationConfig, enabled: true };
+      setNotificationConfig(updated);
+      try {
+        localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+        queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+      } catch (e) {}
+      showToast('🔔 ¡Notificaciones activadas en este dispositivo!');
+      await sendWaterNotification(waterMl, currentProfile.waterDailyMl || 3000);
+    } else if (res === 'denied') {
+      showToast('⚠️ Permiso denegado. Habilita las notificaciones en ajustes del navegador o celular.');
+    } else {
+      showToast('⚠️ Este dispositivo o navegador no soporta Notificaciones Web.');
+    }
+  };
+
+  const handleToggleNotificationEnabled = async () => {
+    if (!notificationConfig.enabled) {
+      if (notificationPermission !== 'granted') {
+        await handleRequestNotificationPermission();
+        return;
+      }
+      const updated = { ...notificationConfig, enabled: true };
+      setNotificationConfig(updated);
+      try {
+        localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+        queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+      } catch (e) {}
+      showToast('🔔 Recordatorios de Creatina y Agua activados.');
+    } else {
+      const updated = { ...notificationConfig, enabled: false };
+      setNotificationConfig(updated);
+      try {
+        localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+        queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+      } catch (e) {}
+      showToast('🔕 Recordatorios desactivados temporalmente.');
+    }
+  };
+
+  const handleSetWaterInterval = (mins) => {
+    setNotificationConfig((prev) => {
+      const updated = { ...prev, waterIntervalMinutes: mins, enabled: mins > 0 ? true : prev.enabled };
+      try {
+        localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+        queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+      } catch (e) {}
+      return updated;
+    });
+    showToast(mins > 0 ? `💧 Recordatorio de agua configurado cada ${mins} min.` : '💧 Recordatorio de agua desactivado.');
+  };
+
+  const handleSetCreatineTime = (timeStr) => {
+    setNotificationConfig((prev) => {
+      const updated = { ...prev, creatineReminderTime: timeStr, enabled: true };
+      try {
+        localStorage.setItem('aurafit_notifications_config', JSON.stringify(updated));
+        queueCloudSync('aurafit_notifications_config', updated, activeProfileId);
+      } catch (e) {}
+      return updated;
+    });
+    showToast(`⚡ Recordatorio de Creatina fijado a las ${timeStr}.`);
+  };
+
+  const handleTestWaterNotification = async () => {
+    if (notificationPermission !== 'granted') {
+      await handleRequestNotificationPermission();
+      return;
+    }
+    const res = await sendWaterNotification(waterMl, currentProfile.waterDailyMl || 3000);
+    if (res.sent) {
+      showToast('💧 Notificación de Agua enviada a tu pantalla.');
+    } else {
+      showToast('⚠️ No se pudo enviar. Verifica los permisos de notificaciones del celular.');
+    }
+  };
+
+  const handleTestCreatineNotification = async () => {
+    if (notificationPermission !== 'granted') {
+      await handleRequestNotificationPermission();
+      return;
+    }
+    const res = await sendCreatineNotification();
+    if (res.sent) {
+      showToast('⚡ Notificación de Creatina enviada a tu pantalla.');
+    } else {
+      showToast('⚠️ No se pudo enviar. Verifica los permisos de notificaciones del celular.');
+    }
   };
 
   const loadProfileData = (profileKey) => {
@@ -1615,6 +1777,17 @@ export default function HomePage() {
             }
           >
             {isSyncing ? '🔄' : cloudStatus === 'synced' ? '☁️' : '📱'}
+          </button>
+          <button
+            type="button"
+            className="header-notif-btn"
+            onClick={() => setShowNotificationModal(true)}
+            title="Recordatorios de Creatina y Agua"
+          >
+            🔔
+            {notificationConfig?.enabled && (
+              <span className="notif-badge-dot" />
+            )}
           </button>
           <button
             type="button"
@@ -3288,8 +3461,22 @@ export default function HomePage() {
                       {habit.icon}
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>{habit.name}</span>
+                        {habit.name?.toLowerCase().includes('creatina') && (
+                          <button
+                            type="button"
+                            className="notif-chip-btn"
+                            style={{ padding: '2px 7px', fontSize: '10px', borderRadius: '6px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowNotificationModal(true);
+                            }}
+                            title="Configurar recordatorio de creatina"
+                          >
+                            🔔 {notificationConfig?.creatineReminderTime || '10:00'}
+                          </button>
+                        )}
                         {habit.id === 'wimhof' && (
                           <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', padding: '2px 6px', borderRadius: '6px', fontWeight: 800 }}>
                             ▶ Asistente Guiado
@@ -3362,7 +3549,18 @@ export default function HomePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '20px' }}>💧</span>
                   <div>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Hidratación Diaria</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>Hidratación Diaria</strong>
+                      <button
+                        type="button"
+                        className="notif-chip-btn"
+                        style={{ padding: '2px 7px', fontSize: '10px', borderRadius: '6px' }}
+                        onClick={() => setShowNotificationModal(true)}
+                        title="Configurar recordatorio de hidratación"
+                      >
+                        🔔 {notificationConfig?.waterIntervalMinutes ? `${notificationConfig.waterIntervalMinutes}m` : 'Recordatorio'}
+                      </button>
+                    </div>
                     <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Inicia en 0 ml todos los días</div>
                   </div>
                 </div>
@@ -6501,6 +6699,336 @@ export default function HomePage() {
                 💾 Guardar PINs
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL DE NOTIFICACIONES Y RECORDATORIOS (CREATINA Y AGUA)
+          =================================================================== */}
+      {showNotificationModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.72)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '16px'
+          }}
+          onClick={() => setShowNotificationModal(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '430px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🔔</span> Recordatorios Inteligentes
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Alertas al instante para Creatina y Agua en tu celular
+                </p>
+              </div>
+              <button
+                type="button"
+                style={{
+                  background: 'var(--bg-card-subtle)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setShowNotificationModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Permission Status Box */}
+            <div
+              style={{
+                background: notificationPermission === 'granted' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.12)',
+                border: `1px solid ${notificationPermission === 'granted' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.35)'}`,
+                borderRadius: '16px',
+                padding: '14px 16px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '20px' }}>
+                    {notificationPermission === 'granted' ? '✅' : '🔔'}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>
+                      {notificationPermission === 'granted'
+                        ? 'Notificaciones Autorizadas'
+                        : 'Permiso de Notificación'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {notificationPermission === 'granted'
+                        ? 'Tu celular recibirá alertas sonoras y visuales.'
+                        : 'Habilita alertas para recibir avisos sin abrir la app.'}
+                    </div>
+                  </div>
+                </div>
+                {notificationPermission !== 'granted' && (
+                  <button
+                    type="button"
+                    style={{
+                      background: 'var(--fitia-blue)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '10px',
+                      padding: '8px 12px',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)'
+                    }}
+                    onClick={handleRequestNotificationPermission}
+                  >
+                    Activar
+                  </button>
+                )}
+              </div>
+
+              {notificationPermission === 'granted' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)' }}>
+                    Recordatorios automáticos
+                  </span>
+                  <button
+                    type="button"
+                    style={{
+                      background: notificationConfig.enabled ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                      color: notificationConfig.enabled ? '#FFFFFF' : 'var(--text-muted)',
+                      border: 'none',
+                      borderRadius: '999px',
+                      padding: '4px 12px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                    onClick={handleToggleNotificationEnabled}
+                  >
+                    {notificationConfig.enabled ? 'Activados' : 'Pausados'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 1. CREATINA SECTION */}
+            <div style={{ background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '24px' }}>⚡</span>
+                  <div>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-main)', display: 'block' }}>Creatina Monohidratada (5g)</strong>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Te avisa a la hora fijada si no has marcado el hábito</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  style={{
+                    background: notificationConfig.creatineReminderEnabled ? '#F59E0B' : 'var(--bg-card)',
+                    color: notificationConfig.creatineReminderEnabled ? '#FFFFFF' : 'var(--text-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '8px',
+                    padding: '4px 8px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    const newCfg = { ...notificationConfig, creatineReminderEnabled: !notificationConfig.creatineReminderEnabled };
+                    setNotificationConfig(newCfg);
+                    localStorage.setItem('aurafit_notifications_config', JSON.stringify(newCfg));
+                    showToast(newCfg.creatineReminderEnabled ? '⚡ Recordatorio de Creatina activado.' : '⚡ Recordatorio de Creatina pausado.');
+                  }}
+                >
+                  {notificationConfig.creatineReminderEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'block', marginBottom: '8px' }}>
+                  Hora programada
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  {['08:00', '10:00', '12:00', '16:00', '19:00', '21:00'].map((time) => {
+                    const isSel = notificationConfig.creatineReminderTime === time;
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        className={`notif-chip-btn ${isSel ? 'active creatine' : ''}`}
+                        onClick={() => handleSetCreatineTime(time)}
+                      >
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  color: '#D97706',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  borderRadius: '12px',
+                  padding: '9px 12px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+                onClick={handleTestCreatineNotification}
+              >
+                <span>⚡</span> Probar Notificación de Creatina
+              </button>
+            </div>
+
+            {/* 2. AGUA / HIDRATACIÓN SECTION */}
+            <div style={{ background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '24px' }}>💧</span>
+                  <div>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-main)', display: 'block' }}>Recordatorio de Agua</strong>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Alertas periódicas para mantener tu rendimiento</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  style={{
+                    background: notificationConfig.waterReminderEnabled ? 'var(--fitia-blue)' : 'var(--bg-card)',
+                    color: notificationConfig.waterReminderEnabled ? '#FFFFFF' : 'var(--text-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '8px',
+                    padding: '4px 8px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    const newCfg = { ...notificationConfig, waterReminderEnabled: !notificationConfig.waterReminderEnabled };
+                    setNotificationConfig(newCfg);
+                    localStorage.setItem('aurafit_notifications_config', JSON.stringify(newCfg));
+                    showToast(newCfg.waterReminderEnabled ? '💧 Recordatorio de Agua activado.' : '💧 Recordatorio de Agua pausado.');
+                  }}
+                >
+                  {notificationConfig.waterReminderEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'block', marginBottom: '8px' }}>
+                  Intervalo de alerta
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                  {[
+                    { label: 'Cada 45 min', val: 45 },
+                    { label: 'Cada 60 min (Recom.)', val: 60 },
+                    { label: 'Cada 90 min', val: 90 },
+                    { label: 'Cada 2 horas', val: 120 }
+                  ].map((item) => {
+                    const isSel = notificationConfig.waterIntervalMinutes === item.val;
+                    return (
+                      <button
+                        key={item.val}
+                        type="button"
+                        className={`notif-chip-btn ${isSel ? 'active' : ''}`}
+                        onClick={() => handleSetWaterInterval(item.val)}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                style={{
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  color: 'var(--fitia-blue)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '12px',
+                  padding: '9px 12px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+                onClick={handleTestWaterNotification}
+              >
+                <span>💧</span> Probar Notificación de Agua
+              </button>
+            </div>
+
+            {/* 3. TELEGRAM BOT NOTICE */}
+            <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>✈️</span>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                <strong style={{ color: 'var(--text-main)' }}>Canal Telegram Bridge:</strong> Recibe alertas en tu Telegram conectando con <span style={{ color: 'var(--fitia-blue)', fontWeight: 700 }}>@mi_antigravity_pc_bot</span>.
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <button
+              type="button"
+              style={{
+                background: 'var(--fitia-green)',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '14px',
+                padding: '14px',
+                fontSize: '14px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                transition: 'transform 0.15s ease'
+              }}
+              onClick={() => setShowNotificationModal(false)}
+            >
+              ✓ Guardar y Cerrar
+            </button>
           </div>
         </div>
       )}

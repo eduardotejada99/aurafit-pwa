@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aurafit-v2.3.0-cloud-sync-peruvian-anicka';
+const CACHE_NAME = 'aurafit-v2.4.0-creatine-water-notifications';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -93,6 +93,23 @@ self.addEventListener('fetch', (event) => {
         .catch(() => null);
 
       return cachedResponse || fetchPromise;
+    })
+  );
+});
+
+// 5. System Notifications click handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
     })
   );
 });
