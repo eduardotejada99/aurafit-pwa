@@ -37,6 +37,11 @@ export default function HomePage() {
   const [pinError, setPinError] = useState('');
   const [isShakingPin, setIsShakingPin] = useState(false);
 
+  // Administrator PIN Management State (Master Control)
+  const [showAdminPinModal, setShowAdminPinModal] = useState(false);
+  const [adminPins, setAdminPins] = useState({ andres: '1234', pareja: '5678', hermana: '9012' });
+  const [pinVisibility, setPinVisibility] = useState({ andres: false, pareja: false, hermana: false });
+
   // Wim Hof Interactive Breathwork State (Andrés Biohacking)
   const [showWimHofModal, setShowWimHofModal] = useState(false);
   const [wimHofRound, setWimHofRound] = useState(1);
@@ -60,35 +65,8 @@ export default function HomePage() {
   const [showTextLogModal, setShowTextLogModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Daily Logged Foods State
-  const [loggedFoods, setLoggedFoods] = useState([
-    {
-      id: 'init-des-1',
-      name: 'Huevos revueltos con pan tostado integral',
-      brand: 'Casero',
-      mealSlot: 'desayuno',
-      servingDesc: '2 huevos + 1 pan',
-      grams: 180,
-      calories: 296,
-      protein: 21,
-      carbs: 16,
-      fat: 15,
-      icon: '🍳'
-    },
-    {
-      id: 'init-com-1',
-      name: 'Pechuga de pollo a la plancha con arroz y brócoli',
-      brand: 'Casero',
-      mealSlot: 'comida',
-      servingDesc: '1 plato balanceado',
-      grams: 350,
-      calories: 615,
-      protein: 58,
-      carbs: 65,
-      fat: 9,
-      icon: '🍗'
-    }
-  ]);
+  // Daily Logged Foods State (persistent per profile)
+  const [loggedFoods, setLoggedFoods] = useState([]);
 
   // Food Search Modal (+2M Database)
   const [showFoodSearchModal, setShowFoodSearchModal] = useState(false);
@@ -143,19 +121,16 @@ export default function HomePage() {
           merged[k] = {
             ...FAMILY_PROFILES[k],
             ...parsed[k],
-            pin: parsed[k].pin || FAMILY_PROFILES[k]?.pin || '1234'
+            pin: (parsed[k].pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
           };
         });
         setFamilyProfiles(merged);
       }
 
       const savedActiveProfile = localStorage.getItem('aurafit_active_profile');
-      if (savedActiveProfile && FAMILY_PROFILES[savedActiveProfile]) {
-        setActiveProfileId(savedActiveProfile);
-        loadProfileData(savedActiveProfile);
-      } else {
-        loadProfileData('andres');
-      }
+      const activeKey = savedActiveProfile && FAMILY_PROFILES[savedActiveProfile] ? savedActiveProfile : 'andres';
+      setActiveProfileId(activeKey);
+      loadProfileData(activeKey);
 
       const savedIngredients = localStorage.getItem('aurafit_ingredients');
       if (savedIngredients) setSelectedIngredients(JSON.parse(savedIngredients));
@@ -169,24 +144,39 @@ export default function HomePage() {
       const prof = FAMILY_PROFILES[profileKey];
       if (!prof) return;
 
-      const savedFoods = localStorage.getItem(`aurafit_foods_${profileKey}`);
-      if (savedFoods) {
-        setLoggedFoods(JSON.parse(savedFoods));
-      } else {
-        // Defaults per profile
-        if (profileKey === 'andres') {
-          setLoggedFoods([
-            { id: 'andres-des-1', name: '4 Huevos revueltos + Avena con Canela', brand: 'Casero', mealSlot: 'desayuno', servingDesc: 'Porción anabólica', grams: 250, calories: 480, protein: 32, carbs: 45, fat: 18, icon: '🍳' }
-          ]);
-        } else if (profileKey === 'pareja') {
-          setLoggedFoods([
-            { id: 'pareja-des-1', name: 'Yogur Griego con Granola, Plátano y Miel', brand: 'Casero', mealSlot: 'desayuno', servingDesc: 'Superávit limpio', grams: 260, calories: 430, protein: 24, carbs: 62, fat: 8, icon: '🥣' }
-          ]);
-        } else if (profileKey === 'hermana') {
-          setLoggedFoods([
-            { id: 'hermana-des-1', name: 'Tortilla de 3 Claras con Espinacas y Palta', brand: 'Glucosa Estable', mealSlot: 'desayuno', servingDesc: 'Bajo índice glucémico', grams: 200, calories: 240, protein: 18, carbs: 6, fat: 14, icon: '🥑' }
-          ]);
+      // 1. Check profile-specific storage key
+      let savedFoods = null;
+      const rawProfileFoods = localStorage.getItem(`aurafit_foods_${profileKey}`);
+      if (rawProfileFoods) {
+        try {
+          const parsed = JSON.parse(rawProfileFoods);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            savedFoods = parsed;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Migration fallback: check legacy storage keys where user's phone might have logged foods
+      if (!savedFoods || savedFoods.length === 0) {
+        const legacyRaw = localStorage.getItem('aurafit_logged_foods') || localStorage.getItem('aurafit_backup_last_logged');
+        if (legacyRaw) {
+          try {
+            const legacyParsed = JSON.parse(legacyRaw);
+            if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
+              savedFoods = legacyParsed;
+              // Migrate and persist to this profile immediately so it is never lost
+              localStorage.setItem(`aurafit_foods_${profileKey}`, JSON.stringify(legacyParsed));
+            }
+          } catch (e) {}
         }
+      }
+
+      // 3. Set logged foods - NEVER overwrite user's actual food with mock data!
+      if (savedFoods && Array.isArray(savedFoods)) {
+        setLoggedFoods(savedFoods);
+      } else {
+        // If profile has no previous entries, keep existing state if any, or empty array
+        setLoggedFoods((prev) => (prev && prev.length > 0 ? prev : []));
       }
 
       const savedHabits = localStorage.getItem(`aurafit_habits_${profileKey}`);
@@ -221,6 +211,13 @@ export default function HomePage() {
 
   const executeProfileSwitch = (newId) => {
     if (!familyProfiles[newId]) return;
+    // CRITICAL: Persist current profile's logged foods before switching!
+    try {
+      if (loggedFoods && loggedFoods.length > 0) {
+        localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods));
+      }
+    } catch (e) {}
+
     setActiveProfileId(newId);
     try {
       localStorage.setItem('aurafit_active_profile', newId);
@@ -256,10 +253,16 @@ export default function HomePage() {
     if (nextPin.length === 4) {
       const targetProf = familyProfiles[pinTargetProfileId] || FAMILY_PROFILES[pinTargetProfileId] || familyProfiles.andres;
       const expectedPin = (targetProf.pin || '1234').toString();
+      const adminPin = (familyProfiles.andres?.pin || FAMILY_PROFILES.andres.pin || '1234').toString();
 
-      if (nextPin === expectedPin) {
+      // Either profile PIN OR Admin (Andrés) Master PIN unlocks!
+      if (nextPin === expectedPin || nextPin === adminPin) {
+        const isAdminBypass = nextPin === adminPin && nextPin !== expectedPin;
         setTimeout(() => {
           executeProfileSwitch(pinTargetProfileId);
+          if (isAdminBypass) {
+            showToast(`🛡️ Acceso concedido con PIN Maestro de Administrador (Andrés).`);
+          }
         }, 150);
       } else {
         setIsShakingPin(true);
@@ -285,6 +288,33 @@ export default function HomePage() {
     showToast('🔒 Perfil bloqueado. Se requiere PIN para ingresar.');
   };
 
+  const handleOpenAdminPinModal = () => {
+    setAdminPins({
+      andres: (familyProfiles.andres?.pin || FAMILY_PROFILES.andres.pin || '1234').toString(),
+      pareja: (familyProfiles.pareja?.pin || FAMILY_PROFILES.pareja.pin || '5678').toString(),
+      hermana: (familyProfiles.hermana?.pin || FAMILY_PROFILES.hermana.pin || '9012').toString()
+    });
+    setShowAdminPinModal(true);
+  };
+
+  const handleSaveAdminPins = (newPins) => {
+    const pinsToSave = newPins || adminPins;
+    setFamilyProfiles((prev) => {
+      const next = {
+        ...prev,
+        andres: { ...prev.andres, pin: (pinsToSave.andres || '1234').toString().replace(/\D/g, '').slice(0, 4) },
+        pareja: { ...prev.pareja, pin: (pinsToSave.pareja || '5678').toString().replace(/\D/g, '').slice(0, 4) },
+        hermana: { ...prev.hermana, pin: (pinsToSave.hermana || '9012').toString().replace(/\D/g, '').slice(0, 4) }
+      };
+      try {
+        localStorage.setItem('aurafit_family_profiles', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    setShowAdminPinModal(false);
+    showToast('🛡️ ¡PINs de los 3 perfiles actualizados y sincronizados!');
+  };
+
   const handleSaveProfileChanges = (updatedProfile) => {
     setFamilyProfiles((prev) => {
       const next = { ...prev, [updatedProfile.id]: updatedProfile };
@@ -293,8 +323,13 @@ export default function HomePage() {
       } catch (e) {}
       return next;
     });
+    // CRITICAL: Ensure current foods remain safely saved and NOT replaced
+    try {
+      localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods));
+      localStorage.setItem('aurafit_logged_foods', JSON.stringify(loggedFoods));
+    } catch (e) {}
     setShowProfileModal(false);
-    showToast(`Perfil de ${updatedProfile.name} actualizado con nuevos requerimientos.`);
+    showToast(`✅ Perfil de ${updatedProfile.name} actualizado. Tus comidas y registros se mantienen intactos.`);
   };
 
   const showToast = (msg) => {
@@ -308,8 +343,12 @@ export default function HomePage() {
     setLoggedFoods((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
       try {
+        localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem('aurafit_logged_foods', JSON.stringify(next));
-      } catch (e) {}
+        localStorage.setItem('aurafit_backup_last_logged', JSON.stringify(next));
+      } catch (e) {
+        console.warn('Storage save err:', e);
+      }
       return next;
     });
   };
@@ -660,6 +699,14 @@ export default function HomePage() {
           </button>
           <button
             type="button"
+            className="header-admin-pin-btn"
+            onClick={handleOpenAdminPinModal}
+            title="Administración de PINs Familiares (Andrés)"
+          >
+            🛡️
+          </button>
+          <button
+            type="button"
             className="theme-toggle-btn"
             onClick={toggleTheme}
             title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
@@ -709,6 +756,15 @@ export default function HomePage() {
           title="Calibrar perfil activo"
         >
           ⚙️
+        </button>
+        <button
+          type="button"
+          className="profile-config-btn"
+          onClick={handleOpenAdminPinModal}
+          title="Administrar PINs Familiares (Admin Andrés)"
+          style={{ background: 'var(--fitia-green-soft)', borderColor: 'var(--fitia-green)' }}
+        >
+          🛡️
         </button>
       </div>
 
@@ -2284,6 +2340,24 @@ export default function HomePage() {
               ))}
             </div>
 
+            {/* Admin PIN Quick Action Banner */}
+            <div style={{ background: 'var(--bg-card-subtle)', border: '1px solid var(--fitia-green)', borderRadius: '14px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>🛡️</span>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 800 }}>Control Central de PINs (Admin)</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Gestiona los PINs de Andrés, Pareja y Hermana</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenAdminPinModal}
+                style={{ background: 'var(--fitia-green)', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+              >
+                Editar PINs
+              </button>
+            </div>
+
             {/* Form Fields */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
@@ -2770,8 +2844,50 @@ export default function HomePage() {
                     ))}
                   </div>
 
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '14px', lineHeight: 1.3 }}>
-                    💡 <em>PIN inicial: Andrés: <strong>1234</strong> · Pareja: <strong>5678</strong> · Hermana: <strong>9012</strong>. Puedes cambiarlo en Calibrar ⚙️.</em>
+                  <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPinTargetProfileId('andres');
+                        setEnteredPin('');
+                        setPinError('');
+                        showToast('🛡️ Modo Administrador: Ingresa el PIN maestro de Andrés.');
+                      }}
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid var(--fitia-green)',
+                        color: 'var(--fitia-green)',
+                        padding: '6px 12px',
+                        borderRadius: '10px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>🛡️</span> Desbloquear con PIN de Admin (Andrés)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAdminPinModal()}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        textDecoration: 'underline',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Editar PINs de la Familia
+                    </button>
+                  </div>
+
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: 1.3 }}>
+                    💡 <em>PIN inicial: Andrés: <strong>1234</strong> · Pareja: <strong>5678</strong> · Hermana: <strong>9012</strong>. Puedes cambiarlos en Calibrar ⚙️ o con el escudo 🛡️.</em>
                   </div>
                 </>
               );
@@ -2941,6 +3057,129 @@ export default function HomePage() {
                 onClick={() => handleRegisterRecipe(selectedRecipeDetail, recipeSlotToLog || selectedRecipeDetail.suggestedSlot || 'comida')}
               >
                 + Registrar en {(recipeSlotToLog || selectedRecipeDetail.suggestedSlot || 'comida').toUpperCase()}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL: ADMINISTRADOR MAESTRO DE PINS FAMILIARES (ANDRÉS)
+          =================================================================== */}
+      {showAdminPinModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '24px 20px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '24px' }}>🛡️</span>
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 900, margin: 0 }}>Administrador de PINs</h3>
+                  <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 700 }}>Control Central Familia Andrés</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}
+                onClick={() => setShowAdminPinModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '18px', lineHeight: 1.4 }}>
+              Como administrador de la cuenta familiar, puedes ver y editar los códigos PIN de 4 dígitos para cada miembro de la familia.
+            </p>
+
+            {/* 3 Profile PIN rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {Object.values(familyProfiles).map((prof) => {
+                const isVisible = pinVisibility[prof.id];
+                const val = adminPins[prof.id] ?? prof.pin ?? '1234';
+
+                return (
+                  <div
+                    key={prof.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      background: 'var(--bg-card-subtle)',
+                      borderRadius: '16px',
+                      border: prof.id === 'andres' ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '24px' }}>{prof.avatar}</span>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '14px' }}>{prof.name}</span>
+                          {prof.id === 'andres' && (
+                            <span style={{ fontSize: '9px', background: 'var(--fitia-green)', color: '#fff', padding: '2px 6px', borderRadius: '6px', fontWeight: 900 }}>ADMIN</span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{prof.role.split('&')[0]}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        type={isVisible ? 'text' : 'password'}
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={val}
+                        onChange={(e) => {
+                          const clean = e.target.value.replace(/\D/g, '').slice(0, 4);
+                          setAdminPins((prev) => ({ ...prev, [prof.id]: clean }));
+                        }}
+                        style={{
+                          width: '76px',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'var(--bg-card)',
+                          color: 'var(--text-main)',
+                          fontWeight: 900,
+                          fontSize: '18px',
+                          letterSpacing: isVisible ? '2px' : '3px',
+                          textAlign: 'center'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPinVisibility((prev) => ({ ...prev, [prof.id]: !prev[prof.id] }))}
+                        style={{
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '8px',
+                          padding: '8px 9px',
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                        title={isVisible ? 'Ocultar PIN' : 'Ver PIN'}
+                      >
+                        {isVisible ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button
+                type="button"
+                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer' }}
+                onClick={() => setShowAdminPinModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                style={{ flex: 2, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--fitia-green)', color: '#FFFFFF', fontWeight: 900, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)' }}
+                onClick={() => handleSaveAdminPins()}
+              >
+                💾 Guardar PINs
               </button>
             </div>
           </div>
