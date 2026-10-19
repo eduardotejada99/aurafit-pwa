@@ -15,7 +15,9 @@ import {
   calculateNutritionalScore,
   calculateDailyAuraScore,
   calculateCouplePortions,
-  generateCoupleGroceryList
+  generateCoupleGroceryList,
+  HYBRID_ATHLETE_SYSTEM,
+  getHybridWorkoutPrescription
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -226,10 +228,33 @@ export default function HomePage() {
     }
   };
   
-  // Workout state
+  // Workout state & Hybrid Athlete System (Dejan Stipke style)
   const [workoutMode, setWorkoutMode] = useState('gym');
+  const [workoutContext, setWorkoutContext] = useState('gym'); // 'gym' | 'home_bars' | 'travel'
+  const [workoutDurationMode, setWorkoutDurationMode] = useState('full'); // 'full' (2h) | 'express' (45m)
+  const [recentHeavyDays, setRecentHeavyDays] = useState(0); // 0, 1, 2+ consecutive heavy days
+  const [selectedSkillTab, setSelectedSkillTab] = useState('handstand'); // 'handstand', 'front_lever', 'muscle_up', 'planche'
+  const [activeSkillLevels, setActiveSkillLevels] = useState({
+    handstand: 1,
+    front_lever: 1,
+    muscle_up: 1,
+    planche: 1
+  });
+  const [showSubstitutesFor, setShowSubstitutesFor] = useState(null); // exercise name or null
+  const [completedExercises, setCompletedExercises] = useState([]); // array of exercise identifiers
   const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+
+  const hybridPrescription = useMemo(() => {
+    return getHybridWorkoutPrescription({
+      profile: currentProfile,
+      sleepHours: Number(sleepHours || 7.5),
+      sleepQuality: sleepQuality || 'deep',
+      recentHeavyDays: Number(recentHeavyDays || 0),
+      context: workoutContext,
+      durationMode: workoutDurationMode
+    });
+  }, [currentProfile, sleepHours, sleepQuality, recentHeavyDays, workoutContext, workoutDurationMode]);
 
   // Weight tracking state
   const [weightLogs, setWeightLogs] = useState([
@@ -2826,131 +2851,690 @@ export default function HomePage() {
         )}
 
         {/* ===================================================================
-            TAB 3: WORKOUT ADAPTATIVO & PESO
+            TAB 3: WORKOUT ADAPTATIVO & ATLETA HÍBRIDO (ESTILO DEJAN STIPKE)
             =================================================================== */}
         {activeTab === 'workout' && (
           <>
-            {/* Mode Switcher per Profile */}
-            {(() => {
-              const profileWorkouts = currentProfile.workouts || WORKOUT_ROUTINES;
-              const workoutKeys = Object.keys(profileWorkouts);
-              const currentKey = workoutKeys.includes(workoutMode) ? workoutMode : workoutKeys[0];
-              const routine = profileWorkouts[currentKey];
+            {/* 1. ATHLETE IDENTITY HERO */}
+            <div style={{
+              background: currentProfile.id === 'pareja' 
+                ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)'
+                : currentProfile.id === 'hermana'
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 107, 0, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '20px',
+              padding: '18px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: 'var(--card-shadow)'
+            }}>
+              <div>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 900,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  color: currentProfile.id === 'pareja' ? '#EC4899' : currentProfile.id === 'hermana' ? '#10B981' : '#FF6B00'
+                }}>
+                  {currentProfile.id === 'pareja' ? '🌸 Atleta Funcional Femenina' : currentProfile.id === 'hermana' ? '🌿 Movilidad & Vitalidad' : '🦁 Sistema Atleta Híbrido (Dejan Stipke)'}
+                </span>
+                <h2 style={{ fontSize: '18px', fontWeight: 900, marginTop: '2px' }}>
+                  {hybridPrescription.routineTitle}
+                </h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {hybridPrescription.focus}
+                </p>
+              </div>
+              <div style={{
+                fontSize: '32px',
+                background: 'var(--bg-card)',
+                width: '54px',
+                height: '54px',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid var(--border-subtle)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
+              }}>
+                {currentProfile.avatar}
+              </div>
+            </div>
 
-              return (
-                <>
-                  <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px', marginBottom: '14px' }}>
-                    {workoutKeys.map((key) => {
-                      const isSel = currentKey === key;
-                      const icon = key === 'gym' ? '🏋️' : key === 'dance' ? '💃' : key === 'gentle_yoga' ? '🧘‍♀️' : '🏔️';
-                      const label = key === 'gym' ? 'Gimnasio' : key === 'dance' ? 'Baile Suave (GLUT-4)' : key === 'gentle_yoga' ? 'Movilidad de Pie' : 'Cajabamba / Viaje';
+            {/* PAREJA SPECIAL LUMBAR SAFETY BANNER */}
+            {currentProfile.id === 'pareja' && (
+              <div style={{
+                background: 'rgba(236, 72, 153, 0.08)',
+                border: '1.5px solid rgba(236, 72, 153, 0.35)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start'
+              }}>
+                <span style={{ fontSize: '24px' }}>🛡️</span>
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 900, color: '#DB2777' }}>
+                    Blindaje Lumbar Activo: Cero Compresión Axial
+                  </h4>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.45 }}>
+                    Rutina diseñada con soporte completo de espalda (prensa inclinada, sentadilla búlgara con mancuernas a los lados y estabilización McGill Big 3). Glúteos y femoral al máximo sin tocar la columna.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 2. CNS AUTO-REGULATION & READINESS CARD */}
+            <div className="hybrid-readiness-hero">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '20px' }}>🧠</span>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 900 }}>Auto-Regulación SNC & Preparación</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      Evaluación neuromuscular según sueño y fatiga acumulada
+                    </p>
+                  </div>
+                </div>
+                <div style={{
+                  background: hybridPrescription.badgeColor,
+                  color: '#FFFFFF',
+                  padding: '5px 12px',
+                  borderRadius: '999px',
+                  fontSize: '12px',
+                  fontWeight: 900,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }}>
+                  {hybridPrescription.readinessScore} / 100 SNC
+                </div>
+              </div>
+
+              {/* Intensity Mode Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'var(--bg-card)',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                border: '1px solid var(--border-subtle)'
+              }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                  Modo Prescrito Hoy:
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: 900, color: hybridPrescription.badgeColor }}>
+                  {hybridPrescription.intensityMode}
+                </span>
+              </div>
+
+              {/* Interactive Sleep Sync Override */}
+              <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800 }}>
+                    🛌 Sueño Sincronizado: <strong>{sleepHours}h</strong> ({sleepQuality === 'deep' ? 'Profundo' : sleepQuality === 'normal' ? 'Normal' : 'Ligero / Inquieto'})
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ajuste Rápido</span>
+                </div>
+                
+                {/* Hours row */}
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                  {[5.5, 6.5, 7.5, 8.5].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '6px 4px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        background: sleepHours === h ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                        color: sleepHours === h ? '#FFFFFF' : 'var(--text-main)',
+                        border: '1px solid var(--border-subtle)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setSleepHours(h)}
+                    >
+                      {h}h
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quality row */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[
+                    { id: 'deep', label: 'Profundo 🌙' },
+                    { id: 'normal', label: 'Normal 💤' },
+                    { id: 'light', label: 'Inquieto ⚠️' }
+                  ].map((q) => (
+                    <button
+                      key={q.id}
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '6px 4px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        background: sleepQuality === q.id ? '#3B82F6' : 'var(--bg-card-subtle)',
+                        color: sleepQuality === q.id ? '#FFFFFF' : 'var(--text-main)',
+                        border: '1px solid var(--border-subtle)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setSleepQuality(q.id)}
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Consecutive Heavy Days Tracker */}
+              <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800 }}>
+                    🏋️ Días pesados seguidos esta semana:
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: recentHeavyDays >= 2 ? '#F59E0B' : 'var(--text-main)' }}>
+                    {recentHeavyDays === 0 ? '0 días' : recentHeavyDays === 1 ? '1 día' : '2+ días (Fatiga)'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[
+                    { val: 0, label: '0 días' },
+                    { val: 1, label: '1 día' },
+                    { val: 2, label: '2+ días pesados ⚡' }
+                  ].map((d) => (
+                    <button
+                      key={d.val}
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        background: recentHeavyDays === d.val ? (d.val >= 2 ? '#F59E0B' : 'var(--fitia-green)') : 'var(--bg-card-subtle)',
+                        color: recentHeavyDays === d.val ? '#FFFFFF' : 'var(--text-main)',
+                        border: '1px solid var(--border-subtle)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setRecentHeavyDays(d.val)}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Smart Alerts & Warnings */}
+              {(hybridPrescription.warnings.length > 0 || hybridPrescription.recommendations.length > 0) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {hybridPrescription.warnings.map((warn, i) => (
+                    <div key={i} style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '10px 12px', fontSize: '12px', color: '#DC2626', fontWeight: 700 }}>
+                      {warn}
+                    </div>
+                  ))}
+                  {hybridPrescription.recommendations.map((rec, i) => (
+                    <div key={i} style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '12px', color: '#B45309', fontWeight: 700 }}>
+                      {rec}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 3. CONTEXT & DURATION SELECTORS */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', paddingLeft: '4px' }}>
+                📍 ¿Dónde entrenas hoy?
+              </div>
+              <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
+                {[
+                  { id: 'gym', label: 'Gimnasio', icon: '🏋️' },
+                  { id: 'home_bars', label: 'En Casa (Barras)', icon: '🏡' },
+                  { id: 'travel', label: 'Cajabamba / Viaje', icon: '🏔️' }
+                ].map((ctx) => {
+                  const isSel = workoutContext === ctx.id;
+                  return (
+                    <button
+                      key={ctx.id}
+                      type="button"
+                      className="hybrid-context-tab"
+                      style={{
+                        background: isSel ? 'var(--bg-card)' : 'transparent',
+                        color: isSel ? 'var(--text-main)' : 'var(--text-muted)',
+                        boxShadow: isSel ? 'var(--card-shadow)' : 'none'
+                      }}
+                      onClick={() => setWorkoutContext(ctx.id)}
+                    >
+                      <span>{ctx.icon}</span>
+                      <span>{ctx.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Duration Switcher (2h vs 45m) */}
+              <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: '9px 12px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    background: workoutDurationMode === 'full' ? 'var(--bg-card)' : 'transparent',
+                    color: workoutDurationMode === 'full' ? 'var(--text-main)' : 'var(--text-muted)',
+                    boxShadow: workoutDurationMode === 'full' ? 'var(--card-shadow)' : 'none',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setWorkoutDurationMode('full')}
+                >
+                  ⏱️ Sesión Completa (~90–120 min)
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: '9px 12px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    background: workoutDurationMode === 'express' ? 'var(--bg-card)' : 'transparent',
+                    color: workoutDurationMode === 'express' ? 'var(--text-main)' : 'var(--text-muted)',
+                    boxShadow: workoutDurationMode === 'express' ? 'var(--card-shadow)' : 'none',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setWorkoutDurationMode('express')}
+                >
+                  ⚡ Sesión Express (45 min)
+                </button>
+              </div>
+            </div>
+
+            {/* 4. MODULAR WORKOUT BLOCKS (DEJAN STIPKE SYSTEM) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {hybridPrescription.blocks.map((block, bIdx) => (
+                <div key={bIdx} className="hybrid-block-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '20px' }}>{block.icon || '⚡'}</span>
+                      <h3 style={{ fontSize: '15px', fontWeight: 900 }}>{block.name}</h3>
+                    </div>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      background: 'var(--fitia-green-soft)',
+                      color: 'var(--fitia-green)',
+                      padding: '3px 8px',
+                      borderRadius: '8px'
+                    }}>
+                      {block.exercises?.length || 0} ejercicios
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {(block.exercises || []).map((ex, eIdx) => {
+                      const exKey = `${bIdx}-${eIdx}-${ex.name}`;
+                      const isDone = completedExercises.includes(exKey);
+                      const isSubOpen = showSubstitutesFor === exKey;
+
                       return (
-                        <button
-                          key={key}
-                          type="button"
-                          style={{
-                            flex: 1,
-                            background: isSel ? 'var(--bg-card)' : 'transparent',
-                            color: isSel ? 'var(--text-main)' : 'var(--text-muted)',
-                            border: 'none',
-                            padding: '10px 8px',
-                            borderRadius: '10px',
-                            fontWeight: 800,
-                            fontSize: '12px',
-                            boxShadow: isSel ? 'var(--card-shadow)' : 'none',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => setWorkoutMode(key)}
+                        <div
+                          key={eIdx}
+                          className={`hybrid-exercise-card ${isDone ? 'completed' : ''}`}
                         >
-                          {icon} {label}
-                        </button>
+                          {/* Exercise Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <button
+                                type="button"
+                                style={{
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '50%',
+                                  border: isDone ? '2px solid var(--fitia-green)' : '2px solid var(--border-subtle)',
+                                  background: isDone ? 'var(--fitia-green)' : 'transparent',
+                                  color: '#FFFFFF',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  flexShrink: 0
+                                }}
+                                onClick={() => {
+                                  if (isDone) {
+                                    setCompletedExercises(completedExercises.filter((k) => k !== exKey));
+                                  } else {
+                                    setCompletedExercises([...completedExercises, exKey]);
+                                  }
+                                }}
+                              >
+                                {isDone ? '✓' : ''}
+                              </button>
+                              <span style={{
+                                fontSize: '14px',
+                                fontWeight: 800,
+                                textDecoration: isDone ? 'line-through' : 'none',
+                                color: isDone ? 'var(--text-muted)' : 'var(--text-main)'
+                              }}>
+                                {ex.name}
+                              </span>
+                            </div>
+
+                            <span style={{
+                              fontSize: '12px',
+                              fontWeight: 900,
+                              color: 'var(--fitia-orange)',
+                              background: 'var(--fitia-orange-soft)',
+                              padding: '3px 8px',
+                              borderRadius: '8px',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || 'Completar'}
+                            </span>
+                          </div>
+
+                          {/* Note / Biomechanical cue */}
+                          {ex.note && (
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4, paddingLeft: '34px' }}>
+                              💡 {ex.note}
+                            </p>
+                          )}
+
+                          {/* Quick Actions (Timer & Substitute Toggle) */}
+                          <div style={{ display: 'flex', gap: '8px', paddingLeft: '34px', marginTop: '2px', flexWrap: 'wrap' }}>
+                            {ex.restSeconds > 0 && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'var(--bg-card)',
+                                  border: '1px solid var(--border-subtle)',
+                                  padding: '5px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  color: 'var(--text-main)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => {
+                                  setActiveTimerSeconds(ex.restSeconds);
+                                  setTimerRunning(true);
+                                }}
+                              >
+                                <span>⏱️</span>
+                                <span>Descanso {ex.restSeconds}s</span>
+                              </button>
+                            )}
+
+                            {ex.substitute && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: isSubOpen ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-card)',
+                                  border: isSubOpen ? '1px solid #3B82F6' : '1px solid var(--border-subtle)',
+                                  padding: '5px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  color: isSubOpen ? '#2563EB' : 'var(--text-muted)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => setShowSubstitutesFor(isSubOpen ? null : exKey)}
+                              >
+                                <span>🔄</span>
+                                <span>{isSubOpen ? 'Ocultar Sustituto' : 'Ver Sustituto Libre'}</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Substitute Box */}
+                          {isSubOpen && ex.substitute && (
+                            <div className="substitute-box" style={{ marginLeft: '34px', marginTop: '4px' }}>
+                              <div style={{ fontWeight: 800, marginBottom: '2px', color: '#2563EB' }}>
+                                🔄 Sustituto Libre si la máquina está ocupada:
+                              </div>
+                              <div>{ex.substitute}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                ✨ Perfecto para adaptarse a cualquier gimnasio comercial con mancuernas o barras libres.
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
+                </div>
+              ))}
+            </div>
 
-                  {/* Active Routine Details */}
-                  {routine && (
-                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--card-shadow)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                        <div>
-                          <h3 style={{ fontSize: '17px', fontWeight: 900 }}>{routine.title}</h3>
-                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{routine.focus}</p>
-                        </div>
-                        <span style={{ background: 'var(--fitia-green-soft)', color: 'var(--fitia-green)', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                          ⏱️ {routine.durationMinutes || 30} min
-                        </span>
+            {/* 5. CALISTHENICS SKILL TREE (DEJAN STIPKE MASTERY) */}
+            <div className="skill-tree-container">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 900 }}>
+                    🤸‍♂️ Árbol de Habilidades de Calistenia
+                  </h3>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Progresiones nivel por nivel para novatos hasta atletas avanzados
+                  </p>
+                </div>
+                <span style={{ fontSize: '20px' }}>⚡</span>
+              </div>
+
+              {/* Skill Tabs */}
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {Object.keys(hybridPrescription.skillTree || {}).map((sKey) => {
+                  const skill = hybridPrescription.skillTree[sKey];
+                  const isSel = selectedSkillTab === sKey;
+                  return (
+                    <button
+                      key={sKey}
+                      type="button"
+                      className="skill-pill-btn"
+                      style={{
+                        background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                        color: isSel ? '#FFFFFF' : 'var(--text-main)',
+                        border: '1px solid var(--border-subtle)'
+                      }}
+                      onClick={() => setSelectedSkillTab(sKey)}
+                    >
+                      <span>{skill.icon}</span>
+                      <span>{skill.name.split(' (')[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Selected Skill Details & Progressive Levels */}
+              {(() => {
+                const currentSkill = hybridPrescription.skillTree[selectedSkillTab];
+                if (!currentSkill) return null;
+
+                const activeLvl = activeSkillLevels[selectedSkillTab] || 1;
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{
+                      background: 'var(--bg-card-subtle)',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: 900 }}>
+                        {currentSkill.icon} {currentSkill.name}
                       </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {(routine.exercises || []).map((ex, idx) => (
-                          <div key={idx} style={{ background: 'var(--bg-card-subtle)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '14px', fontWeight: 800 }}>
-                                {ex.icon ? `${ex.icon} ` : ''}{ex.name}
-                              </span>
-                              <span style={{ fontSize: '13px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
-                                {ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || ex.duration || 'Completar'}
-                              </span>
-                            </div>
-                            {(ex.note || ex.restSeconds || ex.notes) && (
-                              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                {ex.restSeconds ? `Descanso: ${ex.restSeconds}s · ` : ''}{ex.note || ex.notes || ''}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        🎯 Músculos: {currentSkill.targetMuscle}
                       </div>
-
-                      {/* Timer for EMOM or Dance */}
-                      <div style={{ background: 'var(--bg-card-subtle)', padding: '16px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--border-subtle)', marginTop: '6px' }}>
-                        <div style={{ fontSize: '36px', fontWeight: 900, fontFamily: 'monospace', color: 'var(--text-main)' }}>
-                          {activeTimerSeconds ? `${Math.floor(activeTimerSeconds / 60).toString().padStart(2, '0')}:${(activeTimerSeconds % 60).toString().padStart(2, '0')}` : `${routine.durationMinutes || 20}:00`}
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
-                          <button
-                            type="button"
-                            style={{
-                              background: timerRunning ? '#EF4444' : 'var(--fitia-green)',
-                              color: '#FFFFFF',
-                              fontWeight: 900,
-                              border: 'none',
-                              padding: '10px 22px',
-                              borderRadius: '12px',
-                              cursor: 'pointer'
-                            }}
-                            onClick={() => {
-                              if (!activeTimerSeconds) setActiveTimerSeconds((routine.durationMinutes || 20) * 60);
-                              setTimerRunning(!timerRunning);
-                            }}
-                          >
-                            {timerRunning ? 'Pausar' : 'Iniciar Sesión'}
-                          </button>
-                          <button
-                            type="button"
-                            style={{
-                              background: 'var(--bg-card)',
-                              border: '1px solid var(--border-subtle)',
-                              color: 'var(--text-muted)',
-                              fontWeight: 800,
-                              padding: '10px 16px',
-                              borderRadius: '12px',
-                              cursor: 'pointer'
-                            }}
-                            onClick={() => {
-                              setTimerRunning(false);
-                              setActiveTimerSeconds((routine.durationMinutes || 20) * 60);
-                            }}
-                          >
-                            Reiniciar
-                          </button>
-                        </div>
+                      <div style={{ fontSize: '12px', marginTop: '4px', lineHeight: 1.4 }}>
+                        {currentSkill.description}
                       </div>
                     </div>
-                  )}
-                </>
-              );
-            })()}
 
+                    {/* Level Cards */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {currentSkill.levels.map((lvl) => {
+                        const isCurrentLevel = activeLvl === lvl.level;
+                        const badgeBg = lvl.difficulty === 'Novato' ? '#10B981' : lvl.difficulty === 'Intermedio' ? '#3B82F6' : lvl.difficulty === 'Avanzado' ? '#8B5CF6' : '#EC4899';
+
+                        return (
+                          <div
+                            key={lvl.level}
+                            className={`skill-level-card ${isCurrentLevel ? 'active-level' : ''}`}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 900 }}>
+                                {lvl.title}
+                              </span>
+                              <span style={{
+                                fontSize: '10px',
+                                fontWeight: 900,
+                                background: badgeBg,
+                                color: '#FFFFFF',
+                                padding: '2px 8px',
+                                borderRadius: '999px'
+                              }}>
+                                {lvl.difficulty}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
+                              🎯 Objetivo: {lvl.target} · Descanso: {lvl.restSeconds}s
+                            </div>
+
+                            <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                              <strong>Clave Técnica:</strong> {lvl.cues}
+                            </div>
+
+                            {lvl.commonMistake && (
+                              <div style={{ fontSize: '11px', color: '#DC2626', background: 'rgba(239, 68, 68, 0.08)', padding: '6px 10px', borderRadius: '8px' }}>
+                                ⚠️ <strong>Error Común:</strong> {lvl.commonMistake}
+                              </div>
+                            )}
+
+                            <button
+                              type="button"
+                              style={{
+                                alignSelf: 'flex-start',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
+                                color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
+                                border: '1px solid var(--border-subtle)',
+                                cursor: 'pointer',
+                                marginTop: '4px'
+                              }}
+                              onClick={() => setActiveSkillLevels({
+                                ...activeSkillLevels,
+                                [selectedSkillTab]: lvl.level
+                              })}
+                            >
+                              {isCurrentLevel ? '✓ Mi Nivel Actual de Entrenamiento' : 'Practicar este Nivel'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 6. UNIVERSAL DIGITAL REST & SESSION TIMER */}
+            <div style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '20px',
+              padding: '18px',
+              textAlign: 'center',
+              boxShadow: 'var(--card-shadow)'
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                ⏱️ Cronómetro Digital de Descanso & Sesión
+              </div>
+              <div style={{ fontSize: '38px', fontWeight: 900, fontFamily: 'monospace', color: timerRunning ? 'var(--fitia-green)' : 'var(--text-main)' }}>
+                {activeTimerSeconds ? `${Math.floor(activeTimerSeconds / 60).toString().padStart(2, '0')}:${(activeTimerSeconds % 60).toString().padStart(2, '0')}` : `${hybridPrescription.durationMinutes || 45}:00`}
+              </div>
+
+              {/* Preset Buttons */}
+              <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', margin: '12px 0 10px' }}>
+                {[30, 60, 90, 120].map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    style={{
+                      background: 'var(--bg-card-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      padding: '5px 12px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      setActiveTimerSeconds(sec);
+                      setTimerRunning(true);
+                    }}
+                  >
+                    +{sec}s
+                  </button>
+                ))}
+              </div>
+
+              {/* Main Controls */}
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  style={{
+                    background: timerRunning ? '#EF4444' : 'var(--fitia-green)',
+                    color: '#FFFFFF',
+                    fontWeight: 900,
+                    border: 'none',
+                    padding: '10px 24px',
+                    borderRadius: '12px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    if (!activeTimerSeconds) setActiveTimerSeconds((hybridPrescription.durationMinutes || 45) * 60);
+                    setTimerRunning(!timerRunning);
+                  }}
+                >
+                  {timerRunning ? 'Pausar' : 'Iniciar Reloj'}
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-muted)',
+                    fontWeight: 800,
+                    padding: '10px 16px',
+                    borderRadius: '12px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    setTimerRunning(false);
+                    setActiveTimerSeconds(0);
+                  }}
+                >
+                  Reiniciar
+                </button>
+              </div>
+            </div>
 
             {/* Weight Progression Card */}
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '20px', boxShadow: 'var(--card-shadow)' }}>

@@ -1408,3 +1408,602 @@ export function generateCoupleGroceryList(days = 7) {
   ];
 }
 
+/**
+ * 10. Hybrid Athlete System (Dejan Stipke Style)
+ * Combines heavy progressive overload, calisthenics static/dynamic skills,
+ * explosive power, and metabolic conditioning / Zone 2 caloric burn.
+ * Auto-regulates based on sleep, fatigue, travel, and location.
+ */
+export const HYBRID_ATHLETE_SYSTEM = {
+  skillTree: {
+    handstand: {
+      id: 'handstand',
+      name: 'Parada de Manos (Handstand)',
+      icon: '🤸‍♂️',
+      targetMuscle: 'Hombros, trapecio, muñecas y core anterior',
+      description: 'Habilidad reina de empuje vertical y equilibrio neurológico.',
+      levels: [
+        {
+          level: 1,
+          title: 'Nivel 1: Wall Walk & Pecho a la Pared',
+          target: '4 series × 30–45s hold',
+          restSeconds: 90,
+          difficulty: 'Novato',
+          cues: 'Sube los pies por la pared hasta que el pecho casi la toque. Empuja el piso con fuerza (protracción escapular), mete la pelvis y aprieta glúteos.',
+          commonMistake: 'Quebrar la espalda baja formando una curva de plátano.'
+        },
+        {
+          level: 2,
+          title: 'Nivel 2: Despegue de Talones (Heel Taps)',
+          target: '4 series × 8–10 despegues controlados',
+          restSeconds: 90,
+          difficulty: 'Intermedio',
+          cues: 'Desde la pared, usa las yemas de los dedos como frenos para despegar un talón unos centímetros y buscar el punto de equilibrio.',
+          commonMistake: 'Patear con violencia en lugar de empujar con las manos.'
+        },
+        {
+          level: 3,
+          title: 'Nivel 3: Handstand Libre (Freestanding)',
+          target: '5 intentos × 10–25s hold',
+          restSeconds: 120,
+          difficulty: 'Avanzado',
+          cues: 'Entrada controlada con tijera suave. Dedos como garras en el suelo. Mirada fija entre los pulgares.',
+          commonMistake: 'Contener la respiración durante el equilibrio.'
+        }
+      ]
+    },
+    front_lever: {
+      id: 'front_lever',
+      name: 'Front Lever (Palanca Frontal)',
+      icon: '⚡',
+      targetMuscle: 'Dorsal ancho, redondo mayor, tríceps largo y core',
+      description: 'Palanca estática de tracción con brazos rectos más estética de la calistenia.',
+      levels: [
+        {
+          level: 1,
+          title: 'Nivel 1: Tuck Front Lever Hold',
+          target: '4 series × 15–20s',
+          restSeconds: 90,
+          difficulty: 'Novato',
+          cues: 'Colgado de la barra con codos 100% bloqueados, pega las rodillas al pecho y deprime las escápulas hacia tus bolsillos traseros.',
+          commonMistake: 'Flexionar los codos; esto convierte el ejercicio en una dominada en vez de palanca estática.'
+        },
+        {
+          level: 2,
+          title: 'Nivel 2: Advanced Tuck Front Lever',
+          target: '4 series × 10–15s',
+          restSeconds: 120,
+          difficulty: 'Intermedio',
+          cues: 'Abre las rodillas a 90 grados respecto al torso. La espalda debe quedar 100% horizontal paralela al suelo.',
+          commonMistake: 'Dejar que la cadera caiga por debajo de la línea de los hombros.'
+        },
+        {
+          level: 3,
+          title: 'Nivel 3: Straddle / Negativas Lentas',
+          target: '4 series × 8–12s o 5 negativas de 5s',
+          restSeconds: 120,
+          difficulty: 'Avanzado',
+          cues: 'Abre las piernas en V amplia (straddle) para acortar el brazo de palanca o baja desde posición invertida en 5 segundos lentos.',
+          commonMistake: 'Pérdida de la retracción escapular al descender.'
+        },
+        {
+          level: 4,
+          title: 'Nivel 4: Full Front Lever',
+          target: '3–4 series × 5–8s estricto',
+          restSeconds: 150,
+          difficulty: 'Master',
+          cues: 'Cuerpo como una barra de hierro. Glúteos y cuádriceps en máxima contracción.',
+          commonMistake: 'Rotar la pelvis hacia arriba.'
+        }
+      ]
+    },
+    muscle_up: {
+      id: 'muscle_up',
+      name: 'Muscle-Up & Fondos Lastrados',
+      icon: '🚀',
+      targetMuscle: 'Dorsales explosivos, pectoral, tríceps y agarre',
+      description: 'La transición definitiva entre tracción y empuje de alta potencia.',
+      levels: [
+        {
+          level: 1,
+          title: 'Nivel 1: Dominadas Explosivas al Esternón',
+          target: '4 series × 5 reps explosivas + 4 × 10 fondos profundos',
+          restSeconds: 90,
+          difficulty: 'Novato',
+          cues: 'Jala con máxima aceleración intentando tocar la barra con el pecho o esternón, no con la barbilla.',
+          commonMistake: 'Jalar lento buscando volumen en vez de potencia.'
+        },
+        {
+          level: 2,
+          title: 'Nivel 2: Muscle-Up con Banda / Negativas Lentas',
+          target: '4 series × 3–4 reps asistidas',
+          restSeconds: 120,
+          difficulty: 'Intermedio',
+          cues: 'Usa una banda elástica para entender el giro de muñecas y llevar el pecho rápidamente sobre la barra.',
+          commonMistake: 'Subir un brazo primero ("hacer el ala de pollo"). Los dos brazos deben subir simultáneos.'
+        },
+        {
+          level: 3,
+          title: 'Nivel 3: Strict Bar Muscle-Up',
+          target: '3–5 series × 2–5 reps sin balanceo',
+          restSeconds: 150,
+          difficulty: 'Avanzado',
+          cues: 'Cero kipping de piernas. Dominada explosiva, inclinación de torso y fondo firme.',
+          commonMistake: 'Patear con las rodillas para impulsarse.'
+        }
+      ]
+    },
+    planche: {
+      id: 'planche',
+      name: 'Planche (Plancha Calisténica)',
+      icon: '🏆',
+      targetMuscle: 'Deltoides anterior, bíceps, muñecas y serrato anterior',
+      description: 'La máxima expresión de fuerza de empuje con brazos rectos.',
+      levels: [
+        {
+          level: 1,
+          title: 'Nivel 1: Planche Lean en Suelo / Paralelas',
+          target: '4 series × 20–30s hold con inclinación máxima',
+          restSeconds: 90,
+          difficulty: 'Novato',
+          cues: 'En plancha alta, empuja el suelo hacia abajo (protracción fuerte) e inclina los hombros más allá de las muñecas.',
+          commonMistake: 'Doblar los codos o dejar caer la pelvis.'
+        },
+        {
+          level: 2,
+          title: 'Nivel 2: Tuck Planche en Paralelas Cortas',
+          target: '4 series × 10–15s suspendido',
+          restSeconds: 120,
+          difficulty: 'Intermedio',
+          cues: 'Eleva las rodillas hacia el pecho manteniendo los pies en el aire sin tocar el suelo.',
+          commonMistake: 'Hombros por detrás de las muñecas; esto hace imposible la suspensión.'
+        },
+        {
+          level: 3,
+          title: 'Nivel 3: Advanced Tuck / Straddle Planche',
+          target: '3–4 series × 6–10s estricto',
+          restSeconds: 150,
+          difficulty: 'Avanzado',
+          cues: 'Abre el ángulo cadera-torso a 90 grados o abre las piernas en V. Escápulas totalmente separadas y codos de acero.',
+          commonMistake: 'Flexión micro de codo por fatiga de tendones.'
+        }
+      ]
+    }
+  },
+
+  routines: {
+    andres: {
+      gym: {
+        title: 'Sesión Híbrida Completa: Fuerza Pesada + Calistenia + Zona 2',
+        durationMinutes: 90,
+        focus: 'Sobrecarga miofibrilar pesada, habilidades estáticas y quema oxidativa de grasa',
+        blocks: [
+          {
+            name: 'Bloque 1: Fuerza Pesada & Sobrecarga Progresiva (40 min)',
+            icon: '🏋️‍♂️',
+            exercises: [
+              {
+                name: 'Press Banca Plano con Barra',
+                sets: 4,
+                reps: '6 - 8 pesadas',
+                restSeconds: 120,
+                substitute: 'Press Inclinado con Mancuernas Pesadas o Fondos Lastrados',
+                note: 'Carga pesada con RIR 1-2. Barra controlada en 2s bajando.'
+              },
+              {
+                name: 'Remo Pendlay Libre con Barra',
+                sets: 4,
+                reps: '8 reps estrictas',
+                restSeconds: 90,
+                substitute: 'Remo Unilateral con Mancuerna Pesada en Banco',
+                note: 'Espalda 100% horizontal. Tirón explosivo hacia el ombligo.'
+              },
+              {
+                name: 'Sentadilla Trasera / Prensa de Piernas Pesada',
+                sets: 4,
+                reps: '6 - 8 reps',
+                restSeconds: 120,
+                substitute: 'Sentadilla Hack o Goblet Squat Pesada',
+                note: 'Estímulo sistémico de fuerza y testosterona.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Calistenia de Alto Nivel & Trucos (30 min)',
+            icon: '🤸‍♂️',
+            exercises: [
+              {
+                name: 'Progresión de Front Lever (Tuck o Adv Tuck)',
+                sets: 4,
+                reps: '12 - 18s estáticos',
+                restSeconds: 90,
+                substitute: 'Dominadas Estrictas con Pausa de 2s en el Pecho',
+                note: 'Brazos 100% rectos. Retracción escapular activa.'
+              },
+              {
+                name: 'Fondos en Paralelas con Lastre / Excéntrica Lenta',
+                sets: 4,
+                reps: '8 - 10 reps',
+                restSeconds: 90,
+                substitute: 'Flexiones Declinadas o Press Francés Pesado',
+                note: 'Baja profundo hasta 90 grados y sube con bloqueo firme.'
+              },
+              {
+                name: 'Práctica de Handstand en Pared o Suelo',
+                sets: 5,
+                reps: '20 - 30s equilibrio',
+                restSeconds: 60,
+                substitute: 'Pike Pushups en Cajón para Deltoides',
+                note: 'Enfoque en la presión de las yemas de los dedos.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 3: Motor Híbrido & Quema Calórica Zona 2 (20 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'Caminata en Cinta Inclinada (12% inclinación, 4.8 - 5.2 km/h)',
+                sets: 1,
+                reps: '20 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Remo Concept2 o Bicicleta Estática a ritmo constante',
+                note: 'Mantén frecuencia cardíaca en Zona 2 (120-135 bpm) para oxidar grasa pura sin degradar masa muscular.'
+              }
+            ]
+          }
+        ]
+      },
+      home_bars: {
+        title: 'Calistenia de Fuerza & Habilidades en Casa (Barras y Paralelas)',
+        durationMinutes: 65,
+        focus: 'Tensión mecánica en peso corporal, habilidades y volumen de densidad',
+        blocks: [
+          {
+            name: 'Bloque 1: Trucos y Fuerza Estática (25 min)',
+            icon: '⚡',
+            exercises: [
+              {
+                name: 'Práctica de Handstand Kick-ups en Pared',
+                sets: 5,
+                reps: '30s de intentos activos',
+                restSeconds: 75,
+                substitute: 'Wall Walk sostenido 35s',
+                note: 'Hombros bloqueados en protracción.'
+              },
+              {
+                name: 'Front Lever Tuck Holds en Barra',
+                sets: 4,
+                reps: '15s hold',
+                restSeconds: 90,
+                substitute: 'Dragon Flags en suelo o cama',
+                note: 'Codos extendidos sin doblar.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Carga Mecánica & Masa Muscular (25 min)',
+            icon: '💪',
+            exercises: [
+              {
+                name: 'Dominadas Pronas Estrictas en Barra',
+                sets: 4,
+                reps: '8 - 10 reps (opcional mochila con peso)',
+                restSeconds: 90,
+                substitute: 'Dominadas Neutras o Supinas',
+                note: 'Rango completo de movimiento, pecho a la barra.'
+              },
+              {
+                name: 'Fondos Profundos en Barras Paralelas',
+                sets: 4,
+                reps: '12 - 15 reps',
+                restSeconds: 75,
+                substitute: 'Flexiones Diamante en suelo',
+                note: 'Pausa de 1s en la parte baja para estiramiento pectoral.'
+              },
+              {
+                name: 'Sentadillas Búlgaras en Silla / Sofá',
+                sets: 4,
+                reps: '12 por pierna',
+                restSeconds: 60,
+                substitute: 'Pistol Squats asistidas a 1 pierna',
+                note: 'Torso ligeramente inclinado para enfatizar glúteo.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 3: Core Estático & Circuito Metabólico (15 min)',
+            icon: '🔥',
+            exercises: [
+              {
+                name: 'L-Sit en Paralelas / Hollow Body Hold',
+                sets: 4,
+                reps: '25s continuos',
+                restSeconds: 45,
+                substitute: 'Elevaciones de piernas colgado en barra',
+                note: 'Compresión abdominal y flexores de cadera.'
+              },
+              {
+                name: 'Finisher: 100 Flexiones en el menor tiempo posible',
+                sets: 1,
+                reps: '100 reps en micro-series',
+                restSeconds: 0,
+                substitute: 'Tabata de saltos y flexiones',
+                note: 'Congestión máxima de pecho y tríceps.'
+              }
+            ]
+          }
+        ]
+      },
+      travel: {
+        title: 'Calistenia de Altitud Cajabamba & EMOM Explosivo (Cero Equipo)',
+        durationMinutes: 45,
+        focus: 'Potencia explosiva, acondicionamiento y gasto calórico en altura',
+        blocks: [
+          {
+            name: 'Circuito EMOM Pliométrico (30 min)',
+            icon: '🏔️',
+            exercises: [
+              { name: 'Minuto 1: 15 Flexiones Explosivas / Declinadas', sets: 5, reps: '15 reps', restSeconds: 20, substitute: 'Flexiones clásicas', note: 'Potencia de torso sin pesas.' },
+              { name: 'Minuto 2: 20 Sentadillas Profundas con Salto', sets: 5, reps: '20 reps explosivas', restSeconds: 15, substitute: 'Sentadillas profundas sin salto', note: 'Acondicionamiento de piernas en altitud.' },
+              { name: 'Minuto 3: 16 Zancadas Alternadas en Salto', sets: 5, reps: '16 reps', restSeconds: 20, substitute: 'Zancadas estáticas controladas', note: 'Gasto calórico acelerado.' },
+              { name: 'Minuto 4: 15 Pike Pushups (Hombros)', sets: 5, reps: '15 reps', restSeconds: 20, substitute: 'Flexiones diamante', note: 'Simulación de empuje vertical handstand.' },
+              { name: 'Minuto 5: 45s Plancha Dinámica con Toque de Hombros', sets: 5, reps: '45s', restSeconds: 15, substitute: 'Plancha frontal estática', note: 'Estabilidad de core anti-rotación.' },
+              { name: 'Minuto 6: Descanso Activo / Respiración Wim Hof', sets: 5, reps: '60s', restSeconds: 60, substitute: 'Caminata lenta', note: 'Recuperación de oxígeno a 2,654m.' }
+            ]
+          }
+        ]
+      }
+    },
+
+    pareja: {
+      gym: {
+        title: 'Hipertrofia Funcional Atlética: Cero Compresión Axial Lumbar',
+        durationMinutes: 50,
+        focus: 'Glúteos, femoral y espalda con columna 100% protegida y descompresión',
+        blocks: [
+          {
+            name: 'Bloque 1: Cadena Posterior sin Carga Axial (25 min)',
+            icon: '🌸',
+            exercises: [
+              {
+                name: 'Prensa Inclinada de Piernas (Pies altos y separados)',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 90,
+                substitute: 'Hip Thrust en Máquina o Mancuerna Pesada',
+                note: 'Espalda 100% apoyada en el respaldo. Cero presión sobre la columna lumbar.'
+              },
+              {
+                name: 'Sentadilla Búlgara con Mancuernas a los Lados',
+                sets: 3,
+                reps: '10 por pierna',
+                restSeconds: 75,
+                substitute: 'Zancadas Estáticas en Máquina Smith guiada',
+                note: 'Mancuernas colgando a los costados para no cargar la columna vertebral.'
+              },
+              {
+                name: 'Hip Thrust con Barra Acolchada / Banda Elástica',
+                sets: 4,
+                reps: '12 reps (pausa 2s arriba)',
+                restSeconds: 90,
+                substitute: 'Puentes de Glúteo a 1 Pierna en Banco',
+                note: 'Máxima activación de glúteo mayor sin hiperextender la espalda baja.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Tracción Atlética & Core Protector McGill (25 min)',
+            icon: '🧘‍♀️',
+            exercises: [
+              {
+                name: 'Jalón al Pecho Polea Alta (Agarre Neutro)',
+                sets: 4,
+                reps: '10 - 12 reps',
+                restSeconds: 75,
+                substitute: 'Remo en Banco Inclinado con Pecho Apoyado',
+                note: 'Agarre neutro para cuidar hombros y alinear la columna.'
+              },
+              {
+                name: 'Remo con Mancuerna en Banco Inclinado (Pecho Apoyado)',
+                sets: 3,
+                reps: '12 reps',
+                restSeconds: 60,
+                substitute: 'Remo en Polea Baja sentado',
+                note: 'El banco soporta todo el peso corporal; la lumbar queda libre de tensión.'
+              },
+              {
+                name: 'McGill Big 3 (Bird-Dog + Plancha Lateral)',
+                sets: 3,
+                reps: '8 por lado / 30s plancha',
+                restSeconds: 45,
+                substitute: 'Deadbug con respiración diafragmática',
+                note: 'El protocolo clínico de oro para estabilidad lumbar permanente.'
+              }
+            ]
+          }
+        ]
+      },
+      home_bars: {
+        title: 'Calistenia Femenina & Fuerza Funcional en Casa',
+        durationMinutes: 40,
+        focus: 'Glúteos, movilidad articular y tono muscular sin equipamiento pesado',
+        blocks: [
+          {
+            name: 'Rutina Funcional sin Compresión',
+            icon: '🌸',
+            exercises: [
+              { name: 'Puentes de Glúteo a 1 Pierna en Suelo', sets: 4, reps: '15 por lado', restSeconds: 60, substitute: 'Puente bilateral con banda', note: 'Aprieta 2s arriba.' },
+              { name: 'Sentadilla Búlgara en Sofá / Silla', sets: 3, reps: '12 por lado', restSeconds: 60, substitute: 'Sentadilla isométrica contra pared', note: 'Paso largo para enfocar glúteo.' },
+              { name: 'Remo Invertido en Mesa / Banda Elástica', sets: 4, reps: '10 - 12 reps', restSeconds: 60, substitute: 'Jalón con toalla en puerta', note: 'Fortalece espalda media para postura erguida.' },
+              { name: 'Flexiones Inclinadas en Mesa / Barra', sets: 3, reps: '10 reps', restSeconds: 60, substitute: 'Flexiones de rodillas en suelo', note: 'Tono de pecho y tríceps sin sobrecarga.' },
+              { name: 'Estiramiento Profundo de Psoas y Descompresión Lumbar', sets: 3, reps: '45s por lado', restSeconds: 30, substitute: 'Postura del niño (Child pose)', note: 'Alivia dolor lumbar post-viaje.' }
+            ]
+          }
+        ]
+      },
+      travel: {
+        title: 'Movilidad de Viaje & Glúteos Cajabamba (Cero Impacto Lumbar)',
+        durationMinutes: 30,
+        focus: 'Circulación en altitud y activación muscular suave',
+        blocks: [
+          {
+            name: 'Activación & Descompresión de Viaje',
+            icon: '🏔️',
+            exercises: [
+              { name: 'Puentes de Glúteo en Suelo con Pausa', sets: 4, reps: '20 reps', restSeconds: 45, substitute: 'Puente isométrico 40s', note: 'Activa glúteos dormidos por el viaje.' },
+              { name: 'Clamshells (Ostras) para Glúteo Medio', sets: 3, reps: '15 por lado', restSeconds: 30, substitute: 'Abducciones de pie', note: 'Estabiliza la pelvis y previene dolor de ciática.' },
+              { name: 'Bird-Dog de Control Cruzado', sets: 3, reps: '10 por lado lentos', restSeconds: 45, substitute: 'Cat-Cow suave', note: 'Reeducación neuromuscular del core.' },
+              { name: 'Caminata Suave al Aire Libre (Zona 2)', sets: 1, reps: '15 minutos', restSeconds: 0, substitute: 'Movilidad de cadera en colchoneta', note: 'Oxigenación en altura sin fatiga.' }
+            ]
+          }
+        ]
+      }
+    },
+
+    hermana: {
+      gym: {
+        title: 'Movilidad & Tono Suave en Gimnasio (Cero Estrés)',
+        durationMinutes: 35,
+        focus: 'Caminata en inclinación suave y máquinas guiadas de bajo impacto',
+        blocks: [
+          {
+            name: 'Bloque 1: Activación Cardiovascular Amable (15 min)',
+            icon: '🚶‍♀️',
+            exercises: [
+              {
+                name: 'Caminata en Cinta Plana o Ligera Inclinación',
+                sets: 1,
+                reps: '15 minutos continuos',
+                restSeconds: 0,
+                substitute: 'Bicicleta estática con respaldo bajo impacto',
+                note: 'Ritmo suave para activar circulación y sensibilidad a la insulina sin agobio.'
+              }
+            ]
+          },
+          {
+            name: 'Bloque 2: Máquinas Guiadas de Cero Fatiga Articular (20 min)',
+            icon: '🌿',
+            exercises: [
+              {
+                name: 'Prensa Guiada con Carga Muy Ligera',
+                sets: 3,
+                reps: '12 repeticiones cómodas',
+                restSeconds: 60,
+                substitute: 'Sentadillas al aire sobre un banco',
+                note: 'Mantén una respiración tranquila y rango agradable.'
+              },
+              {
+                name: 'Jalón en Polea con Agarre Abierto y Peso Cómodo',
+                sets: 3,
+                reps: '10 repeticiones fluidas',
+                restSeconds: 60,
+                substitute: 'Remo suave con elásticos',
+                note: 'Ayuda a la postura y a abrir el pecho de forma relajada.'
+              }
+            ]
+          }
+        ]
+      },
+      home_bars: {
+        title: 'Movilidad de Bienestar en Casa',
+        durationMinutes: 25,
+        focus: 'Movilidad articular suave, respiración y estiramientos relajantes',
+        blocks: [
+          {
+            name: 'Secuencia Calmante de Movilidad',
+            icon: '🧘‍♀️',
+            exercises: [
+              { name: 'Círculos Suaves de Brazos y Hombros', sets: 3, reps: '10 hacia adelante y atrás', restSeconds: 30, substitute: 'Rotaciones de cuello suaves', note: 'Libera tensión en trapecios.' },
+              { name: 'Estiramiento Suave de Espalda en Silla', sets: 3, reps: '30s por postura', restSeconds: 30, substitute: 'Inclinaciones laterales cómodas', note: 'Flexibilidad sin esfuerzo.' },
+              { name: 'Paseo Suave en Casa o Patio', sets: 1, reps: '10 minutos', restSeconds: 0, substitute: 'Pasos en el sitio con música agradable', note: 'Movimiento gentil y vitalizante.' }
+            ]
+          }
+        ]
+      },
+      travel: {
+        title: 'Paseo Suave & Respiración Reconfortante',
+        durationMinutes: 20,
+        focus: 'Oxigenación y calma corporal',
+        blocks: [
+          {
+            name: 'Bienestar al Aire Libre',
+            icon: '🌿',
+            exercises: [
+              { name: 'Paseo Suave al Aire Libre', sets: 1, reps: '15 minutos', restSeconds: 0, substitute: 'Movilidad en colchoneta suave', note: 'Disfrutar del aire libre a tu propio ritmo.' },
+              { name: 'Respiraciones Profundas Conscientes', sets: 3, reps: '5 ciclos lentos', restSeconds: 30, substitute: 'Estiramiento de brazos al cielo', note: 'Bajar pulsaciones y recargar energía.' }
+            ]
+          }
+        ]
+      }
+    }
+  }
+};
+
+/**
+ * 11. Intelligent Hybrid Workout Auto-Regulation Engine
+ * Dynamically computes readiness based on sleep, fatigue, location, and past volume.
+ */
+export function getHybridWorkoutPrescription({
+  profile = null,
+  sleepHours = 7.5,
+  sleepQuality = 'deep',
+  recentHeavyDays = 0,
+  context = 'gym',
+  durationMode = 'full'
+}) {
+  const profileId = profile?.id || 'andres';
+  const profileRoutines = HYBRID_ATHLETE_SYSTEM.routines[profileId] || HYBRID_ATHLETE_SYSTEM.routines.andres;
+  const routine = profileRoutines[context] || profileRoutines.gym;
+
+  // CNS Readiness Assessment (0 to 100)
+  let readiness = 90;
+  const warnings = [];
+  const recommendations = [];
+
+  if (sleepHours < 6.5) {
+    readiness -= 25;
+    warnings.push(`⚠️ Sueño Corto (${sleepHours}h): Tu sistema nervioso central (SNC) tiene menor velocidad de reclutamiento neuromuscular.`);
+  }
+  if (sleepQuality === 'light') {
+    readiness -= 15;
+    warnings.push('⚠️ Recuperación Inquieta: Menor secreción de hormona de crecimiento en fase de ondas lentas.');
+  }
+
+  if (recentHeavyDays >= 2) {
+    readiness -= 15;
+    recommendations.push('⚡ Tejido Conectivo: Llevas 2 días pesados consecutivos. El sistema híbrido recomienda priorizar Habilidades de Calistenia (Handstand / Front Lever) y Quema Zona 2 para proteger tendones.');
+  }
+
+  let intensityMode = 'Máxima Sobrecarga & Habilidades';
+  let badgeColor = '#10B981';
+
+  if (readiness < 60) {
+    intensityMode = 'Técnica & Descarga Activa';
+    badgeColor = '#F59E0B';
+    recommendations.push('🛡️ Auto-Regulación Activada: Reduce 15% las cargas o enfócate en el Bloque de Habilidades y Movilidad.');
+  } else if (readiness < 75) {
+    intensityMode = 'Hipertrofia Moderada & Habilidades';
+    badgeColor = '#3B82F6';
+  }
+
+  const isExpress = durationMode === 'express';
+  const effectiveMinutes = isExpress ? Math.min(45, routine.durationMinutes) : routine.durationMinutes;
+
+  return {
+    profileId,
+    context,
+    routineTitle: routine.title,
+    durationMinutes: effectiveMinutes,
+    focus: routine.focus,
+    readinessScore: readiness,
+    intensityMode,
+    badgeColor,
+    warnings,
+    recommendations,
+    blocks: routine.blocks || [],
+    skillTree: HYBRID_ATHLETE_SYSTEM.skillTree
+  };
+}
+
+
