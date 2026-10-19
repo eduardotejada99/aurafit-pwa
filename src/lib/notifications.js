@@ -3,6 +3,8 @@
  * Supports Mobile PWA Web Notifications, Service Worker Badging, and Scheduled Background Triggers
  */
 
+import { getLocalDateKey } from './fitness-data.js';
+
 export const DEFAULT_NOTIFICATION_CONFIG = {
   enabled: false,
   waterIntervalMinutes: 60, // 45, 60, 90, 120 or 0 (disabled)
@@ -134,7 +136,7 @@ export async function sendWaterNotification(currentMl = 0, targetMl = 3000) {
  */
 export function evaluateReminders(config, state) {
   const now = Date.now();
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getLocalDateKey();
   const results = { triggerWater: false, triggerCreatine: false };
 
   if (!config || !config.enabled) return results;

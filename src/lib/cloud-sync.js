@@ -1,7 +1,4 @@
-/**
- * AuraFit Cloud Sync Engine (Neon PostgreSQL + Offline-First LocalStorage)
- * Handles bidirectional state synchronization across family devices (Andrés, Pareja, Anicka)
- */
+import { getLocalDateKey } from './fitness-data.js';
 
 export const SYNC_KEYS = {
   FAMILY_PROFILES: 'aurafit_family_profiles',
@@ -114,17 +111,139 @@ export function getLocalSyncBundle(profileKeys = ['andres', 'pareja', 'anicka'])
 }
 
 /**
- * Merge cloud items into local storage safely
+ * Merge cloud items into local storage safely with monotonic data preservation
+ * Prevents offline/stale cloud data from overwriting local non-zero progress
  */
 export function mergeCloudIntoLocalStorage(cloudItems = {}) {
   if (typeof window === 'undefined' || !cloudItems) return { updatedKeys: [] };
 
   const updatedKeys = [];
+  const todayKey = getLocalDateKey();
+
   Object.entries(cloudItems).forEach(([key, val]) => {
     if (val === undefined || val === null) return;
+
     try {
-      const serialized = typeof val === 'string' ? val : JSON.stringify(val);
       const current = localStorage.getItem(key);
+
+      // 1. Water Tracking: Monotonic date-by-date maximum merge (Water never resets to 0 from cloud)
+      if (key.startsWith(SYNC_KEYS.WATER_PREFIX)) {
+        let localObj = {};
+        if (current) {
+          try { localObj = JSON.parse(current); } catch (e) {}
+        }
+        let cloudObj = typeof val === 'object' && val !== null ? val : {};
+        if (typeof val === 'string') {
+          try { cloudObj = JSON.parse(val); } catch (e) {}
+        }
+
+        const mergedWater = { ...localObj };
+        Object.keys(cloudObj).forEach((dateKey) => {
+          const cloudVal = Number(cloudObj[dateKey]) || 0;
+          const localVal = Number(localObj[dateKey]) || 0;
+          mergedWater[dateKey] = Math.max(localVal, cloudVal);
+        });
+
+        const serialized = JSON.stringify(mergedWater);
+        if (current !== serialized) {
+          localStorage.setItem(key, serialized);
+          updatedKeys.push(key);
+        }
+
+        // Also keep daily water key synchronized so today's counter is bulletproof
+        const profileId = key.replace(SYNC_KEYS.WATER_PREFIX, '');
+        const currentDailyRaw = localStorage.getItem(`aurafit_water_daily_${profileId}`);
+        let currentDailyAmount = 0;
+        if (currentDailyRaw) {
+          try {
+            const parsed = JSON.parse(currentDailyRaw);
+            if (parsed.date === todayKey) {
+              currentDailyAmount = parsed.ml ?? parsed.amount ?? 0;
+            }
+          } catch (e) {}
+        }
+        const effectiveTodayWater = Math.max(currentDailyAmount, mergedWater[todayKey] || 0);
+        localStorage.setItem(`aurafit_water_daily_${profileId}`, JSON.stringify({ date: todayKey, ml: effectiveTodayWater }));
+        localStorage.setItem(`aurafit_water_${profileId}`, effectiveTodayWater.toString());
+        return;
+      }
+
+      // 2. Logged Foods: Union merge by item.id so recent meals are never lost
+      if (key.startsWith(SYNC_KEYS.FOODS_PREFIX)) {
+        let localList = [];
+        if (current) {
+          try { localList = JSON.parse(current); } catch (e) {}
+        }
+        let cloudList = Array.isArray(val) ? val : [];
+        if (typeof val === 'string') {
+          try { cloudList = JSON.parse(val); } catch (e) {}
+        }
+
+        const foodMap = new Map();
+        if (Array.isArray(cloudList)) {
+          cloudList.forEach((item) => {
+            if (item && item.id) foodMap.set(String(item.id), item);
+          });
+        }
+        if (Array.isArray(localList)) {
+          localList.forEach((item) => {
+            if (item && item.id) foodMap.set(String(item.id), item);
+          });
+        }
+        const mergedFoods = Array.from(foodMap.values());
+        const serialized = JSON.stringify(mergedFoods);
+        if (current !== serialized) {
+          localStorage.setItem(key, serialized);
+          updatedKeys.push(key);
+        }
+        return;
+      }
+
+      // 3. Habits: Preserve completion checks and custom habits across devices
+      if (key.startsWith(SYNC_KEYS.HABITS_PREFIX)) {
+        let localHabits = [];
+        if (current) {
+          try { localHabits = JSON.parse(current); } catch (e) {}
+        }
+        let cloudHabits = Array.isArray(val) ? val : [];
+        if (typeof val === 'string') {
+          try { cloudHabits = JSON.parse(val); } catch (e) {}
+        }
+
+        const habitMap = new Map();
+        if (Array.isArray(cloudHabits)) {
+          cloudHabits.forEach((h) => {
+            if (h && h.id) habitMap.set(h.id, h);
+          });
+        }
+        if (Array.isArray(localHabits)) {
+          localHabits.forEach((lh) => {
+            if (lh && lh.id) {
+              if (!habitMap.has(lh.id)) {
+                habitMap.set(lh.id, lh);
+              } else {
+                const ch = habitMap.get(lh.id);
+                habitMap.set(lh.id, {
+                  ...ch,
+                  ...lh,
+                  completed: Boolean(lh.completed || ch.completed),
+                  time: lh.time || ch.time
+                });
+              }
+            }
+          });
+        }
+        const mergedHabits = Array.from(habitMap.values());
+        const serialized = JSON.stringify(mergedHabits);
+        if (current !== serialized) {
+          localStorage.setItem(key, serialized);
+          updatedKeys.push(key);
+        }
+        return;
+      }
+
+      // 4. Default: Safe update
+      const serialized = typeof val === 'string' ? val : JSON.stringify(val);
       if (current !== serialized) {
         localStorage.setItem(key, serialized);
         updatedKeys.push(key);

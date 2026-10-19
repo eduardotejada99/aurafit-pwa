@@ -3,6 +3,16 @@
  * Mathematical models, nutritional algorithms, damage control, and workout generators.
  */
 
+// 0. Calendar & Local Timezone Helper (prevents UTC date shifts in Peru / UTC-5)
+export function getLocalDateKey(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // 1. Biometric & Metabolic Formulas (Mifflin-St Jeor)
 export function calculateBMR({ weightKg, heightCm, age = 26, gender = 'male' }) {
   if (!weightKg || !heightCm) return 0;

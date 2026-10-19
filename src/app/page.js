@@ -19,7 +19,8 @@ import {
   HYBRID_ATHLETE_SYSTEM,
   getHybridWorkoutPrescription,
   analyzeWeeklyWorkoutBalance,
-  calculateSystemicPillars
+  calculateSystemicPillars,
+  getLocalDateKey
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
@@ -180,19 +181,22 @@ export default function HomePage() {
   const [todayWorkoutDone, setTodayWorkoutDone] = useState(false);
   const [workoutDurationMins, setWorkoutDurationMins] = useState(45);
 
-  // Active Date Key for 100% Dynamic Day Tracking
-  const [selectedDateKey, setSelectedDateKey] = useState(() => new Date().toISOString().split('T')[0]);
+  // Active Date Key for 100% Dynamic Day Tracking (Local Timezone safe for Peru / UTC-5)
+  const [selectedDateKey, setSelectedDateKey] = useState(() => getLocalDateKey());
   const [waterByDate, setWaterByDate] = useState({});
 
-  const activeDateKey = selectedDateKey || new Date().toISOString().split('T')[0];
-  const activeWaterMl = activeDateKey === new Date().toISOString().split('T')[0] ? waterMl : (waterByDate[activeDateKey] || 0);
+  const activeDateKey = selectedDateKey || getLocalDateKey();
+  const todayDateKey = getLocalDateKey();
+  const activeWaterMl = activeDateKey === todayDateKey
+    ? Math.max(waterMl, waterByDate[todayDateKey] || 0)
+    : (waterByDate[activeDateKey] || 0);
 
   // Daily Logged Foods State (persistent per profile)
   const [loggedFoods, setLoggedFoods] = useState([]);
 
   // Dynamically filtered foods for the active selected day and active profile
   const activeDayFoods = useMemo(() => {
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = getLocalDateKey();
     const targetKey = selectedDateKey || todayKey;
     return loggedFoods.filter((item) => {
       // Strict multi-user profile isolation: items must match activeProfileId
@@ -509,9 +513,24 @@ export default function HomePage() {
       setIsSyncing(true);
       setCloudStatus('syncing');
       try {
-        const res = await pullCloudData(activeKey);
+        const currentActiveProfile = localStorage.getItem('aurafit_active_profile') || activeKey;
+
+        // 1. Push any local changes to cloud first so local entries are safely stored
+        const localBundle = getLocalSyncBundle(Object.keys(FAMILY_PROFILES));
+        if (Object.keys(localBundle).length > 0) {
+          try {
+            await fetch('/api/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ bundle: localBundle, updatedBy: `${currentActiveProfile}-seed` })
+            });
+          } catch (e) {}
+        }
+
+        // 2. Pull latest state from cloud and merge monotonically
+        const res = await pullCloudData(currentActiveProfile);
         if (res && res.ok && res.items && Object.keys(res.items).length > 0) {
-          // Merge cloud data into localStorage
+          // Merge cloud data into localStorage safely
           mergeCloudIntoLocalStorage(res.items);
 
           if (res.items[SYNC_KEYS.FAMILY_PROFILES]) {
@@ -545,19 +564,10 @@ export default function HomePage() {
           }
 
           // Reload active profile data with merged cloud items
-          loadProfileData(activeKey);
+          loadProfileData(currentActiveProfile);
           setCloudStatus('synced');
           setLastSyncTime(new Date());
         } else if (res && res.ok) {
-          // Database was empty: Seed initial cloud database with local state!
-          const localBundle = getLocalSyncBundle(Object.keys(FAMILY_PROFILES));
-          if (Object.keys(localBundle).length > 0) {
-            await fetch('/api/sync', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ bundle: localBundle, updatedBy: 'initial-seed' })
-            });
-          }
           setCloudStatus('synced');
           setLastSyncTime(new Date());
         } else {
@@ -573,13 +583,14 @@ export default function HomePage() {
 
     doInitialCloudSync();
 
-    // Auto-pull when user returns to app
+    // Auto-pull when user returns to app (strictly targeting current active profile)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        pullCloudData(activeKey).then((res) => {
+        const currentActiveProfile = localStorage.getItem('aurafit_active_profile') || 'andres';
+        pullCloudData(currentActiveProfile).then((res) => {
           if (res && res.ok && res.items && Object.keys(res.items).length > 0) {
             mergeCloudIntoLocalStorage(res.items);
-            loadProfileData(activeKey);
+            loadProfileData(currentActiveProfile);
             setCloudStatus('synced');
             setLastSyncTime(new Date());
           }
@@ -703,7 +714,7 @@ export default function HomePage() {
 
       if (triggerCreatine) {
         await sendCreatineNotification();
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getLocalDateKey();
         setNotificationConfig((prev) => {
           const updated = { ...prev, lastCreatineNotifiedDate: todayKey };
           try {
@@ -863,7 +874,7 @@ export default function HomePage() {
       // 4. Set logged foods - strictly to this profile's foods (empty array if no foods logged yet)
       setLoggedFoods(savedFoods);
 
-      const todayKey = new Date().toISOString().split('T')[0];
+      const todayKey = getLocalDateKey();
 
       // 4. Habits daily reset check (Preserve custom habits, reset daily completion checks!)
       const savedHabits = localStorage.getItem(`aurafit_habits_${profileKey}`);
@@ -887,7 +898,7 @@ export default function HomePage() {
         setHabits(prof.habits || []);
       }
 
-      // 5. Water by date tracker: Starts at 0 every single day!
+      // 5. Water by date tracker: Starts at 0 on a brand new day, but strictly preserves any recorded water
       const savedWaterByDate = localStorage.getItem(`aurafit_water_by_date_${profileKey}`);
       let parsedWaterByDate = {};
       if (savedWaterByDate) {
@@ -896,20 +907,17 @@ export default function HomePage() {
       setWaterByDate(parsedWaterByDate);
 
       const savedWaterDaily = localStorage.getItem(`aurafit_water_daily_${profileKey}`);
+      let dailyWater = 0;
       if (savedWaterDaily) {
         try {
           const parsed = JSON.parse(savedWaterDaily);
-          if (parsed.date === todayKey && typeof parsed.ml === 'number') {
-            setWaterMl(parsed.ml);
-          } else {
-            setWaterMl(parsedWaterByDate[todayKey] || 0);
+          if (parsed.date === todayKey && (typeof parsed.ml === 'number' || typeof parsed.amount === 'number')) {
+            dailyWater = parsed.ml ?? parsed.amount ?? 0;
           }
-        } catch (e) {
-          setWaterMl(0);
-        }
-      } else {
-        setWaterMl(parsedWaterByDate[todayKey] || 0);
+        } catch (e) {}
       }
+      const finalTodayWater = Math.max(dailyWater, parsedWaterByDate[todayKey] || 0);
+      setWaterMl(finalTodayWater);
 
       // 6. Sleep & Recovery State for current profile (checked by date)
       const savedSleep = localStorage.getItem(`aurafit_sleep_${profileKey}`);
@@ -974,7 +982,7 @@ export default function HomePage() {
           let streak = 0;
           let checkDate = new Date();
           while (true) {
-            const k = checkDate.toISOString().split('T')[0];
+            const k = getLocalDateKey(checkDate);
             if (days.includes(k)) {
               streak++;
               checkDate.setDate(checkDate.getDate() - 1);
@@ -1015,9 +1023,17 @@ export default function HomePage() {
 
   const executeProfileSwitch = (newId) => {
     if (!familyProfiles[newId]) return;
-    // CRITICAL: Persist current profile's logged foods before switching!
+    // CRITICAL: Persist current profile's logged foods and water before switching!
     try {
       localStorage.setItem(`aurafit_foods_${activeProfileId}`, JSON.stringify(loggedFoods || []));
+      const todayKey = getLocalDateKey();
+      if (waterMl > 0) {
+        localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: waterMl }));
+        localStorage.setItem(`aurafit_water_${activeProfileId}`, waterMl.toString());
+        const mergedWater = { ...waterByDate, [todayKey]: waterMl };
+        localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(mergedWater));
+        queueCloudSync(`aurafit_water_by_date_${activeProfileId}`, mergedWater, activeProfileId);
+      }
     } catch (e) {}
 
     setActiveProfileId(newId);
@@ -1302,7 +1318,7 @@ export default function HomePage() {
 
   const handleRegisterFoodFromSearch = (food, slot = 'snack', grams = 50) => {
     const scale = grams / (food.grams || 100);
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
     const newEntry = {
       id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       profileId: activeProfileId,
@@ -1339,7 +1355,7 @@ export default function HomePage() {
     if (!typedName || !typedName.trim()) return;
     const nameClean = typedName.trim();
     const parsedList = parseNaturalLanguageFood(nameClean);
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
 
     if (parsedList && parsedList.length > 0) {
       const newEntries = parsedList.map((first, idx) => ({
@@ -1399,7 +1415,7 @@ export default function HomePage() {
 
   const handleQuickLogPeruvianMenu = (menuItem, slot = 'comida') => {
     if (!menuItem) return;
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
     const newEntry = {
       id: `menu-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       profileId: activeProfileId,
@@ -1436,7 +1452,7 @@ export default function HomePage() {
   };
 
   const handleConfirmTextLog = (detectedList, slot = 'snack') => {
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
     if (!detectedList || detectedList.length === 0) {
       // Create fallback item from raw text
       const rawEntry = {
@@ -1500,7 +1516,7 @@ export default function HomePage() {
 
   const handleAddCompensatoryMeal = (option) => {
     const slot = option.mealSlot.toLowerCase().includes('cena') ? 'cena' : option.mealSlot.toLowerCase().includes('comida') ? 'comida' : 'snack';
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
     const newItems = option.foodItemsToAdd.map((food, idx) => ({
       id: `comp-${Date.now()}-${idx}`,
       profileId: activeProfileId,
@@ -1554,7 +1570,7 @@ export default function HomePage() {
     const scaledF = Math.round(baseF * mult * 10) / 10;
     const scaledCal = Math.round(baseCal * mult);
     const scaledG = Math.round(baseG * mult);
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
 
     const newEntry = {
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -1581,7 +1597,7 @@ export default function HomePage() {
 
   // Safe Multi-User Couple Serving Handler (1 Sartén, 2 Porciones Independientes)
   const handleServeCouplePortion = (targetProfileKey, portionData) => {
-    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const targetDate = selectedDateKey || getLocalDateKey();
     const newEntry = {
       id: `couple-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       profileId: targetProfileKey,
@@ -1684,7 +1700,7 @@ export default function HomePage() {
         return h;
       });
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getLocalDateKey();
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
@@ -1711,7 +1727,7 @@ export default function HomePage() {
     setHabits((prev) => {
       const next = [...prev, habitToAdd];
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getLocalDateKey();
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
@@ -1728,7 +1744,7 @@ export default function HomePage() {
     setHabits((prev) => {
       const next = prev.filter((h) => h.id !== habitId);
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getLocalDateKey();
         localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
         localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
         localStorage.setItem('aurafit_habits', JSON.stringify(next));
@@ -1741,7 +1757,7 @@ export default function HomePage() {
 
   const recordActivityToday = () => {
     try {
-      const todayKey = new Date().toISOString().split('T')[0];
+      const todayKey = getLocalDateKey();
       const savedRaw = localStorage.getItem(`aurafit_activity_days_${activeProfileId}`);
       let days = [];
       if (savedRaw) {
@@ -1755,7 +1771,7 @@ export default function HomePage() {
         let streak = 0;
         let checkDate = new Date();
         while (true) {
-          const k = checkDate.toISOString().split('T')[0];
+          const k = getLocalDateKey(checkDate);
           if (days.includes(k)) {
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
@@ -1771,41 +1787,77 @@ export default function HomePage() {
   };
 
   const addWater = (ml) => {
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = getLocalDateKey();
     const targetKey = selectedDateKey || todayKey;
-    setWaterMl((prev) => {
-      const current = targetKey === todayKey ? prev : (waterByDate[targetKey] || 0);
-      const maxWater = (currentProfile.waterDailyMl || 3000) + 1500;
-      const updated = Math.min(current + ml, maxWater);
+
+    // Retrieve fresh water records from state or localStorage
+    let currentByDate = { ...waterByDate };
+    if (Object.keys(currentByDate).length === 0 && typeof window !== 'undefined') {
       try {
+        const raw = localStorage.getItem(`aurafit_water_by_date_${activeProfileId}`);
+        if (raw) currentByDate = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    const currentAmount = targetKey === todayKey
+      ? Math.max(waterMl, currentByDate[todayKey] || 0)
+      : (currentByDate[targetKey] || 0);
+
+    const maxWater = (currentProfile.waterDailyMl || 3000) + 1500;
+    const updated = Math.min(currentAmount + ml, maxWater);
+    const updatedByDate = { ...currentByDate, [targetKey]: updated };
+
+    // Update React states cleanly outside setter reducers
+    if (targetKey === todayKey) {
+      setWaterMl(updated);
+    }
+    setWaterByDate(updatedByDate);
+
+    // Atomically persist to localStorage & cloud
+    try {
+      if (typeof window !== 'undefined') {
         if (targetKey === todayKey) {
           localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: updated }));
           localStorage.setItem(`aurafit_water_${activeProfileId}`, updated.toString());
         }
-        const updatedByDate = { ...waterByDate, [targetKey]: updated };
-        setWaterByDate(updatedByDate);
         localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
         queueCloudSync(`aurafit_water_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
-      } catch (e) {}
-      recordActivityToday();
-      return targetKey === todayKey ? updated : prev;
-    });
+      }
+    } catch (e) {
+      console.warn('Error saving water:', e);
+    }
+
+    recordActivityToday();
     showToast(`💧 +${ml} ml de agua registrados.`);
   };
 
   const handleResetWater = () => {
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = getLocalDateKey();
     const targetKey = selectedDateKey || todayKey;
-    if (targetKey === todayKey) setWaterMl(0);
-    const updatedByDate = { ...waterByDate, [targetKey]: 0 };
+
+    let currentByDate = { ...waterByDate };
+    if (Object.keys(currentByDate).length === 0 && typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(`aurafit_water_by_date_${activeProfileId}`);
+        if (raw) currentByDate = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    const updatedByDate = { ...currentByDate, [targetKey]: 0 };
+    if (targetKey === todayKey) {
+      setWaterMl(0);
+    }
     setWaterByDate(updatedByDate);
+
     try {
-      if (targetKey === todayKey) {
-        localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: 0 }));
-        localStorage.setItem(`aurafit_water_${activeProfileId}`, '0');
+      if (typeof window !== 'undefined') {
+        if (targetKey === todayKey) {
+          localStorage.setItem(`aurafit_water_daily_${activeProfileId}`, JSON.stringify({ date: todayKey, ml: 0 }));
+          localStorage.setItem(`aurafit_water_${activeProfileId}`, '0');
+        }
+        localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+        queueCloudSync(`aurafit_water_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
       }
-      localStorage.setItem(`aurafit_water_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
-      queueCloudSync(`aurafit_water_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
     } catch (e) {}
     showToast('💧 Contador de agua reiniciado a 0 ml.');
   };
@@ -1814,7 +1866,7 @@ export default function HomePage() {
     setSleepHours((prev) => {
       const next = Math.min(12, Math.max(4, Math.round((prev + delta) * 10) / 10));
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getLocalDateKey();
         localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: next, quality: sleepQuality }));
         queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayKey, hours: next, quality: sleepQuality }, activeProfileId);
       } catch (e) {}
@@ -1825,7 +1877,7 @@ export default function HomePage() {
   const handleSetSleepQuality = (qual) => {
     setSleepQuality(qual);
     try {
-      const todayKey = new Date().toISOString().split('T')[0];
+      const todayKey = getLocalDateKey();
       localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: sleepHours, quality: qual }));
       queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayKey, hours: sleepHours, quality: qual }, activeProfileId);
     } catch (e) {}
@@ -1835,7 +1887,7 @@ export default function HomePage() {
   const handleToggleTodayWorkout = () => {
     setTodayWorkoutDone((prev) => {
       const next = !prev;
-      const todayKey = new Date().toISOString().split('T')[0];
+      const todayKey = getLocalDateKey();
       try {
         localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: next, minutes: workoutDurationMins }));
         queueCloudSync(`aurafit_workout_${activeProfileId}`, { date: todayKey, done: next, minutes: workoutDurationMins }, activeProfileId);
@@ -1881,7 +1933,7 @@ export default function HomePage() {
   const handleToggleMissedDay = () => {
     const nextMissed = !isMissedDay;
     setIsMissedDay(nextMissed);
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = getLocalDateKey();
 
     if (nextMissed) {
       setSelectedSplit('home_core');
@@ -1917,7 +1969,7 @@ export default function HomePage() {
     setWorkoutDurationMins((prev) => {
       const next = Math.min(120, Math.max(15, prev + delta));
       try {
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getLocalDateKey();
         localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: todayWorkoutDone, minutes: next }));
       } catch (e) {}
       return next;
@@ -1975,8 +2027,8 @@ export default function HomePage() {
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      const dateKey = d.toISOString().split('T')[0];
-      const isToday = d.toDateString() === now.toDateString();
+      const dateKey = getLocalDateKey(d);
+      const isToday = dateKey === getLocalDateKey(now);
       const num = d.getDate();
 
       const weekLog = weeklyWorkoutLogs[dateKey];
@@ -2204,7 +2256,7 @@ export default function HomePage() {
         {activeTab === 'nutrition' && (
           <>
             {/* Dynamic Date Selection Indicator */}
-            {selectedDateKey !== new Date().toISOString().split('T')[0] && (
+            {selectedDateKey !== getLocalDateKey() && (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -2224,7 +2276,7 @@ export default function HomePage() {
                   onClick={() => {
                     const today = new Date();
                     setSelectedDay(today.getDate());
-                    setSelectedDateKey(today.toISOString().split('T')[0]);
+                    setSelectedDateKey(getLocalDateKey(today));
                   }}
                   style={{
                     background: '#3B82F6',
@@ -3807,7 +3859,7 @@ export default function HomePage() {
                       onClick={() => {
                         setSleepHours(val);
                         try {
-                          const todayKey = new Date().toISOString().split('T')[0];
+                          const todayKey = getLocalDateKey();
                           localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: val, quality: sleepQuality }));
                         } catch (e) {}
                       }}
