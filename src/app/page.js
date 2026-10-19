@@ -1158,8 +1158,9 @@ export default function HomePage() {
       localStorage.setItem(`aurafit_selected_split_${activeProfileId}`, splitId);
       localStorage.removeItem(`aurafit_missed_day_${activeProfileId}`);
     } catch (e) {}
-    const splitTitle = HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[splitId]?.title || splitId;
-    showToast(`🎯 Split de entrenamiento activo: ${splitTitle.split('(')[0].trim()}`);
+    const splitObj = HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[splitId];
+    const splitTitle = splitObj?.shortName || splitObj?.name || splitId;
+    showToast(`🎯 Split de entrenamiento activo: ${splitTitle}`);
   };
 
   const handleToggleMissedDay = () => {
@@ -1549,7 +1550,7 @@ export default function HomePage() {
                 <h4 style={{ fontSize: '13px', fontWeight: 900, margin: '2px 0 3px', color: 'var(--text-main)' }}>
                   {isMissedDay 
                     ? 'Día Ocupado: Sensibilidad a la Insulina & Core Express' 
-                    : `Combustible para: ${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[selectedSplit || (activeProfileId === 'andres' ? 'legs' : 'glutes_legs')]?.title?.split('(')[0] || 'Entrenamiento del Día'}`}
+                    : `Combustible para: ${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[selectedSplit || (activeProfileId === 'andres' ? 'legs' : 'glutes_legs')]?.shortName || 'Entrenamiento del Día'}`}
                 </h4>
                 <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.35 }}>
                   {isMissedDay 
@@ -3215,7 +3216,7 @@ export default function HomePage() {
                     }}
                     onClick={() => handleSelectSplit(weeklyWorkoutBalance.recommendedSplit)}
                   >
-                    ⚡ Aplicar Split Recomendado ({HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.title?.split('(')[0]?.trim() || weeklyWorkoutBalance.recommendedSplit})
+                    ⚡ Aplicar Split Recomendado ({HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || weeklyWorkoutBalance.recommendedSplit})
                   </button>
                 )}
               </div>
@@ -3258,7 +3259,7 @@ export default function HomePage() {
                       >
                         <span style={{ fontSize: '16px' }}>{sObj.icon || '⚡'}</span>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {sObj.title.split('(')[0].trim()}
+                          {sObj.shortName || sObj.name || sKey}
                         </span>
                       </button>
                     );
