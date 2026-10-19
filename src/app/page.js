@@ -3193,11 +3193,11 @@ export default function HomePage() {
                     📊 Balance Semanal Adaptativo
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {weeklyWorkoutBalance.summary}
+                    Piernas: {weeklyWorkoutBalance.legsCount || 0} · Empuje: {weeklyWorkoutBalance.pushCount || 0} · Tracción: {weeklyWorkoutBalance.pullCount || 0}
                   </span>
                 </div>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
-                  {weeklyWorkoutBalance.recommendation}
+                  {weeklyWorkoutBalance.weeklySummaryText}
                 </p>
                 {weeklyWorkoutBalance.recommendedSplit && selectedSplit !== weeklyWorkoutBalance.recommendedSplit && !isMissedDay && (
                   <button
@@ -3332,17 +3332,17 @@ export default function HomePage() {
                     borderRadius: '999px',
                     border: '1px solid var(--fitia-green)'
                   }}>
-                    {systemicPillars.totalScore}/100 PTS
+                    {systemicPillars.totalAuraScore || 70}/100 PTS
                   </div>
                 </div>
 
                 {/* 4 Pillars Mini Gauges */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                   {[
-                    { name: 'Nutrición', pts: systemicPillars.pillars.nutrition.points, icon: '🥗', color: '#10B981' },
-                    { name: 'Fuerza', pts: systemicPillars.pillars.workout.points, icon: '🦁', color: '#F97316' },
-                    { name: 'Sueño/SNC', pts: systemicPillars.pillars.sleep.points, icon: '💤', color: '#6366F1' },
-                    { name: 'Hábitos', pts: systemicPillars.pillars.habits.points, icon: '🧘', color: '#3B82F6' }
+                    { name: 'Nutrición', pts: systemicPillars.breakdown?.nutrition ?? 15, icon: '🥗', color: '#10B981' },
+                    { name: 'Fuerza', pts: systemicPillars.breakdown?.workout ?? 15, icon: '🦁', color: '#F97316' },
+                    { name: 'Sueño/SNC', pts: systemicPillars.breakdown?.sleep ?? 20, icon: '💤', color: '#6366F1' },
+                    { name: 'Hábitos', pts: systemicPillars.breakdown?.habits ?? 15, icon: '🧘', color: '#3B82F6' }
                   ].map((p, pIdx) => (
                     <div key={pIdx} style={{
                       background: 'var(--bg-card-subtle)',
@@ -3359,18 +3359,22 @@ export default function HomePage() {
                 </div>
 
                 {/* Dynamic Cross-Pillar Synergies */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {systemicPillars.synergies.map((syn, sIdx) => (
-                    <div key={sIdx} style={{
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {(systemicPillars.synergies || []).map((syn, sIdx) => (
+                    <div key={syn.id || sIdx} style={{
                       background: 'var(--bg-card-subtle)',
                       borderLeft: '3px solid var(--fitia-green)',
                       padding: '8px 10px',
                       borderRadius: '0 8px 8px 0',
                       fontSize: '11.5px',
-                      color: 'var(--text-main)',
                       lineHeight: 1.35
                     }}>
-                      {syn}
+                      <div style={{ fontWeight: 800, color: 'var(--text-main)', marginBottom: '2px' }}>
+                        {syn.icon} {syn.title}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)' }}>
+                        {syn.text}
+                      </div>
                     </div>
                   ))}
                 </div>
