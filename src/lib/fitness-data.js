@@ -606,8 +606,9 @@ export const FAMILY_PROFILES = {
 
   hermana: {
     id: 'hermana',
-    name: 'Mi Hermana',
-    role: 'Bienestar, Movilidad & Vitalidad',
+    name: 'Anicka (Hermana)',
+    shortName: 'Anicka',
+    role: 'Bienestar, Movilidad & Vitalidad Amable',
     avatar: '🌿',
     pin: '9012',
     gender: 'female',
@@ -1166,6 +1167,87 @@ export const PANTRY_DATABASE = [
       'Vierte los 2 huevos batidos, revuelve suavemente 2 minutos y retira jugoso.'
     ],
     tags: ['cena', 'alta_proteina', 'insulin_sensitivity']
+  },
+  {
+    id: 'meal-jugo-verde',
+    name: 'Jugo Verde Biohacking & Desinflamante SNC',
+    title: 'Jugo Verde Biohacking & Desinflamante SNC',
+    icon: '🥬',
+    requiredIngredients: ['espinaca', 'manzana', 'limon'],
+    prepMinutes: 5,
+    difficulty: 'Fácil',
+    calories: 95,
+    protein: 3,
+    proteinG: 3,
+    carbs: 20,
+    carbsG: 20,
+    fat: 0.5,
+    fatG: 0.5,
+    suggestedSlot: 'desayuno',
+    portionDidactic: '1 vaso generoso (350ml): espinaca tierna, apio crujiente, 1/2 manzana verde, zumo de limón y kion',
+    didacticWhy: '🌱 Clorofila, polifenoles y magnesio bioasimilable. Reduce el cortisol matutino, limpia el tracto digestivo y oxigena en altura Cajabamba.',
+    description: 'Espinacas frescas, apio, manzana verde crujiente, toque de kion y limón recién exprimido.',
+    chefTip: 'Tómalo recién licuado con unos cubos de hielo para conservar intactas las enzimas vivas y la vitamina C.',
+    instructions: [
+      'Lava bien 2 tazas de espinaca y 1 tallo de apio fresco.',
+      'Coloca en la licuadora con media manzana verde picada, un trocito pequeño de kion y 200ml de agua fría.',
+      'Licúa a máxima potencia 1 minuto, exprime el zumo de medio limón y sirve sin colar para aprovechar la fibra.'
+    ],
+    tags: ['desayuno', 'snack', 'biohacking', 'alcalinizante', 'desinflamacion']
+  },
+  {
+    id: 'meal-humitas-andinas',
+    name: 'Humitas Andinas Caseras con Queso Fresco',
+    title: 'Humitas Andinas Caseras con Queso Fresco',
+    icon: '🌽',
+    requiredIngredients: ['choclo', 'queso', 'leche'],
+    prepMinutes: 15,
+    difficulty: 'Medio',
+    calories: 280,
+    protein: 10,
+    proteinG: 10,
+    carbs: 42,
+    carbsG: 42,
+    fat: 8,
+    fatG: 8,
+    suggestedSlot: 'desayuno',
+    portionDidactic: '1 humita tradicional (120g) calentada al vapor + 40g de queso fresco serrano',
+    didacticWhy: '🌽 Choclo tierno andino de bajo impacto glucémico combinado con calcio y caseína de queso fresco para energía sostenida.',
+    description: 'Humita de choclo tierno peruano con anís y canela, servida con lonjas de queso fresco serrano.',
+    chefTip: 'Calienta la humita a baño maría o en vaporera para mantener la masa húmeda, suave y aromática.',
+    instructions: [
+      'Calienta la humita al vapor en una ollita tapada durante 8-10 minutos.',
+      'Corta 40g de queso fresco serrano en láminas.',
+      'Desenvuelve la humita caliente y acompaña con el queso fresco y una infusión caliente de hierbas.'
+    ],
+    tags: ['desayuno', 'snack', 'peruano', 'tradicional', 'andino']
+  },
+  {
+    id: 'meal-tamal-criollo',
+    name: 'Tamal Criollo Tradicional con Pollo',
+    title: 'Tamal Criollo Tradicional con Pollo',
+    icon: '🫔',
+    requiredIngredients: ['maiz', 'pollo', 'huevo'],
+    prepMinutes: 10,
+    difficulty: 'Fácil',
+    calories: 340,
+    protein: 16,
+    proteinG: 16,
+    carbs: 38,
+    carbsG: 38,
+    fat: 14,
+    fatG: 14,
+    suggestedSlot: 'desayuno',
+    portionDidactic: '1 tamal mediano (160g) de masa de maíz amarillo, pechuga de pollo, huevo duro y salsa criolla suave',
+    didacticWhy: '🇵🇪 Desayuno dominguero peruano clásico: energía de liberación lenta del maíz amarillo molido con proteína magra.',
+    description: 'Tamal criollo tradicional relleno de pechuga de pollo, ají amarillo y aceituna botija.',
+    chefTip: 'Prepara una salsa criolla rápida con cebolla roja en pluma fina, bastante limón y unas hojas de culantro para cortar la grasa.',
+    instructions: [
+      'Calienta el tamal al vapor con su panca durante 8 a 10 minutos.',
+      'Prepara la salsa criolla mezclando cebolla en juliana con sal, limón y ají limo picado.',
+      'Abre la panca del tamal caliente y corona con la salsa criolla fresca.'
+    ],
+    tags: ['desayuno', 'comida', 'peruano', 'tradicional', 'criollo']
   }
 ];
 
@@ -1568,6 +1650,384 @@ export const HYBRID_ATHLETE_SYSTEM = {
           commonMistake: 'Flexión micro de codo por fatiga de tendones.'
         }
       ]
+    }
+  },
+
+  skillTrees: {
+    andres: {
+      handstand: {
+        id: 'handstand',
+        name: 'Parada de Manos (Handstand)',
+        icon: '🤸‍♂️',
+        targetMuscle: 'Hombros, trapecio, muñecas y core anterior',
+        description: 'Habilidad reina de empuje vertical y equilibrio neurológico.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Wall Walk & Pecho a la Pared',
+            target: '4 series × 30–45s hold',
+            restSeconds: 90,
+            difficulty: 'Novato',
+            cues: 'Sube los pies por la pared hasta que el pecho casi la toque. Empuja el piso con fuerza, mete la pelvis y aprieta glúteos.',
+            commonMistake: 'Quebrar la espalda baja formando una curva de plátano.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Despegue de Talones (Heel Taps)',
+            target: '4 series × 8–10 despegues controlados',
+            restSeconds: 90,
+            difficulty: 'Intermedio',
+            cues: 'Desde la pared, usa las yemas de los dedos como frenos para despegar un talón unos centímetros y buscar el punto de equilibrio.',
+            commonMistake: 'Patear con violencia en lugar de empujar con las manos.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Handstand Libre (Freestanding)',
+            target: '5 intentos × 10–25s hold',
+            restSeconds: 120,
+            difficulty: 'Avanzado',
+            cues: 'Entrada controlada con tijera suave. Dedos como garras en el suelo. Mirada fija entre los pulgares.',
+            commonMistake: 'Contener la respiración durante el equilibrio.'
+          }
+        ]
+      },
+      front_lever: {
+        id: 'front_lever',
+        name: 'Front Lever (Palanca Frontal)',
+        icon: '⚡',
+        targetMuscle: 'Dorsal ancho, redondo mayor, tríceps largo y core',
+        description: 'Palanca estática de tracción con brazos rectos más estética de la calistenia.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Tuck Front Lever Hold',
+            target: '4 series × 15–20s',
+            restSeconds: 90,
+            difficulty: 'Novato',
+            cues: 'Colgado de la barra con codos 100% bloqueados, pega las rodillas al pecho y deprime las escápulas.',
+            commonMistake: 'Flexionar los codos; esto convierte el ejercicio en una dominada.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Advanced Tuck Front Lever',
+            target: '4 series × 10–15s',
+            restSeconds: 120,
+            difficulty: 'Intermedio',
+            cues: 'Abre las rodillas a 90 grados respecto al torso. La espalda debe quedar 100% horizontal paralela al suelo.',
+            commonMistake: 'Dejar que la cadera caiga por debajo de la línea de los hombros.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: One-Leg / Straddle Front Lever',
+            target: '4 series × 6–10s estricto',
+            restSeconds: 120,
+            difficulty: 'Avanzado',
+            cues: 'Extiende una pierna completamente recta mientras mantienes la otra doblada, o abre en tijera horizontal (straddle).',
+            commonMistake: 'Mirar hacia abajo perdiendo la alineación de la columna torácica.'
+          },
+          {
+            level: 4,
+            title: 'Nivel 4: Full Front Lever de Dejan Stipke',
+            target: '3 series × 5–8s congelado en el aire',
+            restSeconds: 150,
+            difficulty: 'Master',
+            cues: 'Cuerpo como una tabla de acero. Máxima tensión en dorsales y activación del transverso abdominal.',
+            commonMistake: 'Dejar caer la cadera al final por fatiga escapular.'
+          }
+        ]
+      },
+      muscle_up: {
+        id: 'muscle_up',
+        name: 'Bar Muscle-Up (Transición Explosiva)',
+        icon: '🦁',
+        targetMuscle: 'Dorsales, bíceps, pecho y tríceps (fuerza dinámica)',
+        description: 'La transición icónica de tracción a empuje vertical sobre la barra.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Dominadas Altas al Pecho / Esternón',
+            target: '4 series × 5 reps explosivas',
+            restSeconds: 90,
+            difficulty: 'Novato',
+            cues: 'Tracción ultra explosiva llevando la barra hasta tocar la parte baja del pecho.',
+            commonMistake: 'Tirar lento hacia la barbilla sin aceleración vertical.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Fondos en Barra Recta (Straight Bar Dips)',
+            target: '4 series × 8–10 reps profundas',
+            restSeconds: 90,
+            difficulty: 'Intermedio',
+            cues: 'Apoya el abdomen superior en la barra y baja profundo hasta que el pecho casi la toque, subiendo con bloqueo firme.',
+            commonMistake: 'Inclinarse excesivamente hacia adelante perdiendo el equilibrio.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Strict Bar Muscle-Up (Cero Kipping)',
+            target: '4 series × 3–5 reps limpias',
+            restSeconds: 120,
+            difficulty: 'Avanzado',
+            cues: 'Tracción curva en C, transición rápida de muñecas hacia adelante y empuje vertical fluido.',
+            commonMistake: 'Subir con un solo codo primero (chicken wing).'
+          }
+        ]
+      },
+      planche: {
+        id: 'planche',
+        name: 'Planche (Plancha Calisténica)',
+        icon: '🏆',
+        targetMuscle: 'Deltoides anterior, bíceps, muñecas y serrato anterior',
+        description: 'La máxima expresión de fuerza de empuje con brazos rectos.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Planche Lean en Suelo / Paralelas',
+            target: '4 series × 20–30s hold con inclinación máxima',
+            restSeconds: 90,
+            difficulty: 'Novato',
+            cues: 'En plancha alta, empuja el suelo hacia abajo e inclina los hombros más allá de las muñecas.',
+            commonMistake: 'Doblar los codos o dejar caer la pelvis.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Tuck Planche en Paralelas Cortas',
+            target: '4 series × 10–15s suspendido',
+            restSeconds: 120,
+            difficulty: 'Intermedio',
+            cues: 'Eleva las rodillas hacia el pecho manteniendo los pies en el aire sin tocar el suelo.',
+            commonMistake: 'Hombros por detrás de las muñecas.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Advanced Tuck / Straddle Planche',
+            target: '3–4 series × 6–10s estricto',
+            restSeconds: 150,
+            difficulty: 'Avanzado',
+            cues: 'Abre el ángulo cadera-torso a 90 grados o abre las piernas en V. Escápulas separadas y codos de acero.',
+            commonMistake: 'Flexión micro de codo por fatiga.'
+          }
+        ]
+      }
+    },
+    pareja: {
+      hip_thrust: {
+        id: 'hip_thrust',
+        name: 'Puentes & Hip Thrust Seguro',
+        icon: '🍑',
+        targetMuscle: 'Glúteo mayor, isquiotibiales y core posterior',
+        description: 'Progresión rey para glúteos firmes con cero impacto sobre la columna lumbar.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Puentes de Glúteo en Suelo con Pausa',
+            target: '3 series × 15–20 reps (pausa 2s)',
+            restSeconds: 45,
+            difficulty: 'Novato',
+            cues: 'Apoya pies firmes, eleva la pelvis apretando glúteos en el punto alto sin arquear la cintura.',
+            commonMistake: 'Subir hiper-extendiendo la zona lumbar en vez de empujar con los glúteos.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Puente Unilateral / con Banda Elástica',
+            target: '3 series × 12 por pierna',
+            restSeconds: 60,
+            difficulty: 'Intermedio',
+            cues: 'Coloca una mini-banda arriba de las rodillas empujando hacia afuera mientras subes.',
+            commonMistake: 'Dejar que las rodillas se cierren hacia adentro.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Hip Thrust en Banco con Barra Acolchada',
+            target: '4 series × 10–12 reps',
+            restSeconds: 90,
+            difficulty: 'Avanzado',
+            cues: 'Espalda alta apoyada firme en el borde del banco. Mentón pegado al pecho, empuja desde los talones.',
+            commonMistake: 'Mirar al techo en lugar de mantener la mirada al frente.'
+          }
+        ]
+      },
+      mcgill_core: {
+        id: 'mcgill_core',
+        name: 'Blindaje Lumbar McGill Big 3',
+        icon: '🛡️',
+        targetMuscle: 'Multífidos, cuadrado lumbar, oblicuos y transverso abdominal',
+        description: 'El protocolo clínico de oro del Dr. Stuart McGill para estabilizar la columna vertebral.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Bird-Dog Modificado de Control Cruzado',
+            target: '3 series × 8 por lado (pausa 3s)',
+            restSeconds: 45,
+            difficulty: 'Novato',
+            cues: 'En cuatro puntos, extiende brazo derecho y pierna izquierda sin rotar la cadera.',
+            commonMistake: 'Patear hacia arriba arqueando la espalda baja.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Bird-Dog con Cuadrados en el Aire',
+            target: '3 series × 6 por lado con dibujo de micro-cuadrados',
+            restSeconds: 60,
+            difficulty: 'Intermedio',
+            cues: 'Mantén la extremidad extendida y dibuja pequeños cuadrados en el aire para desafiar la anti-rotación.',
+            commonMistake: 'Perder la respiración diafragmática.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Plancha Lateral con Elevación de Pierna Superior',
+            target: '3 series × 25s por lado',
+            restSeconds: 60,
+            difficulty: 'Avanzado',
+            cues: 'Alinea tobillo, cadera y hombro. Sostén el cuerpo como una tabla rígida.',
+            commonMistake: 'Dejar caer la cadera hacia el piso.'
+          }
+        ]
+      },
+      supported_row: {
+        id: 'supported_row',
+        name: 'Tracción con Pecho Apoyado & Postura',
+        icon: '🧘‍♀️',
+        targetMuscle: 'Dorsales, romboides, deltoides posterior y trapecio medio',
+        description: 'Fortalece la espalda alta y mejora la postura sin poner carga en la columna baja.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Remo en Banco Inclinado Pecho Apoyado',
+            target: '3 series × 12 reps con mancuernas ligeras',
+            restSeconds: 60,
+            difficulty: 'Novato',
+            cues: 'Apoya el pecho por completo en el banco a 45°. Tira con los codos hacia las caderas.',
+            commonMistake: 'Despegar el pecho del banco para ayudarse con impulso.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Jalón al Pecho Polea Alta Agarre Neutro',
+            target: '4 series × 10 reps controladas',
+            restSeconds: 75,
+            difficulty: 'Intermedio',
+            cues: 'Agarre neutro cerrado. Lleva los codos hacia abajo y junta las escápulas.',
+            commonMistake: 'Tirar con los bíceps en lugar de iniciar con la espalda.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Face Pulls en Polea con Rotación Externa',
+            target: '4 series × 15 reps con pausa 2s',
+            restSeconds: 60,
+            difficulty: 'Avanzado',
+            cues: 'Cuerda a la altura de los ojos. Separa los nudillos al final para abrir el pecho.',
+            commonMistake: 'Usar demasiado peso y balancear el cuerpo.'
+          }
+        ]
+      }
+    },
+    hermana: {
+      vitality_walk: {
+        id: 'vitality_walk',
+        name: 'Paseo Diario de Vitalidad & Bienestar',
+        icon: '🚶‍♀️',
+        targetMuscle: 'Circulación suave, salud cardiovascular y sensibilidad a la insulina',
+        description: 'Movimiento gentil para llenar el cuerpo de energía, activar el metabolismo y despejar la mente sin fatiga ni sobrecarga.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Paseo Suave de 10 minutos',
+            target: '10 minutos a tu propio ritmo',
+            restSeconds: 0,
+            difficulty: 'Amable',
+            cues: 'Camina a un paso cómodo, en casa, patio o alrededor, escuchando música tranquila que te guste.',
+            commonMistake: 'Caminar apresurada o con tensión en los hombros.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Caminata Energizante de 15 minutos',
+            target: '15 minutos al aire libre',
+            restSeconds: 0,
+            difficulty: 'Vital',
+            cues: 'Disfruta de la luz del sol de la mañana o la tarde. Respira con calma y mantén una postura cómoda.',
+            commonMistake: 'Mirar el celular continuamente mientras caminas.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Paseo con Respiraciones Conscientes (20 min)',
+            target: '20 minutos placenteros',
+            restSeconds: 0,
+            difficulty: 'Bienestar Pleno',
+            cues: 'Inhala en 4 pasos y exhala en 4 pasos mientras caminas. Llena tus pulmones de aire fresco.',
+            commonMistake: 'Sentir que es una obligación; debe ser tu momento de relax.'
+          }
+        ]
+      },
+      gentle_flexibility: {
+        id: 'gentle_flexibility',
+        name: 'Flexibilidad Serena & Espalda Liviana',
+        icon: '🌸',
+        targetMuscle: 'Cuello, hombros, espalda alta y articulaciones relajadas',
+        description: 'Movimientos suaves para soltar cualquier nudo de tensión en cuello o espalda, devolviendo ligereza al cuerpo.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Estiramientos en Silla o Sillón',
+            target: '3 posturas × 30s cada una',
+            restSeconds: 30,
+            difficulty: 'Amable',
+            cues: 'Sentada cómoda, haz círculos lentos de hombros hacia atrás e inclina suavemente la cabeza a los lados.',
+            commonMistake: 'Forzar el cuello o tirar bruscamente.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Apertura de Pecho & Respiración Relajante',
+            target: '5 minutos de movilidad fluida',
+            restSeconds: 30,
+            difficulty: 'Vital',
+            cues: 'Abre los brazos como un abrazo al cielo al inhalar, y abrázate suavemente al exhalar.',
+            commonMistake: 'Contener la respiración durante el movimiento.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Descompresión en Alfombra o Cama',
+            target: '8-10 minutos de relax corporal',
+            restSeconds: 0,
+            difficulty: 'Bienestar Pleno',
+            cues: 'Recuéstate boca arriba, lleva suavemente una rodilla al pecho y respira profundo sintiendo cómo se suelta la espalda.',
+            commonMistake: 'Levantarse de golpe al terminar.'
+          }
+        ]
+      },
+      calm_rest: {
+        id: 'calm_rest',
+        name: 'Momentos de Calma & Recarga de Energía',
+        icon: '🕊️',
+        targetMuscle: 'Sistema Nervioso Parasimpático (Relajación & Anti-Estrés)',
+        description: 'Técnicas amables para calmar la mente, mejorar el descanso nocturno y equilibrar los niveles de glucosa de forma natural.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Pausa de 5 minutos con Respiración 4-4',
+            target: '5 minutos con ojos cerrados',
+            restSeconds: 0,
+            difficulty: 'Amable',
+            cues: 'Inhala en 4 segundos por la nariz, exhala suavemente en 4 segundos por la boca.',
+            commonMistake: 'Preocuparse por tener pensamientos; solo déjalos pasar.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Desconexión con Música de Paz o Sonidos Naturales',
+            target: '10 minutos de descanso reparador',
+            restSeconds: 0,
+            difficulty: 'Vital',
+            cues: 'Ponte audífonos con música suave o sonidos de lluvia, relaja la mandíbula y descansa.',
+            commonMistake: 'Revisar notificaciones del teléfono durante la pausa.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Ritual de Infusión & Serenidad Nocturna',
+            target: '15 minutos antes de dormir',
+            restSeconds: 0,
+            difficulty: 'Bienestar Pleno',
+            cues: 'Una taza tibia de manzanilla o valeriana con luz tenue para un sueño profundo y reparador.',
+            commonMistake: 'Tomar la infusión viendo pantallas brillantes en la cama.'
+          }
+        ]
+      }
     }
   },
 
@@ -2491,6 +2951,26 @@ export const HYBRID_ATHLETE_SYSTEM = {
             ]
           }
         ]
+      },
+      calm_break: {
+        id: 'calm_break',
+        name: 'Pausa de Calma & Descompresión (5–10 min)',
+        shortName: 'Pausa de Calma',
+        icon: '🌸',
+        dayRecommendation: 'Días Ocupados / Recarga de Energía',
+        durationMinutes: 10,
+        focus: 'Respiración consciente, relajación de hombros y bienestar instantáneo',
+        blocks: [
+          {
+            name: 'Pausa Serena Express',
+            icon: '🌸',
+            exercises: [
+              { name: 'Respiración Relajante 4-4 Sentada Cómoda', sets: 1, reps: '3 minutos', restSeconds: 0, substitute: 'Ojos cerrados con música de calma', note: 'Inhala en 4s, exhala en 4s.' },
+              { name: 'Movilidad de Cuello y Hombros Suave', sets: 2, reps: '8 círculos lentos', restSeconds: 30, substitute: 'Estiramiento lateral suave', note: 'Libera la carga del día.' },
+              { name: 'Vaso de Agua Fresca o Infusión Tibia', sets: 1, reps: '1 taza / vaso', restSeconds: 0, substitute: 'Infusión de manzanilla o menta', note: 'Hidratación reconfortante.' }
+            ]
+          }
+        ]
       }
     }
   }
@@ -2517,7 +2997,7 @@ export function getHybridWorkoutPrescription({
   // Determine effective split
   let activeSplitKey = selectedSplit;
   if (isMissedDay) {
-    activeSplitKey = 'home_core';
+    activeSplitKey = profileId === 'hermana' ? 'calm_break' : 'home_core';
   } else if (!activeSplitKey || !profileSplits[activeSplitKey]) {
     activeSplitKey = profileId === 'pareja' ? 'glutes_legs' : profileId === 'hermana' ? 'mobility_gentle' : (context === 'home_bars' || context === 'travel') ? 'full_upper' : 'legs';
   }
@@ -2534,28 +3014,54 @@ export function getHybridWorkoutPrescription({
 
   if (sleepHours < 6.5) {
     readiness -= 25;
-    warnings.push(`⚠️ Sueño Corto (${sleepHours}h): Tu sistema nervioso central (SNC) tiene menor velocidad de reclutamiento neuromuscular.`);
+    warnings.push(`⚠️ Sueño Corto (${sleepHours}h): Menor velocidad de recuperación y descanso neuromuscular.`);
   }
   if (sleepQuality === 'light') {
     readiness -= 15;
-    warnings.push('⚠️ Recuperación Inquieta: Menor secreción de hormona de crecimiento en fase de ondas lentas.');
+    warnings.push('⚠️ Recuperación Inquieta: Menor fase de sueño profundo reparador.');
   }
 
   if (recentHeavyDays >= 2) {
     readiness -= 15;
-    recommendations.push('⚡ Tejido Conectivo: Llevas 2 días pesados consecutivos. El sistema híbrido recomienda priorizar Habilidades de Calistenia (Handstand / Front Lever) y Quema Zona 2 para proteger tendones.');
+    if (profileId === 'andres') {
+      recommendations.push('⚡ Tejido Conectivo: Llevas 2 días pesados consecutivos. El sistema híbrido recomienda priorizar Habilidades de Calistenia (Handstand / Front Lever) y Quema Zona 2 para proteger tendones.');
+    } else if (profileId === 'pareja') {
+      recommendations.push('🛡️ Descompresión: Prioriza el protocolo McGill Big 3 y movilidad de cadera para cuidar tu espalda baja.');
+    } else {
+      recommendations.push('🌸 Día de Cuidado: Hoy realiza movimientos suaves o un paseo tranquilo para mantener tu vitalidad sin exigirte.');
+    }
   }
 
   let intensityMode = 'Máxima Sobrecarga & Habilidades';
   let badgeColor = '#10B981';
 
-  if (readiness < 60) {
-    intensityMode = 'Técnica & Descarga Activa';
-    badgeColor = '#F59E0B';
-    recommendations.push('🛡️ Auto-Regulación Activada: Reduce 15% las cargas o enfócate en el Bloque de Habilidades y Movilidad.');
-  } else if (readiness < 75) {
-    intensityMode = 'Hipertrofia Moderada & Habilidades';
-    badgeColor = '#3B82F6';
+  if (profileId === 'hermana') {
+    intensityMode = 'Vitalidad & Ritmo Amable';
+    badgeColor = '#10B981';
+    if (readiness < 60) {
+      intensityMode = 'Pausa & Respiración Serena';
+      badgeColor = '#F59E0B';
+      recommendations.push('🌸 Modo Calma: Hoy solo disfruta de respiraciones profundas, hidratación y descanso reconfortante.');
+    } else {
+      recommendations.push('🌸 Ritmo Gentil: Camina a tu propio ritmo y haz movimientos agradables sin fatiga ni sobrecarga.');
+    }
+  } else if (profileId === 'pareja') {
+    intensityMode = 'Glúteos & Blindaje Lumbar';
+    badgeColor = '#10B981';
+    if (readiness < 60) {
+      intensityMode = 'Descompresión & Movilidad Lumbar';
+      badgeColor = '#F59E0B';
+      recommendations.push('🛡️ Auto-Regulación Lumbar: Enfócate en el McGill Big 3 y puentes de glúteo sin carga.');
+    }
+  } else {
+    if (readiness < 60) {
+      intensityMode = 'Técnica & Descarga Activa';
+      badgeColor = '#F59E0B';
+      recommendations.push('🛡️ Auto-Regulación Activada: Reduce 15% las cargas o enfócate en el Bloque de Habilidades y Movilidad.');
+    } else if (readiness < 75) {
+      intensityMode = 'Hipertrofia Moderada & Habilidades';
+      badgeColor = '#3B82F6';
+    }
   }
 
   const isExpress = durationMode === 'express' || isMissedDay;
@@ -2575,7 +3081,7 @@ export function getHybridWorkoutPrescription({
     warnings,
     recommendations,
     blocks: routine.blocks || [],
-    skillTree: HYBRID_ATHLETE_SYSTEM.skillTree
+    skillTree: (HYBRID_ATHLETE_SYSTEM.skillTrees && HYBRID_ATHLETE_SYSTEM.skillTrees[profileId]) || HYBRID_ATHLETE_SYSTEM.skillTree
   };
 }
 

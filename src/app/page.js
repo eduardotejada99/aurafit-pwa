@@ -93,6 +93,7 @@ export default function HomePage() {
   const [familyProfiles, setFamilyProfiles] = useState(FAMILY_PROFILES);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
+  const [coupleModeEnabled, setCoupleModeEnabled] = useState(true);
 
   // PIN Privacy & Biometric Security
   const [isLocked, setIsLocked] = useState(false);
@@ -367,10 +368,25 @@ export default function HomePage() {
 
       const savedIngredients = localStorage.getItem('aurafit_ingredients');
       if (savedIngredients) setSelectedIngredients(JSON.parse(savedIngredients));
+
+      const savedCouple = localStorage.getItem('aurafit_couple_mode_enabled');
+      if (savedCouple !== null) {
+        setCoupleModeEnabled(savedCouple === 'true');
+      }
     } catch (err) {
       console.warn('Storage sync err:', err);
     }
   }, []);
+
+  const handleToggleCoupleMode = () => {
+    setCoupleModeEnabled((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('aurafit_couple_mode_enabled', next ? 'true' : 'false');
+      }
+      return next;
+    });
+  };
 
   const loadProfileData = (profileKey) => {
     try {
@@ -2083,28 +2099,30 @@ export default function HomePage() {
               </div>
 
               {/* Sincronización de Cocina en Pareja & Despensa Compartida */}
-              <div className="couple-kitchen-banner">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '18px' }}>👫</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>
-                      Cocina en Pareja & Mismo Menú
-                    </strong>
+              {coupleModeEnabled && (activeProfileId === 'andres' || activeProfileId === 'pareja') && (
+                <div className="couple-kitchen-banner">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '18px' }}>👫</span>
+                      <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                        Cocina en Pareja & Mismo Menú
+                      </strong>
+                    </div>
+                    <span className="couple-badge-synced">100% Ingredientes Compartidos</span>
                   </div>
-                  <span className="couple-badge-synced">100% Ingredientes Compartidos</span>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                    Compran y cocinan los mismos alimentos para ahorrar tiempo. Las porciones se modulan según el objetivo: <strong>Andrés (~125% / 60% de la olla)</strong> y <strong>su Pareja (~85% / 40% de la olla)</strong>.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-open-grocery-list"
+                    onClick={() => setShowCoupleGroceryModal(true)}
+                  >
+                    <span>🛒</span>
+                    <span>Lista de Compras Compartida (Semana / Cajabamba)</span>
+                  </button>
                 </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  Compran y cocinan los mismos alimentos para ahorrar tiempo. Las porciones se modulan según el objetivo: <strong>Andrés (~125% / 60% de la olla)</strong> y <strong>su Pareja (~85% / 40% de la olla)</strong>.
-                </p>
-                <button
-                  type="button"
-                  className="btn-open-grocery-list"
-                  onClick={() => setShowCoupleGroceryModal(true)}
-                >
-                  <span>🛒</span>
-                  <span>Lista de Compras Compartida (Semana / Cajabamba)</span>
-                </button>
-              </div>
+              )}
 
               {/* Paso 1: Selección Didáctica de Ingredientes por Categoría */}
               <div style={{ marginTop: '14px' }}>
@@ -2447,7 +2465,7 @@ export default function HomePage() {
                             )}
 
                             {/* Cocina en Pareja: Mismo Plato, 2 Porciones (Batch Cooking 1 Sartén) */}
-                            {(() => {
+                            {coupleModeEnabled && (activeProfileId === 'andres' || activeProfileId === 'pareja') && (() => {
                               const couple = calculateCouplePortions(meal);
                               if (!couple) return null;
                               const isExp = couplePortionsExpanded[meal.id];
@@ -3366,7 +3384,7 @@ export default function HomePage() {
                     🎯 Tu Split de Hoy:
                   </span>
                   <span style={{ fontSize: '11px', color: isMissedDay ? '#DC2626' : 'var(--fitia-green)', fontWeight: 800 }}>
-                    {isMissedDay ? '⚡ Planchas 12m' : 'Personalizable'}
+                    {isMissedDay ? (currentProfile.id === 'hermana' ? '🌸 Pausa 5m' : '⚡ Planchas 12m') : 'Personalizable'}
                   </span>
                 </div>
 
@@ -3430,15 +3448,19 @@ export default function HomePage() {
                     onClick={handleToggleMissedDay}
                   >
                     <span style={{ minWidth: 0, flex: 1, textAlign: 'left', lineHeight: 1.25 }}>
-                      {isMissedDay ? '⚡ Modo Día Ocupado Activo (12 min Planchas)' : '❌ ¿Día complicado? No pude entrenar'}
+                      {isMissedDay
+                        ? (currentProfile.id === 'hermana' ? '🌸 Pausa Serena Activa (5-10 min)' : '⚡ Modo Día Ocupado Activo (12 min Planchas)')
+                        : (currentProfile.id === 'hermana' ? '🌸 ¿Día complicado? Pausa de calma' : '❌ ¿Día complicado? No pude entrenar')}
                     </span>
                     <span style={{ fontSize: '11px', fontWeight: 900, flexShrink: 0 }}>
-                      {isMissedDay ? 'Desactivar ↩️' : 'Planchas 12m →'}
+                      {isMissedDay ? 'Desactivar ↩️' : (currentProfile.id === 'hermana' ? 'Pausa 5m →' : 'Planchas 12m →')}
                     </span>
                   </button>
                   {isMissedDay && (
                     <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px', fontSize: '11.5px', color: '#B45309', lineHeight: 1.4 }}>
-                      💡 <strong>Prescripción Dinámica:</strong> Rutina express de 10-12 min de planchas y core isométrico en casa. Cero fricción, mantiene el SNC despierto y se sincroniza la nutrición para preservar la masa magra.
+                      💡 <strong>Prescripción Dinámica:</strong> {currentProfile.id === 'hermana'
+                        ? 'Pausa amable de 5-10 min con respiración relajante 4-4, movilidad suave e infusión tibia. Cero exigencia, oxigena el cuerpo y recarga tu energía.'
+                        : 'Rutina express de 10-12 min de planchas y core isométrico en casa. Cero fricción, mantiene el SNC despierto y se sincroniza la nutrición para preservar la masa magra.'}
                     </div>
                   )}
                 </div>
@@ -3921,140 +3943,158 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* 5. CALISTHENICS SKILL TREE (DEJAN STIPKE MASTERY) */}
-            <div className="skill-tree-container">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 900 }}>
-                    🤸‍♂️ Árbol de Habilidades de Calistenia
-                  </h3>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Progresiones nivel por nivel para novatos hasta atletas avanzados
-                  </p>
-                </div>
-                <span style={{ fontSize: '20px' }}>⚡</span>
-              </div>
+            {/* 5. CALISTHENICS & PROFILE SKILL TREE */}
+            {(() => {
+              const profileSkillTree = hybridPrescription.skillTree || {};
+              const skillKeys = Object.keys(profileSkillTree);
+              const effectiveSkillTab = profileSkillTree[selectedSkillTab]
+                ? selectedSkillTab
+                : (skillKeys[0] || 'handstand');
+              const currentSkill = profileSkillTree[effectiveSkillTab];
 
-              {/* Skill Tabs */}
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                {Object.keys(hybridPrescription.skillTree || {}).map((sKey) => {
-                  const skill = hybridPrescription.skillTree[sKey];
-                  const isSel = selectedSkillTab === sKey;
-                  return (
-                    <button
-                      key={sKey}
-                      type="button"
-                      className="skill-pill-btn"
-                      style={{
-                        background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
-                        color: isSel ? '#FFFFFF' : 'var(--text-main)',
-                        border: '1px solid var(--border-subtle)'
-                      }}
-                      onClick={() => setSelectedSkillTab(sKey)}
-                    >
-                      <span>{skill.icon}</span>
-                      <span>{skill.name.split(' (')[0]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Selected Skill Details & Progressive Levels */}
-              {(() => {
-                const currentSkill = hybridPrescription.skillTree[selectedSkillTab];
-                if (!currentSkill) return null;
-
-                const activeLvl = activeSkillLevels[selectedSkillTab] || 1;
-
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{
-                      background: 'var(--bg-card-subtle)',
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      border: '1px solid var(--border-subtle)'
-                    }}>
-                      <div style={{ fontSize: '13px', fontWeight: 900 }}>
-                        {currentSkill.icon} {currentSkill.name}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        🎯 Músculos: {currentSkill.targetMuscle}
-                      </div>
-                      <div style={{ fontSize: '12px', marginTop: '4px', lineHeight: 1.4 }}>
-                        {currentSkill.description}
-                      </div>
+              return (
+                <div className="skill-tree-container">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 900 }}>
+                        {currentProfile.id === 'pareja'
+                          ? '🍑 Árbol de Blindaje Lumbar & Glúteos'
+                          : currentProfile.id === 'hermana'
+                          ? '🌸 Ruta de Vitalidad & Movilidad Amable'
+                          : '🤸‍♂️ Árbol de Habilidades de Calistenia'}
+                      </h3>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {currentProfile.id === 'pareja'
+                          ? 'Progresiones de hip thrust, protocolo McGill Big 3 y postura sin compresión axial'
+                          : currentProfile.id === 'hermana'
+                          ? 'Pasos gentiles de bienestar, paseos relajantes y hábitos reconfortantes sin fatiga ni sobrecarga'
+                          : 'Progresiones nivel por nivel para novatos hasta atletas avanzados'}
+                      </p>
                     </div>
-
-                    {/* Level Cards */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {currentSkill.levels.map((lvl) => {
-                        const isCurrentLevel = activeLvl === lvl.level;
-                        const badgeBg = lvl.difficulty === 'Novato' ? '#10B981' : lvl.difficulty === 'Intermedio' ? '#3B82F6' : lvl.difficulty === 'Avanzado' ? '#8B5CF6' : '#EC4899';
-
-                        return (
-                          <div
-                            key={lvl.level}
-                            className={`skill-level-card ${isCurrentLevel ? 'active-level' : ''}`}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 900 }}>
-                                {lvl.title}
-                              </span>
-                              <span style={{
-                                fontSize: '10px',
-                                fontWeight: 900,
-                                background: badgeBg,
-                                color: '#FFFFFF',
-                                padding: '2px 8px',
-                                borderRadius: '999px'
-                              }}>
-                                {lvl.difficulty}
-                              </span>
-                            </div>
-
-                            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
-                              🎯 Objetivo: {lvl.target} · Descanso: {lvl.restSeconds}s
-                            </div>
-
-                            <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                              <strong>Clave Técnica:</strong> {lvl.cues}
-                            </div>
-
-                            {lvl.commonMistake && (
-                              <div style={{ fontSize: '11px', color: '#DC2626', background: 'rgba(239, 68, 68, 0.08)', padding: '6px 10px', borderRadius: '8px' }}>
-                                ⚠️ <strong>Error Común:</strong> {lvl.commonMistake}
-                              </div>
-                            )}
-
-                            <button
-                              type="button"
-                              style={{
-                                alignSelf: 'flex-start',
-                                padding: '6px 12px',
-                                borderRadius: '8px',
-                                fontSize: '11px',
-                                fontWeight: 800,
-                                background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
-                                color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
-                                border: '1px solid var(--border-subtle)',
-                                cursor: 'pointer',
-                                marginTop: '4px'
-                              }}
-                              onClick={() => setActiveSkillLevels({
-                                ...activeSkillLevels,
-                                [selectedSkillTab]: lvl.level
-                              })}
-                            >
-                              {isCurrentLevel ? '✓ Mi Nivel Actual de Entrenamiento' : 'Practicar este Nivel'}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <span style={{ fontSize: '20px' }}>
+                      {currentProfile.id === 'pareja' ? '🛡️' : currentProfile.id === 'hermana' ? '🌿' : '⚡'}
+                    </span>
                   </div>
-                );
-              })()}
-            </div>
+
+                  {/* Skill Tabs */}
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {skillKeys.map((sKey) => {
+                      const skill = profileSkillTree[sKey];
+                      const isSel = effectiveSkillTab === sKey;
+                      return (
+                        <button
+                          key={sKey}
+                          type="button"
+                          className="skill-pill-btn"
+                          style={{
+                            background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                            color: isSel ? '#FFFFFF' : 'var(--text-main)',
+                            border: '1px solid var(--border-subtle)'
+                          }}
+                          onClick={() => setSelectedSkillTab(sKey)}
+                        >
+                          <span>{skill.icon}</span>
+                          <span>{skill.name.split(' (')[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Selected Skill Details & Progressive Levels */}
+                  {currentSkill && (() => {
+                    const activeLvl = activeSkillLevels[effectiveSkillTab] || 1;
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{
+                          background: 'var(--bg-card-subtle)',
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-subtle)'
+                        }}>
+                          <div style={{ fontSize: '13px', fontWeight: 900 }}>
+                            {currentSkill.icon} {currentSkill.name}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            🎯 Enfoque: {currentSkill.targetMuscle}
+                          </div>
+                          <div style={{ fontSize: '12px', marginTop: '4px', lineHeight: 1.4 }}>
+                            {currentSkill.description}
+                          </div>
+                        </div>
+
+                        {/* Level Cards */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {currentSkill.levels.map((lvl) => {
+                            const isCurrentLevel = activeLvl === lvl.level;
+                            const badgeBg = lvl.difficulty === 'Novato' || lvl.difficulty === 'Amable' ? '#10B981' : lvl.difficulty === 'Intermedio' || lvl.difficulty === 'Vital' ? '#3B82F6' : lvl.difficulty === 'Avanzado' || lvl.difficulty === 'Bienestar Pleno' ? '#8B5CF6' : '#EC4899';
+
+                            return (
+                              <div
+                                key={lvl.level}
+                                className={`skill-level-card ${isCurrentLevel ? 'active-level' : ''}`}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 900 }}>
+                                    {lvl.title}
+                                  </span>
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: 900,
+                                    background: badgeBg,
+                                    color: '#FFFFFF',
+                                    padding: '2px 8px',
+                                    borderRadius: '999px'
+                                  }}>
+                                    {lvl.difficulty}
+                                  </span>
+                                </div>
+
+                                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
+                                  🎯 Objetivo: {lvl.target} {lvl.restSeconds > 0 ? `· Descanso: ${lvl.restSeconds}s` : ''}
+                                </div>
+
+                                <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                  <strong>Clave:</strong> {lvl.cues}
+                                </div>
+
+                                {lvl.commonMistake && (
+                                  <div style={{ fontSize: '11px', color: '#DC2626', background: 'rgba(239, 68, 68, 0.08)', padding: '6px 10px', borderRadius: '8px' }}>
+                                    ⚠️ <strong>A tener en cuenta:</strong> {lvl.commonMistake}
+                                  </div>
+                                )}
+
+                                <button
+                                  type="button"
+                                  style={{
+                                    alignSelf: 'flex-start',
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                    background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
+                                    color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
+                                    border: '1px solid var(--border-subtle)',
+                                    cursor: 'pointer',
+                                    marginTop: '4px'
+                                  }}
+                                  onClick={() => setActiveSkillLevels({
+                                    ...activeSkillLevels,
+                                    [effectiveSkillTab]: lvl.level
+                                  })}
+                                >
+                                  {isCurrentLevel ? '✓ Mi Nivel Actual' : 'Practicar este Nivel'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })()}
 
             {/* 6. UNIVERSAL DIGITAL REST & SESSION TIMER */}
             <div style={{
@@ -4601,6 +4641,31 @@ export default function HomePage() {
                       { label: '1 pan (40g)', g: 40 },
                       { label: '2 panes (80g)', g: 80 },
                       { label: '3 panes (120g)', g: 120 }
+                    ];
+                  } else if (nameLower.includes('jugo') || nameLower.includes('verde') || nameLower.includes('emoliente')) {
+                    portionButtons = [
+                      { label: '1 vaso (250ml)', g: 250 },
+                      { label: '1 vaso grande (300ml)', g: 300 },
+                      { label: '2 vasos (500ml)', g: 500 }
+                    ];
+                  } else if (nameLower.includes('humita')) {
+                    portionButtons = [
+                      { label: '1 humita (120g)', g: 120 },
+                      { label: '1.5 humitas (180g)', g: 180 },
+                      { label: '2 humitas (240g)', g: 240 }
+                    ];
+                  } else if (nameLower.includes('tamal')) {
+                    portionButtons = [
+                      { label: '1/2 tamal (80g)', g: 80 },
+                      { label: '1 tamal (160g)', g: 160 },
+                      { label: '1 tamalito (120g)', g: 120 },
+                      { label: '2 tamales (320g)', g: 320 }
+                    ];
+                  } else if (nameLower.includes('huanca')) {
+                    portionButtons = [
+                      { label: 'Porción personal (150g)', g: 150 },
+                      { label: 'Porción clásica (220g)', g: 220 },
+                      { label: 'Porción generosa (300g)', g: 300 }
                     ];
                   }
 
@@ -5332,6 +5397,48 @@ export default function HomePage() {
                     Se solicitará este PIN para acceder a tus registros de peso, comidas y datos médicos en los celulares.
                   </div>
                 </div>
+              </div>
+
+              {/* Couple Kitchen Mode Configuration */}
+              <div style={{
+                background: 'var(--bg-card-subtle)',
+                border: '1.5px solid rgba(236, 72, 153, 0.35)',
+                borderRadius: '14px',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '22px' }}>👫</span>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: 900, color: 'var(--text-main)' }}>
+                      Modo Cocina en Pareja
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                      1 Sartén, 2 Porciones (Andrés 60% / Pareja 40%) en recetas y compras
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleCoupleMode}
+                  style={{
+                    background: coupleModeEnabled ? '#EC4899' : 'var(--bg-card)',
+                    color: coupleModeEnabled ? '#FFFFFF' : 'var(--text-muted)',
+                    border: '1px solid ' + (coupleModeEnabled ? '#EC4899' : 'var(--border-subtle)'),
+                    borderRadius: '20px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    boxShadow: coupleModeEnabled ? '0 2px 8px rgba(236,72,153,0.3)' : 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {coupleModeEnabled ? 'Activado ✓' : 'Desactivado'}
+                </button>
               </div>
 
               {/* Dynamic Target Preview */}

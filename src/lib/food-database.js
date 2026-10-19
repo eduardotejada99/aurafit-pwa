@@ -537,6 +537,150 @@ export const CURATED_PERUVIAN_FOODS = [
     isSnack: false,
     isUltraProcessed: false,
     icon: '🥔'
+  },
+  {
+    id: 'fit-jugo-verde-alcalinizante',
+    name: 'Jugo Verde Alcalinizante & Biohacking (Espinaca, Apio, Manzana, Kion, Limón)',
+    brand: 'Casero / Natural',
+    servingDesc: '1 vaso estándar (300ml)',
+    grams: 300,
+    calories: 85,
+    protein: 2.5,
+    carbs: 18.0,
+    fat: 0.5,
+    fiber: 3.5,
+    category: 'bebida_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥬'
+  },
+  {
+    id: 'peru-humita-dulce',
+    name: 'Humita Dulce Andina con Pasas y Canela (Choclo Tierno)',
+    brand: 'Tradicional Casera',
+    servingDesc: '1 unidad (120g)',
+    grams: 120,
+    calories: 240,
+    protein: 5.5,
+    carbs: 45.0,
+    fat: 4.8,
+    fiber: 3.2,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌽'
+  },
+  {
+    id: 'peru-humita-salada',
+    name: 'Humita Salada con Queso Serrano / Pollo',
+    brand: 'Tradicional Casera',
+    servingDesc: '1 unidad (130g)',
+    grams: 130,
+    calories: 260,
+    protein: 9.0,
+    carbs: 38.0,
+    fat: 8.5,
+    fiber: 3.5,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌽'
+  },
+  {
+    id: 'peru-tamal-pollo',
+    name: 'Tamal Criollo de Pollo Tradicional (Maíz Amarillo, Huevo y Aceituna)',
+    brand: 'Tradicional',
+    servingDesc: '1 unidad mediana (160g)',
+    grams: 160,
+    calories: 340,
+    protein: 16.0,
+    carbs: 38.0,
+    fat: 14.0,
+    fiber: 3.8,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🫔'
+  },
+  {
+    id: 'peru-tamal-chancho',
+    name: 'Tamal Criollo de Chancho / Cerdo',
+    brand: 'Tradicional',
+    servingDesc: '1 unidad mediana (160g)',
+    grams: 160,
+    calories: 410,
+    protein: 15.0,
+    carbs: 37.0,
+    fat: 22.0,
+    fiber: 3.5,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🫔'
+  },
+  {
+    id: 'peru-tamalito-verde',
+    name: 'Tamalito Verde Piurano de Culantro y Pollo',
+    brand: 'Piurano Tradicional',
+    servingDesc: '1 unidad (120g)',
+    grams: 120,
+    calories: 260,
+    protein: 12.0,
+    carbs: 28.0,
+    fat: 11.0,
+    fiber: 3.0,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🫔'
+  },
+  {
+    id: 'peru-papa-huancaina',
+    name: 'Papa a la Huancaína con Huevo Duro y Aceituna',
+    brand: 'Criollo',
+    servingDesc: '1 plato (220g)',
+    grams: 220,
+    calories: 330,
+    protein: 11.0,
+    carbs: 38.0,
+    fat: 14.0,
+    fiber: 3.0,
+    category: 'comida',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥔'
+  },
+  {
+    id: 'peru-pan-chicharron',
+    name: 'Pan con Chicharrón, Camote Frito y Salsa Criolla',
+    brand: 'Tradicional Limeño',
+    servingDesc: '1 sandwich completo (210g)',
+    grams: 210,
+    calories: 520,
+    protein: 26.0,
+    carbs: 48.0,
+    fat: 25.0,
+    fiber: 3.2,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥪'
+  },
+  {
+    id: 'peru-emoliente-andino',
+    name: 'Emoliente Andino Caliente con Cebada, Linaza y Limón',
+    brand: 'Natural Andino',
+    servingDesc: '1 vaso (300ml)',
+    grams: 300,
+    calories: 65,
+    protein: 1.0,
+    carbs: 15.0,
+    fat: 0.2,
+    fiber: 2.5,
+    category: 'bebida_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍵'
   }
 ];
 
@@ -784,6 +928,26 @@ export function parseNaturalLanguageFood(text = '') {
       key: 'ceviche',
       keywords: ['ceviche'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'plato-ceviche-mixto')
+    },
+    {
+      key: 'jugo_verde',
+      keywords: ['jugo verde', 'green juice', 'batido verde', 'smoothie verde'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-jugo-verde-alcalinizante')
+    },
+    {
+      key: 'humita',
+      keywords: ['humita', 'humitas', 'humita dulce', 'humita salada'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-humita-dulce')
+    },
+    {
+      key: 'tamal',
+      keywords: ['tamal', 'tamales', 'tamalito', 'tamal de pollo', 'tamal de chancho'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-tamal-pollo')
+    },
+    {
+      key: 'huancaina',
+      keywords: ['papa a la huancaina', 'huancaina', 'huancaína'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-papa-huancaina')
     }
   ];
 

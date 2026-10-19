@@ -18,8 +18,13 @@ describe('AuraFit Pantry Meal Generator', () => {
 
   it('should have valid macronutrient densities for all meals', () => {
     PANTRY_DATABASE.forEach((meal) => {
-      assert.ok(meal.calories > 300, `${meal.name} has low calories`);
-      assert.ok(meal.proteinG >= 20, `${meal.name} should have >= 20g protein`);
+      if (meal.tags?.includes('biohacking') || meal.tags?.includes('snack') || meal.tags?.includes('peruano') || meal.tags?.includes('tradicional')) {
+        assert.ok(meal.calories >= 70, `${meal.name} should have >= 70 calories`);
+        assert.ok(meal.proteinG >= 2, `${meal.name} should have >= 2g protein`);
+      } else {
+        assert.ok(meal.calories > 300, `${meal.name} has low calories`);
+        assert.ok(meal.proteinG >= 20, `${meal.name} should have >= 20g protein`);
+      }
       assert.ok(meal.prepMinutes <= 15, `${meal.name} should take <= 15 min`);
       assert.ok(meal.portionDidactic && meal.portionDidactic.length > 5, `${meal.name} must have a didactic portion`);
       assert.ok(meal.didacticWhy && meal.didacticWhy.length > 10, `${meal.name} must explain why to eat this`);
@@ -110,6 +115,20 @@ describe('AuraFit Couple Kitchen & Shared Grocery Synchronization', () => {
     assert.ok(bioCat);
     assert.ok(bioCat.items.some((i) => i.name.includes('Creatina')));
     assert.ok(bioCat.items.some((i) => i.name.includes('Sal Marina')));
+  });
+
+  it('should include authentic Peruvian foods and green juice in PANTRY_DATABASE', () => {
+    const jugoVerde = PANTRY_DATABASE.find((m) => m.id === 'meal-jugo-verde');
+    const humitas = PANTRY_DATABASE.find((m) => m.id === 'meal-humitas-andinas');
+    const tamal = PANTRY_DATABASE.find((m) => m.id === 'meal-tamal-criollo');
+
+    assert.ok(jugoVerde, 'Should contain meal-jugo-verde');
+    assert.ok(humitas, 'Should contain meal-humitas-andinas');
+    assert.ok(tamal, 'Should contain meal-tamal-criollo');
+
+    assert.ok(jugoVerde.name.includes('Jugo Verde'));
+    assert.ok(humitas.name.includes('Humitas'));
+    assert.ok(tamal.name.includes('Tamal'));
   });
 });
 

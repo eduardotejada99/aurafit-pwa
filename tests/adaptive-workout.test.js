@@ -126,4 +126,55 @@ describe('AuraFit Adaptive Workout Engine', () => {
     assert.ok(HYBRID_ATHLETE_SYSTEM.routines.pareja.home_bars);
     assert.ok(HYBRID_ATHLETE_SYSTEM.routines.pareja.travel);
   });
+
+  it('should personalize workout prescription strictly for Anicka (Hermana) with zero calisthenics or heavy strain', () => {
+    const anickaPrescription = getHybridWorkoutPrescription({
+      profile: FAMILY_PROFILES.hermana,
+      sleepHours: 7.5,
+      sleepQuality: 'deep',
+      recentHeavyDays: 0,
+      context: 'gym',
+      durationMode: 'full'
+    });
+
+    assert.equal(anickaPrescription.profileId, 'hermana');
+    assert.equal(anickaPrescription.intensityMode, 'Vitalidad & Ritmo Amable');
+    
+    // Skill tree must be Anicka's gentle vitality tree, NOT calisthenics
+    assert.ok(anickaPrescription.skillTree.vitality_walk, 'Must have vitality walk');
+    assert.ok(anickaPrescription.skillTree.gentle_flexibility, 'Must have gentle flexibility');
+    assert.ok(anickaPrescription.skillTree.calm_rest, 'Must have calm rest');
+    assert.ok(!anickaPrescription.skillTree.handstand, 'Anicka must NOT have handstand');
+    assert.ok(!anickaPrescription.skillTree.muscle_up, 'Anicka must NOT have muscle-up');
+    assert.ok(!anickaPrescription.skillTree.planche, 'Anicka must NOT have planche');
+
+    // Exercise blocks must be gentle
+    anickaPrescription.blocks.forEach((block) => {
+      block.exercises.forEach((ex) => {
+        assert.ok(!ex.name.toLowerCase().includes('muscle-up'));
+        assert.ok(!ex.name.toLowerCase().includes('handstand'));
+        assert.ok(!ex.name.toLowerCase().includes('pesado'));
+      });
+    });
+  });
+
+  it('should provide distinct skill trees for all 3 profiles', () => {
+    const andresTree = HYBRID_ATHLETE_SYSTEM.skillTrees.andres;
+    const parejaTree = HYBRID_ATHLETE_SYSTEM.skillTrees.pareja;
+    const hermanaTree = HYBRID_ATHLETE_SYSTEM.skillTrees.hermana;
+
+    assert.ok(andresTree.handstand && andresTree.front_lever && andresTree.muscle_up && andresTree.planche);
+    assert.ok(parejaTree.hip_thrust && parejaTree.mcgill_core && parejaTree.supported_row);
+    assert.ok(hermanaTree.vitality_walk && hermanaTree.gentle_flexibility && hermanaTree.calm_rest);
+  });
+
+  it('should prescribe gentle calm break for Anicka on missed days instead of heavy planks', () => {
+    const anickaMissed = getHybridWorkoutPrescription({
+      profile: FAMILY_PROFILES.hermana,
+      isMissedDay: true
+    });
+
+    assert.equal(anickaMissed.selectedSplit, 'calm_break');
+    assert.ok(anickaMissed.routineTitle.toLowerCase().includes('calma') || anickaMissed.routineTitle.toLowerCase().includes('descompresión'));
+  });
 });
