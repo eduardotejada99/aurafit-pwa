@@ -3759,7 +3759,11 @@ export default function HomePage() {
                     📊 Balance Semanal Adaptativo
                   </span>
                   <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                    Piernas: {weeklyWorkoutBalance.legsCount || 0} · Empuje: {weeklyWorkoutBalance.pushCount || 0} · Tracción: {weeklyWorkoutBalance.pullCount || 0}
+                    {currentProfile.id === 'hermana'
+                      ? '🌸 Vitalidad Serena Diaria'
+                      : currentProfile.id === 'pareja'
+                      ? `Glúteos: ${weeklyWorkoutBalance.legsCount || 0} · Espalda/Postura: ${weeklyWorkoutBalance.pullCount || 0}`
+                      : `Piernas: ${weeklyWorkoutBalance.legsCount || 0} · Empuje: ${weeklyWorkoutBalance.pushCount || 0} · Tracción: ${weeklyWorkoutBalance.pullCount || 0}`}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
@@ -3784,7 +3788,9 @@ export default function HomePage() {
                     }}
                     onClick={() => handleSelectSplit(weeklyWorkoutBalance.recommendedSplit)}
                   >
-                    ⚡ Aplicar Split Recomendado ({HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || weeklyWorkoutBalance.recommendedSplit})
+                    {currentProfile.id === 'hermana'
+                      ? `🌸 Aplicar Rutina Sugerida (${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || 'Movilidad Suave'})`
+                      : `⚡ Aplicar Split Recomendado (${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || weeklyWorkoutBalance.recommendedSplit})`}
                   </button>
                 )}
               </div>
@@ -3793,7 +3799,7 @@ export default function HomePage() {
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '14px 14px', boxShadow: 'var(--card-shadow)', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '4px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)' }}>
-                    🎯 Tu Split de Hoy:
+                    {currentProfile.id === 'hermana' ? '🌸 Tu Momento de Bienestar de Hoy:' : '🎯 Tu Split de Hoy:'}
                   </span>
                   <span style={{ fontSize: '11px', color: isMissedDay ? '#DC2626' : 'var(--fitia-green)', fontWeight: 800 }}>
                     {isMissedDay ? (currentProfile.id === 'hermana' ? '🌸 Pausa 5m' : '⚡ Planchas 12m') : 'Personalizable'}
@@ -4067,43 +4073,59 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Consecutive Heavy Days Tracker */}
-              <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800 }}>
-                    🏋️ Días pesados seguidos esta semana:
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 900, color: recentHeavyDays >= 2 ? '#F59E0B' : 'var(--text-main)' }}>
-                    {recentHeavyDays === 0 ? '0 días' : recentHeavyDays === 1 ? '1 día' : '2+ días (Fatiga)'}
-                  </span>
+              {/* Consecutive Heavy Days Tracker - Solo para Andrés y Pareja */}
+              {currentProfile.id !== 'hermana' ? (
+                <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800 }}>
+                      🏋️ Días pesados seguidos esta semana:
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 900, color: recentHeavyDays >= 2 ? '#F59E0B' : 'var(--text-main)' }}>
+                      {recentHeavyDays === 0 ? '0 días' : recentHeavyDays === 1 ? '1 día' : '2+ días (Fatiga)'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {[
+                      { val: 0, label: '0 días' },
+                      { val: 1, label: '1 día' },
+                      { val: 2, label: '2+ días pesados ⚡' }
+                    ].map((d) => (
+                      <button
+                        key={d.val}
+                        type="button"
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          background: recentHeavyDays === d.val ? (d.val >= 2 ? '#F59E0B' : 'var(--fitia-green)') : 'var(--bg-card-subtle)',
+                          color: recentHeavyDays === d.val ? '#FFFFFF' : 'var(--text-main)',
+                          border: '1px solid var(--border-subtle)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => setRecentHeavyDays(d.val)}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[
-                    { val: 0, label: '0 días' },
-                    { val: 1, label: '1 día' },
-                    { val: 2, label: '2+ días pesados ⚡' }
-                  ].map((d) => (
-                    <button
-                      key={d.val}
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 800,
-                        background: recentHeavyDays === d.val ? (d.val >= 2 ? '#F59E0B' : 'var(--fitia-green)') : 'var(--bg-card-subtle)',
-                        color: recentHeavyDays === d.val ? '#FFFFFF' : 'var(--text-main)',
-                        border: '1px solid var(--border-subtle)',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setRecentHeavyDays(d.val)}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
+              ) : (
+                <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800 }}>
+                      🌿 Nivel de Energía & Bienestar:
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-green)' }}>
+                      Vitalidad Serena
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Cero sobrecarga articular ni fatiga pesada. Actividad orientada a la salud, circulación y relajación.
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Smart Alerts & Warnings */}
               {(hybridPrescription.warnings.length > 0 || hybridPrescription.recommendations.length > 0) && (
@@ -4122,75 +4144,98 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* 3. CONTEXT & DURATION SELECTORS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', paddingLeft: '4px' }}>
-                📍 ¿Dónde entrenas hoy?
-              </div>
-              <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
-                {[
-                  { id: 'gym', label: 'Gimnasio', icon: '🏋️' },
-                  { id: 'home_bars', label: 'En Casa (Barras)', icon: '🏡' },
-                  { id: 'travel', label: 'Cajabamba / Viaje', icon: '🏔️' }
-                ].map((ctx) => {
-                  const isSel = workoutContext === ctx.id;
-                  return (
-                    <button
-                      key={ctx.id}
-                      type="button"
-                      className="hybrid-context-tab"
-                      style={{
-                        background: isSel ? 'var(--bg-card)' : 'transparent',
-                        color: isSel ? 'var(--text-main)' : 'var(--text-muted)',
-                        boxShadow: isSel ? 'var(--card-shadow)' : 'none'
-                      }}
-                      onClick={() => setWorkoutContext(ctx.id)}
-                    >
-                      <span>{ctx.icon}</span>
-                      <span>{ctx.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* 3. CONTEXT & DURATION SELECTORS (SOLO PARA ANDRÉS Y PAREJA; OCULTO PARA ANICKA) */}
+            {currentProfile.id !== 'hermana' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', paddingLeft: '4px' }}>
+                  📍 ¿Dónde entrenas hoy?
+                </div>
+                <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
+                  {[
+                    { id: 'gym', label: 'Gimnasio', icon: '🏋️' },
+                    { id: 'home_bars', label: 'En Casa (Barras)', icon: '🏡' },
+                    { id: 'travel', label: 'Cajabamba / Viaje', icon: '🏔️' }
+                  ].map((ctx) => {
+                    const isSel = workoutContext === ctx.id;
+                    return (
+                      <button
+                        key={ctx.id}
+                        type="button"
+                        className="hybrid-context-tab"
+                        style={{
+                          background: isSel ? 'var(--bg-card)' : 'transparent',
+                          color: isSel ? 'var(--text-main)' : 'var(--text-muted)',
+                          boxShadow: isSel ? 'var(--card-shadow)' : 'none'
+                        }}
+                        onClick={() => setWorkoutContext(ctx.id)}
+                      >
+                        <span>{ctx.icon}</span>
+                        <span>{ctx.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Duration Switcher (2h vs 45m) */}
-              <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '9px 12px',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    background: workoutDurationMode === 'full' ? 'var(--bg-card)' : 'transparent',
-                    color: workoutDurationMode === 'full' ? 'var(--text-main)' : 'var(--text-muted)',
-                    boxShadow: workoutDurationMode === 'full' ? 'var(--card-shadow)' : 'none',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setWorkoutDurationMode('full')}
-                >
-                  ⏱️ Sesión Completa (~90–120 min)
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '9px 12px',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    background: workoutDurationMode === 'express' ? 'var(--bg-card)' : 'transparent',
-                    color: workoutDurationMode === 'express' ? 'var(--text-main)' : 'var(--text-muted)',
-                    boxShadow: workoutDurationMode === 'express' ? 'var(--card-shadow)' : 'none',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setWorkoutDurationMode('express')}
-                >
-                  ⚡ Sesión Express (45 min)
-                </button>
+                {/* Duration Switcher (2h vs 45m) */}
+                <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: '9px 12px',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      background: workoutDurationMode === 'full' ? 'var(--bg-card)' : 'transparent',
+                      color: workoutDurationMode === 'full' ? 'var(--text-main)' : 'var(--text-muted)',
+                      boxShadow: workoutDurationMode === 'full' ? 'var(--card-shadow)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setWorkoutDurationMode('full')}
+                  >
+                    ⏱️ Sesión Completa (~90–120 min)
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: '9px 12px',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      background: workoutDurationMode === 'express' ? 'var(--bg-card)' : 'transparent',
+                      color: workoutDurationMode === 'express' ? 'var(--text-main)' : 'var(--text-muted)',
+                      boxShadow: workoutDurationMode === 'express' ? 'var(--card-shadow)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setWorkoutDurationMode('express')}
+                  >
+                    ⚡ Sesión Express (45 min)
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Tarjeta Serena Exclusiva para Anicka */
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <span style={{ fontSize: '26px' }}>🌸</span>
+                <div>
+                  <strong style={{ fontSize: '13px', color: 'var(--text-main)', display: 'block' }}>
+                    Ruta de Movilidad & Bienestar Amable
+                  </strong>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', lineHeight: 1.35 }}>
+                    Sesiones suaves de 15 a 25 min para realizar cómodamente en casa o en un paseo tranquilo, sin pesas ni impacto articular.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* 4. MODULAR WORKOUT BLOCKS (DEJAN STIPKE SYSTEM) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
