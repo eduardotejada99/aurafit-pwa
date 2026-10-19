@@ -30,6 +30,13 @@ export default function HomePage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
 
+  // PIN Privacy & Biometric Security
+  const [isLocked, setIsLocked] = useState(false);
+  const [pinTargetProfileId, setPinTargetProfileId] = useState('andres');
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [isShakingPin, setIsShakingPin] = useState(false);
+
   // Wim Hof Interactive Breathwork State (Andrés Biohacking)
   const [showWimHofModal, setShowWimHofModal] = useState(false);
   const [wimHofRound, setWimHofRound] = useState(1);
@@ -128,7 +135,16 @@ export default function HomePage() {
 
       const savedProfiles = localStorage.getItem('aurafit_family_profiles');
       if (savedProfiles) {
-        setFamilyProfiles(JSON.parse(savedProfiles));
+        const parsed = JSON.parse(savedProfiles);
+        const merged = { ...FAMILY_PROFILES };
+        Object.keys(parsed).forEach((k) => {
+          merged[k] = {
+            ...FAMILY_PROFILES[k],
+            ...parsed[k],
+            pin: parsed[k].pin || FAMILY_PROFILES[k]?.pin || '1234'
+          };
+        });
+        setFamilyProfiles(merged);
       }
 
       const savedActiveProfile = localStorage.getItem('aurafit_active_profile');
@@ -201,15 +217,70 @@ export default function HomePage() {
     }
   };
 
-  const handleSwitchProfile = (newId) => {
+  const executeProfileSwitch = (newId) => {
     if (!familyProfiles[newId]) return;
     setActiveProfileId(newId);
     try {
       localStorage.setItem('aurafit_active_profile', newId);
     } catch (e) {}
     loadProfileData(newId);
+    setIsLocked(false);
+    setEnteredPin('');
+    setPinError('');
     const prof = familyProfiles[newId];
-    showToast(`¡Perfil cambiado a ${prof.name}! (${prof.role})`);
+    showToast(`🔓 ¡Perfil cambiado a ${prof.name}! (${prof.role})`);
+  };
+
+  const handleSwitchProfile = (newId) => {
+    if (!familyProfiles[newId]) return;
+    if (newId === activeProfileId && !isLocked) {
+      setEditingProfile({ ...currentProfile });
+      setShowProfileModal(true);
+      return;
+    }
+    // Demand PIN to switch profile
+    setPinTargetProfileId(newId);
+    setEnteredPin('');
+    setPinError('');
+    setIsLocked(true);
+  };
+
+  const handlePinDigit = (digit) => {
+    if (enteredPin.length >= 4) return;
+    const nextPin = enteredPin + digit;
+    setEnteredPin(nextPin);
+    setPinError('');
+
+    if (nextPin.length === 4) {
+      const targetProf = familyProfiles[pinTargetProfileId] || FAMILY_PROFILES[pinTargetProfileId] || familyProfiles.andres;
+      const expectedPin = (targetProf.pin || '1234').toString();
+
+      if (nextPin === expectedPin) {
+        setTimeout(() => {
+          executeProfileSwitch(pinTargetProfileId);
+        }, 150);
+      } else {
+        setIsShakingPin(true);
+        setPinError('PIN incorrecto. Intenta de nuevo.');
+        setTimeout(() => {
+          setEnteredPin('');
+          setIsShakingPin(false);
+        }, 450);
+      }
+    }
+  };
+
+  const handlePinBackspace = () => {
+    setEnteredPin((prev) => prev.slice(0, -1));
+    setPinError('');
+  };
+
+  const handleLockApp = () => {
+    setPinTargetProfileId(activeProfileId);
+    setEnteredPin('');
+    setPinError('');
+    setIsLocked(true);
+    showToast('🔒 Perfil bloqueado. Se requiere PIN para ingresar.');
   };
 
   const handleSaveProfileChanges = (updatedProfile) => {
@@ -549,6 +620,14 @@ export default function HomePage() {
             <span>🔥</span>
             <span>{streakDays}</span>
           </div>
+          <button
+            type="button"
+            className="header-lock-btn"
+            onClick={handleLockApp}
+            title="Bloquear sesión con PIN"
+          >
+            🔒
+          </button>
           <button
             type="button"
             className="theme-toggle-btn"
@@ -2241,6 +2320,44 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Custom PIN Security Setting */}
+              <div style={{ background: 'var(--bg-card-subtle)', border: '1.5px solid var(--fitia-green)', borderRadius: '14px', padding: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--fitia-green)', textTransform: 'uppercase' }}>
+                    🔒 PIN de Privacidad (4 dígitos)
+                  </label>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Solo números</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={editingProfile.pin || ''}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setEditingProfile({ ...editingProfile, pin: clean });
+                    }}
+                    placeholder="1234"
+                    style={{
+                      width: '100px',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border-subtle)',
+                      background: 'var(--bg-card)',
+                      color: 'var(--text-main)',
+                      fontWeight: 900,
+                      fontSize: '18px',
+                      letterSpacing: '4px',
+                      textAlign: 'center'
+                    }}
+                  />
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                    Se solicitará este PIN para acceder a tus registros de peso, comidas y datos médicos en los celulares.
+                  </div>
+                </div>
+              </div>
+
               {/* Dynamic Target Preview */}
               {(() => {
                 const preview = calculateProfileTargets(editingProfile);
@@ -2477,6 +2594,117 @@ export default function HomePage() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL / OVERLAY: BLOQUEO POR PIN & PRIVACIDAD FAMILIAR
+          =================================================================== */}
+      {isLocked && (
+        <div className="pin-lock-overlay">
+          <div className="pin-lock-card">
+            {(() => {
+              const targetProf = familyProfiles[pinTargetProfileId] || FAMILY_PROFILES[pinTargetProfileId] || familyProfiles.andres;
+
+              return (
+                <>
+                  <div className="pin-profile-avatar">
+                    {targetProf.avatar}
+                  </div>
+                  <div className="pin-profile-name">{targetProf.name}</div>
+                  <div className="pin-profile-role">{targetProf.role}</div>
+
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                    Ingresa tu PIN de seguridad (4 dígitos)
+                  </div>
+
+                  {/* Visual PIN Dots */}
+                  <div className={`pin-dots-wrap ${isShakingPin ? 'pin-shake' : ''}`}>
+                    {[0, 1, 2, 3].map((idx) => (
+                      <div
+                        key={idx}
+                        className={`pin-dot ${idx < enteredPin.length ? 'filled' : ''}`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="pin-error-msg">
+                    {pinError || ''}
+                  </div>
+
+                  {/* Numeric Keypad */}
+                  <div className="pin-keypad">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                      <button
+                        key={digit}
+                        type="button"
+                        className="pin-key-btn"
+                        onClick={() => handlePinDigit(digit)}
+                      >
+                        {digit}
+                        <span className="pin-key-sub">
+                          {digit === '2' ? 'ABC' : digit === '3' ? 'DEF' : digit === '4' ? 'GHI' : digit === '5' ? 'JKL' : digit === '6' ? 'MNO' : digit === '7' ? 'PQRS' : digit === '8' ? 'TUV' : digit === '9' ? 'WXYZ' : '·'}
+                        </span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="pin-action-btn"
+                      onClick={() => setEnteredPin('')}
+                      title="Limpiar"
+                    >
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>BORRAR</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pin-key-btn"
+                      onClick={() => handlePinDigit('0')}
+                    >
+                      0
+                      <span className="pin-key-sub">+</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pin-action-btn"
+                      onClick={handlePinBackspace}
+                      title="Retroceso"
+                    >
+                      ⌫
+                    </button>
+                  </div>
+
+                  {/* Switch Profile Chips on Lock Screen */}
+                  <div className="pin-switch-row">
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Persona:</span>
+                    {Object.values(familyProfiles).map((prof) => (
+                      <button
+                        key={prof.id}
+                        type="button"
+                        className="pin-switch-chip"
+                        style={{
+                          borderColor: prof.id === pinTargetProfileId ? 'var(--fitia-green)' : 'var(--border-subtle)',
+                          color: prof.id === pinTargetProfileId ? 'var(--fitia-green)' : 'var(--text-main)',
+                          background: prof.id === pinTargetProfileId ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)'
+                        }}
+                        onClick={() => {
+                          setPinTargetProfileId(prof.id);
+                          setEnteredPin('');
+                          setPinError('');
+                        }}
+                      >
+                        <span>{prof.avatar}</span>
+                        <span>{prof.name.split(' ')[0]}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '14px', lineHeight: 1.3 }}>
+                    💡 <em>PIN inicial: Andrés: <strong>1234</strong> · Pareja: <strong>5678</strong> · Hermana: <strong>9012</strong>. Puedes cambiarlo en Calibrar ⚙️.</em>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
