@@ -2,6 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CURATED_PERUVIAN_FOODS,
+  PERUVIAN_MENU_OPTIONS,
+  calculatePeruvianCustomMenu,
   parseNaturalLanguageFood
 } from '../src/lib/food-database.js';
 import {
@@ -115,5 +117,70 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(anickaSkills.dona_eden_dance, 'Donna Eden skill tree');
     assert.ok(anickaSkills.eft_tapping, 'EFT tapping skill tree');
     assert.ok(anickaSkills.vitality_walk, 'Vitality walk skill tree');
+  });
+
+  it('should include authentic Peruvian Menús del Día with realistic restaurant portions', () => {
+    assert.ok(PERUVIAN_MENU_OPTIONS.length >= 10, 'Should have at least 10 Peruvian menu options');
+    const ids = PERUVIAN_MENU_OPTIONS.map((m) => m.id);
+
+    assert.ok(ids.includes('menu-sopa-papaseca-pollo-lenteja-camote'), 'Must have user exact menu: Sopa papa seca + pollo + lenteja + camote');
+    assert.ok(ids.includes('menu-pollo-plancha-arroz-papas'), 'Must have Pollo a la plancha menu');
+    assert.ok(ids.includes('menu-guiso-pollo-lentejas-arroz'), 'Must have Guiso de pollo con lentejas');
+    assert.ok(ids.includes('menu-aji-gallina-arroz-papa'), 'Must have Aji de gallina menu');
+    assert.ok(ids.includes('menu-seco-pollo-frejoles-arroz'), 'Must have Seco de pollo menu');
+    assert.ok(ids.includes('menu-estofado-pollo-arroz-papa'), 'Must have Estofado de pollo menu');
+
+    // Verify Sopa de Papa Seca menu matches user exact lunch
+    const userMenu = PERUVIAN_MENU_OPTIONS.find((m) => m.id === 'menu-sopa-papaseca-pollo-lenteja-camote');
+    assert.equal(userMenu.calories, 660);
+    assert.equal(userMenu.protein, 53.0);
+    assert.equal(userMenu.carbs, 82.0);
+    assert.equal(userMenu.fat, 12.0);
+    assert.ok(userMenu.breakdown.includes('Sopa de papa seca'));
+  });
+
+  it('should parse natural language queries for complete Peruvian menus with 1-click zero friction', () => {
+    // 1. User exact lunch: Sopa de papa seca con lenteja, camote y pollo
+    const parsedUserLunch = parseNaturalLanguageFood('sopa de papa seca con lenteja, camote y pollo');
+    assert.equal(parsedUserLunch.length, 1);
+    assert.equal(parsedUserLunch[0].id, 'menu-sopa-papaseca-pollo-lenteja-camote');
+    assert.equal(parsedUserLunch[0].calories, 660);
+    assert.equal(parsedUserLunch[0].protein, 53.0);
+
+    // 2. Pollo a la plancha del menú
+    const parsedPlancha = parseNaturalLanguageFood('pollo a la plancha con arroz y papas');
+    assert.equal(parsedPlancha.length, 1);
+    assert.equal(parsedPlancha[0].id, 'menu-pollo-plancha-arroz-papas');
+    assert.equal(parsedPlancha[0].protein, 53.0);
+
+    // 3. Ají de gallina
+    const parsedAji = parseNaturalLanguageFood('menu aji de gallina');
+    assert.equal(parsedAji.length, 1);
+    assert.equal(parsedAji[0].id, 'menu-aji-gallina-arroz-papa');
+
+    // 4. Guiso de pollo con lentejas
+    const parsedGuiso = parseNaturalLanguageFood('guiso de pollo con lentejas y arroz');
+    assert.equal(parsedGuiso.length, 1);
+    assert.equal(parsedGuiso[0].id, 'menu-guiso-pollo-lentejas-arroz');
+  });
+
+  it('should calculate custom Peruvian menu in 3 taps with accurate macros', () => {
+    const custom = calculatePeruvianCustomMenu({
+      entradaId: 'sopa_papa_seca',
+      segundoId: 'guiso_pollo',
+      carboIds: ['lentejas', 'camote']
+    });
+
+    assert.ok(custom.name.includes('Sopa de Papa Seca'));
+    assert.ok(custom.name.includes('Guiso de Pollo'));
+    assert.ok(custom.name.includes('Lentejas'));
+    assert.ok(custom.name.includes('Camote'));
+
+    // Exact sums: Sopa (160) + Guiso (230) + Lentejas (170) + Camote (120) = 680 kcal
+    assert.equal(custom.calories, 680);
+    assert.equal(custom.protein, 53.0);
+    assert.equal(custom.carbs, 88.0);
+    assert.equal(custom.fat, 14.0);
+    assert.ok(custom.breakdown.includes('Sopa de Papa Seca'));
   });
 });

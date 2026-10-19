@@ -23,6 +23,11 @@ import {
 } from '@/lib/fitness-data';
 import {
   CURATED_PERUVIAN_FOODS,
+  PERUVIAN_MENU_OPTIONS,
+  PERUVIAN_ENTRADAS_DATABASE,
+  PERUVIAN_SEGUNDOS_DATABASE,
+  PERUVIAN_CARBOS_DATABASE,
+  calculatePeruvianCustomMenu,
   parseNaturalLanguageFood,
   calculateCompensatoryRebalance
 } from '@/lib/food-database';
@@ -240,6 +245,12 @@ export default function HomePage() {
   const [selectedFoodToLog, setSelectedFoodToLog] = useState(null);
   const [customGrams, setCustomGrams] = useState(50);
   
+  // Peruvian Menu Modal State (Menú del Día Rápido)
+  const [showPeruvianMenuModal, setShowPeruvianMenuModal] = useState(false);
+  const [peruvianMenuTab, setPeruvianMenuTab] = useState('presets'); // 'presets' | 'builder'
+  const [builderEntradaId, setBuilderEntradaId] = useState('none');
+  const [builderSegundoId, setBuilderSegundoId] = useState('pollo_plancha');
+  const [builderCarboIds, setBuilderCarboIds] = useState(['arroz', 'lentejas']);
   // Nutrition & Pantry state (Fitia Coach)
   const [selectedIngredients, setSelectedIngredients] = useState(['huevos', 'avena', 'platano', 'pollo', 'arroz']);
   const [pantryCategoryTab, setPantryCategoryTab] = useState('proteinas');
@@ -1331,12 +1342,11 @@ export default function HomePage() {
     const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
 
     if (parsedList && parsedList.length > 0) {
-      const first = parsedList[0];
-      const newEntry = {
-        id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      const newEntries = parsedList.map((first, idx) => ({
+        id: `custom-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 4)}`,
         profileId: activeProfileId,
         name: first.name,
-        brand: 'Compendio Nutricional Fitia',
+        brand: first.brand || 'Compendio Nutricional Fitia',
         mealSlot: slot,
         servingDesc: first.servingDesc || `${first.grams || customWeight}g`,
         grams: first.grams || customWeight,
@@ -1347,10 +1357,11 @@ export default function HomePage() {
         icon: first.icon || '🍽️',
         isSnack: first.isSnack || slot === 'snack',
         isUltraProcessed: first.isUltraProcessed || false,
+        breakdown: first.breakdown,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: targetDate
-      };
-      persistLoggedFoods((prev) => [newEntry, ...prev]);
+      }));
+      persistLoggedFoods((prev) => [...newEntries, ...prev]);
       recordActivityToday();
     } else {
       const isSnackLike = /dulce|postre|snack|chocolate|torta|fritura|galleta|queque|keke|chifle|chifles/i.test(nameClean);
@@ -1384,6 +1395,44 @@ export default function HomePage() {
     setShowFoodSearchModal(false);
     setFoodSearchQuery('');
     showToast(`✨ ¡"${nameClean}" registrado en ${slot.toUpperCase()}!`);
+  };
+
+  const handleQuickLogPeruvianMenu = (menuItem, slot = 'comida') => {
+    if (!menuItem) return;
+    const targetDate = selectedDateKey || new Date().toISOString().split('T')[0];
+    const newEntry = {
+      id: `menu-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      profileId: activeProfileId,
+      name: menuItem.name,
+      brand: menuItem.brand || 'Menú del Día Peruano',
+      mealSlot: slot,
+      servingDesc: menuItem.servingDesc || `${menuItem.grams}g`,
+      grams: menuItem.grams || 450,
+      calories: menuItem.calories,
+      protein: menuItem.protein,
+      carbs: menuItem.carbs,
+      fat: menuItem.fat,
+      fiber: menuItem.fiber || 5,
+      icon: menuItem.icon || '🍲',
+      isSnack: false,
+      isUltraProcessed: false,
+      breakdown: menuItem.breakdown,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: targetDate
+    };
+    persistLoggedFoods((prev) => [newEntry, ...prev]);
+    recordActivityToday();
+    setShowPeruvianMenuModal(false);
+    showToast(`🇵🇪 ¡${menuItem.shortName || menuItem.name} registrado en ${slot.toUpperCase()}! 🔥 ${menuItem.calories} kcal · ${menuItem.protein}g P`);
+  };
+
+  const handleConfirmCustomMenuBuild = (slot = 'comida') => {
+    const customMenu = calculatePeruvianCustomMenu({
+      entradaId: builderEntradaId,
+      segundoId: builderSegundoId,
+      carboIds: builderCarboIds
+    });
+    handleQuickLogPeruvianMenu(customMenu, slot);
   };
 
   const handleConfirmTextLog = (detectedList, slot = 'snack') => {
@@ -2458,22 +2507,22 @@ export default function HomePage() {
               </section>
             )}
 
-            {/* Quick Actions Row: Fitia Text Log / Search Foods (Screenshot 3 & 4) */}
-            <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Quick Actions Row: Fitia Text Log / Menús del Día / Search Foods */}
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
                 style={{
                   flex: 1,
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '12px',
+                  padding: '12px 6px',
                   borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   boxShadow: 'var(--card-shadow)',
                   color: 'var(--text-main)',
                   cursor: 'pointer'
@@ -2481,7 +2530,34 @@ export default function HomePage() {
                 onClick={() => setShowTextLogModal(true)}
               >
                 <span>✍️</span>
-                <span>Registro por Texto</span>
+                <span>Por Texto</span>
+              </button>
+
+              <button
+                type="button"
+                style={{
+                  flex: 1.25,
+                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                  padding: '12px 6px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  fontWeight: 900,
+                  fontSize: '12px',
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.15)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  setTargetMealSlot('comida');
+                  setShowPeruvianMenuModal(true);
+                }}
+              >
+                <span>🇵🇪</span>
+                <span>Menús del Día</span>
               </button>
 
               <button
@@ -2490,14 +2566,14 @@ export default function HomePage() {
                   flex: 1,
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '12px',
+                  padding: '12px 6px',
                   borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   boxShadow: 'var(--card-shadow)',
                   color: 'var(--text-main)',
                   cursor: 'pointer'
@@ -2508,7 +2584,7 @@ export default function HomePage() {
                 }}
               >
                 <span>🔍</span>
-                <span>Buscar Alimento (+2M)</span>
+                <span>Buscar (+2M)</span>
               </button>
             </div>
 
@@ -2696,16 +2772,56 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    <button
-                      type="button"
-                      className="btn-add-meal-slot"
-                      onClick={() => {
-                        setTargetMealSlot(slot.key);
-                        setShowFoodSearchModal(true);
-                      }}
-                    >
-                      <span>+</span> Agregar alimento a {slot.label}
-                    </button>
+                    {slot.key === 'comida' || slot.key === 'cena' ? (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                        <button
+                          type="button"
+                          className="btn-add-meal-slot"
+                          style={{ flex: 1.3, margin: 0 }}
+                          onClick={() => {
+                            setTargetMealSlot(slot.key);
+                            setShowFoodSearchModal(true);
+                          }}
+                        >
+                          <span>+</span> Agregar a {slot.label}
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            flex: 1,
+                            padding: '10px 8px',
+                            borderRadius: '12px',
+                            border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(239, 68, 68, 0.08) 100%)',
+                            color: 'var(--text-main)',
+                            fontSize: '11.5px',
+                            fontWeight: 900,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            setTargetMealSlot(slot.key);
+                            setShowPeruvianMenuModal(true);
+                          }}
+                        >
+                          <span>🇵🇪</span> Menú del Día
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-add-meal-slot"
+                        onClick={() => {
+                          setTargetMealSlot(slot.key);
+                          setShowFoodSearchModal(true);
+                        }}
+                      >
+                        <span>+</span> Agregar alimento a {slot.label}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -5481,6 +5597,393 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Modal: Menú del Día Peruano (Opciones Rápidas & Armador en 3 toques) */}
+      {showPeruvianMenuModal && (
+        <div
+          className="modal-backdrop food-modal-backdrop"
+          onClick={() => setShowPeruvianMenuModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet food-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '90dvh', padding: '20px 18px calc(24px + var(--safe-bottom))', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '24px' }}>🇵🇪</span>
+                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-main)', margin: 0 }}>
+                    Menú del Día Peruano
+                  </h3>
+                </div>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.35 }}>
+                  Porciones estándar de restaurante (Arroz, menestra, camote/papa, ensalada y proteína).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPeruvianMenuModal(false)}
+                style={{ fontSize: '20px', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Target Slot Selector & Tabs Switcher */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Registrar en:
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {['comida', 'cena'].map((slotKey) => (
+                    <button
+                      key={slotKey}
+                      type="button"
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '10px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        border: targetMealSlot === slotKey ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        background: targetMealSlot === slotKey ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                        color: targetMealSlot === slotKey ? 'var(--fitia-green)' : 'var(--text-muted)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setTargetMealSlot(slotKey)}
+                    >
+                      {slotKey === 'comida' ? 'Almuerzo' : 'Cena'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subtabs: Presets vs Builder */}
+              <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', borderRadius: '12px', padding: '3px', border: '1px solid var(--border-subtle)' }}>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: '8px 6px',
+                    borderRadius: '10px',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    border: 'none',
+                    background: peruvianMenuTab === 'presets' ? 'var(--bg-card)' : 'transparent',
+                    color: peruvianMenuTab === 'presets' ? 'var(--text-main)' : 'var(--text-muted)',
+                    boxShadow: peruvianMenuTab === 'presets' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onClick={() => setPeruvianMenuTab('presets')}
+                >
+                  ⚡ Menús Clásicos (1 Clic)
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: '8px 6px',
+                    borderRadius: '10px',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    border: 'none',
+                    background: peruvianMenuTab === 'builder' ? 'var(--bg-card)' : 'transparent',
+                    color: peruvianMenuTab === 'builder' ? 'var(--text-main)' : 'var(--text-muted)',
+                    boxShadow: peruvianMenuTab === 'builder' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onClick={() => setPeruvianMenuTab('builder')}
+                >
+                  🎨 Arma tu Menú (3 Toques)
+                </button>
+              </div>
+            </div>
+
+            {/* Content Tab 1: Presets Rápidos */}
+            {peruvianMenuTab === 'presets' && (
+              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '2px' }}>
+                {PERUVIAN_MENU_OPTIONS.map((menu) => {
+                  const isTodayHighlight = menu.id === 'menu-sopa-papaseca-pollo-lenteja-camote';
+
+                  return (
+                    <div
+                      key={menu.id}
+                      style={{
+                        background: isTodayHighlight ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%)' : 'var(--bg-card)',
+                        border: isTodayHighlight ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        borderRadius: '16px',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        boxShadow: 'var(--card-shadow)',
+                        position: 'relative'
+                      }}
+                    >
+                      {isTodayHighlight && (
+                        <div style={{
+                          alignSelf: 'flex-start',
+                          fontSize: '10px',
+                          fontWeight: 900,
+                          background: 'var(--fitia-green)',
+                          color: '#FFFFFF',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.4px'
+                        }}>
+                          ⭐ Tu Menú de Hoy (Recomendado)
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '28px', flexShrink: 0 }}>{menu.icon || '🍲'}</span>
+                          <div>
+                            <div style={{ fontSize: '13.5px', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1.25 }}>
+                              {menu.shortName || menu.name}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                              {menu.servingDesc}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--fitia-green)' }}>
+                            🔥 {menu.calories} kcal
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                            {menu.protein}g Proteína
+                          </div>
+                        </div>
+                      </div>
+
+                      {menu.breakdown && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card-subtle)', padding: '6px 10px', borderRadius: '8px', lineHeight: 1.35 }}>
+                          🥣 <em>{menu.breakdown}</em>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px', borderTop: '1px dashed var(--border-subtle)' }}>
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <span><strong>{menu.protein}g</strong> P</span>
+                          <span>•</span>
+                          <span><strong>{menu.carbs}g</strong> C</span>
+                          <span>•</span>
+                          <span><strong>{menu.fat}g</strong> G</span>
+                        </div>
+
+                        <button
+                          type="button"
+                          style={{
+                            background: isTodayHighlight ? 'var(--fitia-green)' : 'var(--fitia-green-soft)',
+                            color: isTodayHighlight ? '#FFFFFF' : 'var(--fitia-green)',
+                            border: isTodayHighlight ? 'none' : '1px solid var(--fitia-green)',
+                            padding: '6px 14px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleQuickLogPeruvianMenu(menu, targetMealSlot)}
+                        >
+                          + Registrar en {targetMealSlot === 'comida' ? 'Almuerzo' : 'Cena'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Content Tab 2: Custom Menu Builder */}
+            {peruvianMenuTab === 'builder' && (() => {
+              const currentCustom = calculatePeruvianCustomMenu({
+                entradaId: builderEntradaId,
+                segundoId: builderSegundoId,
+                carboIds: builderCarboIds
+              });
+
+              return (
+                <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '2px' }}>
+                  {/* Step 1: Entrada */}
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)', marginBottom: '6px' }}>
+                      1. ¿Qué entrada comiste?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '6px' }}>
+                      {PERUVIAN_ENTRADAS_DATABASE.map((ent) => {
+                        const isSel = builderEntradaId === ent.id;
+                        return (
+                          <button
+                            key={ent.id}
+                            type="button"
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: '12px',
+                              border: isSel ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                              background: isSel ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                              color: isSel ? 'var(--fitia-green)' : 'var(--text-main)',
+                              fontSize: '11px',
+                              fontWeight: isSel ? 900 : 700,
+                              textAlign: 'left',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => setBuilderEntradaId(ent.id)}
+                          >
+                            <span>{ent.icon}</span>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ent.name}</div>
+                              <div style={{ fontSize: '10px', opacity: 0.8 }}>{ent.calories} kcal</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Step 2: Segundo */}
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)', marginBottom: '6px' }}>
+                      2. ¿Qué segundo (proteína) pediste?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '6px' }}>
+                      {PERUVIAN_SEGUNDOS_DATABASE.map((seg) => {
+                        const isSel = builderSegundoId === seg.id;
+                        return (
+                          <button
+                            key={seg.id}
+                            type="button"
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: '12px',
+                              border: isSel ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                              background: isSel ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                              color: isSel ? 'var(--fitia-green)' : 'var(--text-main)',
+                              fontSize: '11px',
+                              fontWeight: isSel ? 900 : 700,
+                              textAlign: 'left',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => setBuilderSegundoId(seg.id)}
+                          >
+                            <span>{seg.icon}</span>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{seg.name}</div>
+                              <div style={{ fontSize: '10px', opacity: 0.8 }}>{seg.calories} kcal · {seg.protein}g P</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Step 3: Guarniciones */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)' }}>
+                        3. ¿Guarniciones / Carbohidratos? (Marca 1 o 2)
+                      </span>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                        {builderCarboIds.length} seleccionada(s)
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '6px' }}>
+                      {PERUVIAN_CARBOS_DATABASE.map((carb) => {
+                        const isSel = builderCarboIds.includes(carb.id);
+                        return (
+                          <button
+                            key={carb.id}
+                            type="button"
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: '12px',
+                              border: isSel ? '1.5px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                              background: isSel ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                              color: isSel ? 'var(--fitia-green)' : 'var(--text-main)',
+                              fontSize: '11px',
+                              fontWeight: isSel ? 900 : 700,
+                              textAlign: 'left',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              if (isSel) {
+                                if (builderCarboIds.length > 1) {
+                                  setBuilderCarboIds(builderCarboIds.filter((cid) => cid !== carb.id));
+                                }
+                              } else {
+                                setBuilderCarboIds((prev) => (prev.length >= 2 ? [prev[1], carb.id] : [...prev, carb.id]));
+                              }
+                            }}
+                          >
+                            <span>{carb.icon}</span>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{carb.name}</div>
+                              <div style={{ fontSize: '10px', opacity: 0.8 }}>{carb.calories} kcal · {carb.carbs}g C</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Summary Bar */}
+                  <div style={{
+                    marginTop: 'auto',
+                    background: 'var(--bg-card)',
+                    border: '1.5px solid var(--fitia-green)',
+                    borderRadius: '16px',
+                    padding: '12px 14px',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.12)'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--fitia-green)', textTransform: 'uppercase' }}>
+                      ✨ Resumen de tu Menú Armado:
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text-main)', margin: '3px 0' }}>
+                      {currentCustom.name}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      <span>🔥 <strong>{currentCustom.calories}</strong> kcal</span>
+                      <span>•</span>
+                      <span>💪 <strong>{currentCustom.protein}g</strong> P</span>
+                      <span>•</span>
+                      <span>🍚 <strong>{currentCustom.carbs}g</strong> C</span>
+                      <span>•</span>
+                      <span>🥑 <strong>{currentCustom.fat}g</strong> G</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ width: '100%', padding: '12px', fontSize: '13px' }}
+                      onClick={() => handleConfirmCustomMenuBuild(targetMealSlot)}
+                    >
+                      + Registrar Menú Completo en {targetMealSlot === 'comida' ? 'Almuerzo' : 'Cena'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Modal: Buscador de Alimentos (+2 Millones de Alimentos - Base Global & Perú) */}
       {showFoodSearchModal && (
         <div
@@ -5558,6 +6061,7 @@ export default function HomePage() {
               <div className="food-filter-chips" style={{ marginTop: '10px' }}>
                 {[
                   { key: 'all', label: '🌟 Todos' },
+                  { key: 'menu_peruano', label: '🇵🇪 Menús del Día' },
                   { key: 'proteina', label: '🥩 Proteínas' },
                   { key: 'carbohidrato', label: '🍚 Carbohidratos' },
                   { key: 'grasa_saludable', label: '🥑 Grasas Buenas' },

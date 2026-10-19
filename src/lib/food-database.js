@@ -684,6 +684,356 @@ export const CURATED_PERUVIAN_FOODS = [
   }
 ];
 
+export const PERUVIAN_MENU_OPTIONS = [
+  {
+    id: 'menu-sopa-papaseca-pollo-lenteja-camote',
+    name: 'Menú Completo: Sopa de Papa Seca + Pollo con Lentejas y Camote',
+    shortName: 'Sopa Papa Seca + Pollo, Lenteja y Camote',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 menú completo (Sopa de papa seca + Pollo, lentejas y camote · 530g)',
+    grams: 530,
+    calories: 660,
+    protein: 53.0,
+    carbs: 82.0,
+    fat: 12.0,
+    fiber: 11.5,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Sopa de papa seca casera (160 kcal) + Presa de pollo (210 kcal) + Lentejas guisadas (170 kcal) + Camote sancochado (120 kcal)'
+  },
+  {
+    id: 'menu-pollo-plancha-arroz-papas',
+    name: 'Menú del Día: Pollo a la Plancha con Arroz, Papas y Ensalada',
+    shortName: 'Pollo a la Plancha + Arroz y Papas',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Pechuga a la plancha, arroz blanco, papas y ensalada · 450g)',
+    grams: 450,
+    calories: 645,
+    protein: 53.0,
+    carbs: 76.0,
+    fat: 12.0,
+    fiber: 4.5,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍗',
+    breakdown: 'Pechuga a la plancha (240 kcal) + Arroz blanco (230 kcal) + Papas doradas/sancochadas (140 kcal) + Ensalada fresca (35 kcal)'
+  },
+  {
+    id: 'menu-guiso-pollo-lentejas-arroz',
+    name: 'Menú del Día: Guiso de Pollo con Lentejas y Arroz Blanco',
+    shortName: 'Guiso de Pollo + Lentejas y Arroz',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Pollo guisado, cazo de lentejas y arroz · 480g)',
+    grams: 480,
+    calories: 630,
+    protein: 48.0,
+    carbs: 79.0,
+    fat: 12.0,
+    fiber: 9.0,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍛',
+    breakdown: 'Guiso de pollo criollo (230 kcal) + Lentejas guisadas (170 kcal) + Arroz blanco (205 kcal) + Ensalada (25 kcal)'
+  },
+  {
+    id: 'menu-aji-gallina-arroz-papa',
+    name: 'Menú del Día: Ají de Gallina con Arroz, Papa y Huevo Duro',
+    shortName: 'Ají de Gallina + Arroz y Papa',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Ají de gallina, arroz, papa y huevo · 460g)',
+    grams: 460,
+    calories: 640,
+    protein: 36.0,
+    carbs: 85.0,
+    fat: 18.0,
+    fiber: 4.2,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Ají de gallina con pollo deshilachado (280 kcal) + Arroz blanco (230 kcal) + Papa sancochada (85 kcal) + Huevo duro (45 kcal)'
+  },
+  {
+    id: 'menu-seco-pollo-frejoles-arroz',
+    name: 'Menú del Día: Seco de Pollo con Lentejas / Frijoles y Arroz',
+    shortName: 'Seco de Pollo + Menestra y Arroz',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Seco de pollo al culantro, menestra guisada y arroz · 480g)',
+    grams: 480,
+    calories: 640,
+    protein: 47.0,
+    carbs: 81.0,
+    fat: 13.0,
+    fiber: 9.5,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Seco de pollo en culantro (240 kcal) + Frijoles/lentejas guisadas (175 kcal) + Arroz blanco (205 kcal) + Salsa criolla (20 kcal)'
+  },
+  {
+    id: 'menu-estofado-pollo-arroz-papa',
+    name: 'Menú del Día: Estofado de Pollo con Arroz y Papas',
+    shortName: 'Estofado de Pollo + Arroz y Papas',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Estofado de pollo, arvejas, papa y arroz · 460g)',
+    grams: 460,
+    calories: 550,
+    protein: 37.0,
+    carbs: 81.0,
+    fat: 9.0,
+    fiber: 4.8,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥘',
+    breakdown: 'Estofado de pollo casero (220 kcal) + Arroz blanco (230 kcal) + Papa sancochada en guiso (100 kcal)'
+  },
+  {
+    id: 'menu-lomo-saltado-arroz-papas',
+    name: 'Menú del Día: Lomo Saltado Criollo con Arroz y Papas Fritas',
+    shortName: 'Lomo Saltado + Arroz y Papas',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Lomo saltado con cebolla/tomate, papas fritas y arroz · 460g)',
+    grams: 460,
+    calories: 720,
+    protein: 38.0,
+    carbs: 88.0,
+    fat: 24.0,
+    fiber: 4.5,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥩',
+    breakdown: 'Lomo saltado de carne (260 kcal) + Arroz blanco (230 kcal) + Papas fritas/doradas (230 kcal)'
+  },
+  {
+    id: 'menu-pescado-frito-lentejas-arroz',
+    name: 'Menú del Día: Pescado Frito con Lentejas, Arroz y Ensalada Criolla',
+    shortName: 'Pescado Frito + Lentejas y Arroz',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Filete de pescado dorado, lentejas guisadas y arroz · 470g)',
+    grams: 470,
+    calories: 640,
+    protein: 46.0,
+    carbs: 79.0,
+    fat: 13.0,
+    fiber: 8.5,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🐟',
+    breakdown: 'Filete de pescado frito (240 kcal) + Lentejas guisadas (170 kcal) + Arroz blanco (205 kcal) + Salsa criolla (25 kcal)'
+  },
+  {
+    id: 'menu-milanesa-pollo-pure-arroz',
+    name: 'Menú del Día: Milanesa de Pollo con Arroz y Puré de Papas',
+    shortName: 'Milanesa de Pollo + Puré y Arroz',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Milanesa de pechuga, puré de papa casero y arroz blanco · 450g)',
+    grams: 450,
+    calories: 655,
+    protein: 39.0,
+    carbs: 85.0,
+    fat: 18.0,
+    fiber: 4.0,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍗',
+    breakdown: 'Milanesa de pechuga de pollo (290 kcal) + Puré de papas casero (160 kcal) + Arroz blanco (205 kcal)'
+  },
+  {
+    id: 'menu-arroz-pollo-huancaina',
+    name: 'Menú del Día: Arroz con Pollo con Papa a la Huancaína',
+    shortName: 'Arroz con Pollo + Huancaína',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 plato completo (Arroz con pollo criollo y papa con huancaína · 470g)',
+    grams: 470,
+    calories: 700,
+    protein: 42.0,
+    carbs: 80.0,
+    fat: 25.0,
+    fiber: 5.5,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍗',
+    breakdown: 'Arroz con pollo criollo (550 kcal) + 1/2 papa con huancaína (150 kcal)'
+  },
+  {
+    id: 'entrada-sopa-papa-seca',
+    name: 'Sopa de Papa Seca del Menú (Entrada Criolla Casera)',
+    shortName: 'Sopa de Papa Seca',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 tazón estándar (250g)',
+    grams: 250,
+    calories: 160,
+    protein: 7.0,
+    carbs: 26.0,
+    fat: 3.0,
+    fiber: 2.8,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥣',
+    breakdown: 'Caldo casero con papa seca tostada, verduras y hierbas andinas'
+  },
+  {
+    id: 'guarnicion-lentejas-cocidas',
+    name: 'Porción de Lentejas Guisadas del Menú (Menestra Casera)',
+    shortName: 'Lentejas Guisadas',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 cazo generoso (150g)',
+    grams: 150,
+    calories: 170,
+    protein: 12.0,
+    carbs: 28.0,
+    fat: 1.5,
+    fiber: 7.5,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🫘',
+    breakdown: 'Lentejas cocidas con sofrito criollo ligero y orégano'
+  },
+  {
+    id: 'guarnicion-camote-sancochado',
+    name: 'Camote Sancochado Dulce Andino',
+    shortName: 'Camote Sancochado',
+    brand: 'Natural / Casero',
+    servingDesc: '1 unidad mediana (130g)',
+    grams: 130,
+    calories: 120,
+    protein: 2.0,
+    carbs: 28.0,
+    fat: 0.5,
+    fiber: 3.5,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍠',
+    breakdown: 'Camote sancochado rico en betacarotenos y carbohidratos complejos'
+  },
+  {
+    id: 'guarnicion-papa-sancochada',
+    name: 'Papa Sancochada Amarilla / Canchán',
+    shortName: 'Papa Sancochada',
+    brand: 'Natural / Casero',
+    servingDesc: '1 unidad mediana (120g)',
+    grams: 120,
+    calories: 105,
+    protein: 2.5,
+    carbs: 24.0,
+    fat: 0.2,
+    fiber: 2.2,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥔',
+    breakdown: 'Papa sancochada andina saciante'
+  },
+  {
+    id: 'entrada-ensalada-menu',
+    name: 'Ensalada Fresca del Menú (Lechuga, Tomate, Pepino y Limón)',
+    shortName: 'Ensalada Fresca del Menú',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 platito de entrada (80g)',
+    grams: 80,
+    calories: 35,
+    protein: 1.2,
+    carbs: 4.5,
+    fat: 1.2,
+    fiber: 1.8,
+    category: 'vegetal',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥗',
+    breakdown: 'Mix de vegetales frescos con aliño de limón'
+  }
+];
+
+// Unify into Curated Foods compendium
+CURATED_PERUVIAN_FOODS.push(...PERUVIAN_MENU_OPTIONS);
+
+export const PERUVIAN_ENTRADAS_DATABASE = [
+  { id: 'none', name: 'Sin entrada', calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, icon: '🚫' },
+  { id: 'sopa_papa_seca', name: 'Sopa de Papa Seca Casera', calories: 160, protein: 7.0, carbs: 26.0, fat: 3.0, fiber: 2.8, icon: '🥣', desc: 'Tazón caliente con caldo casero (250g)' },
+  { id: 'ensalada_fresca', name: 'Ensalada Fresca del Menú', calories: 35, protein: 1.2, carbs: 4.5, fat: 1.2, fiber: 1.8, icon: '🥗', desc: 'Lechuga, tomate, pepino y limón (80g)' },
+  { id: 'sopa_moron', name: 'Sopa de Morón / Menestras', calories: 140, protein: 6.0, carbs: 22.0, fat: 3.0, fiber: 3.0, icon: '🥣', desc: 'Sopa andina reconfortante (250g)' },
+  { id: 'caldo_gallina', name: 'Caldo de Gallina Ligero', calories: 130, protein: 10.0, carbs: 14.0, fat: 4.0, fiber: 1.0, icon: '🍲', desc: 'Caldo casero con presa pequeña (250g)' },
+  { id: 'papa_huancaina', name: '1/2 Papa a la Huancaína', calories: 150, protein: 4.5, carbs: 18.0, fat: 7.0, fiber: 1.5, icon: '🥔', desc: 'Entrada criolla con huevo duro (110g)' }
+];
+
+export const PERUVIAN_SEGUNDOS_DATABASE = [
+  { id: 'pollo_plancha', name: 'Pollo a la Plancha', calories: 240, protein: 45.0, carbs: 0.0, fat: 6.0, fiber: 0, icon: '🍗', desc: 'Filete de pechuga dorada (150g cocida)' },
+  { id: 'guiso_pollo', name: 'Guiso de Pollo Criollo', calories: 230, protein: 32.0, carbs: 6.0, fat: 9.0, fiber: 1.2, icon: '🍛', desc: 'Presa de pollo en salsa criolla (160g)' },
+  { id: 'aji_gallina', name: 'Ají de Gallina', calories: 280, protein: 26.0, carbs: 15.0, fat: 14.0, fiber: 1.5, icon: '🍲', desc: 'Pollo deshilachado en crema de ají (160g)' },
+  { id: 'seco_pollo', name: 'Seco de Pollo al Culantro', calories: 240, protein: 32.0, carbs: 8.0, fat: 9.0, fiber: 1.8, icon: '🍲', desc: 'Presa de pollo en aderezo verde (160g)' },
+  { id: 'estofado_pollo', name: 'Estofado de Pollo', calories: 220, protein: 30.0, carbs: 8.0, fat: 8.0, fiber: 1.5, icon: '🥘', desc: 'Pollo con tomate, arvejas y zanahoria (160g)' },
+  { id: 'lomo_saltado', name: 'Lomo Saltado de Res', calories: 260, protein: 30.0, carbs: 8.0, fat: 14.0, fiber: 1.5, icon: '🥩', desc: 'Carne de res saltada al wok (180g)' },
+  { id: 'pescado_frito', name: 'Pescado Frito Dorado', calories: 240, protein: 30.0, carbs: 6.0, fat: 10.0, fiber: 0.5, icon: '🐟', desc: 'Filete de pescado fresco frito (150g)' },
+  { id: 'milanesa_pollo', name: 'Milanesa de Pechuga', calories: 290, protein: 32.0, carbs: 14.0, fat: 12.0, fiber: 1.0, icon: '🍗', desc: 'Pechuga apanada crocante (140g)' }
+];
+
+export const PERUVIAN_CARBOS_DATABASE = [
+  { id: 'arroz', name: 'Arroz Blanco', calories: 230, protein: 4.5, carbs: 50.0, fat: 1.0, fiber: 1.0, icon: '🍚', grams: 180, desc: 'Porción estándar de menú (180g)' },
+  { id: 'lentejas', name: 'Lentejas Guisadas', calories: 170, protein: 12.0, carbs: 28.0, fat: 1.5, fiber: 7.5, icon: '🫘', grams: 150, desc: 'Cazo de menestra casera (150g)' },
+  { id: 'camote', name: 'Camote Sancochado', calories: 120, protein: 2.0, carbs: 28.0, fat: 0.5, fiber: 3.5, icon: '🍠', grams: 130, desc: '1 camote andino mediano (130g)' },
+  { id: 'papa_sancochada', name: 'Papa Sancochada', calories: 105, protein: 2.5, carbs: 24.0, fat: 0.2, fiber: 2.2, icon: '🥔', grams: 120, desc: '1 papa amarilla o canchán (120g)' },
+  { id: 'pure_papas', name: 'Puré de Papas', calories: 160, protein: 3.0, carbs: 26.0, fat: 5.0, fiber: 2.0, icon: '🥔', grams: 140, desc: 'Puré casero con leche (140g)' },
+  { id: 'papas_fritas', name: 'Papas Fritas', calories: 260, protein: 3.5, carbs: 36.0, fat: 12.0, fiber: 2.5, icon: '🍟', grams: 120, desc: 'Porción clásica de menú (120g)' },
+  { id: 'frejoles', name: 'Frijoles Canario', calories: 185, protein: 11.5, carbs: 30.0, fat: 2.0, fiber: 8.0, icon: '🫘', grams: 150, desc: 'Menestra de frijol canario (150g)' }
+];
+
+/**
+ * Custom Peruvian Menu Calculator ("Armador Rápido de Menú")
+ * Generates consolidated macros and instant loggable object in 1 tap
+ */
+export function calculatePeruvianCustomMenu({
+  entradaId = 'none',
+  segundoId = 'pollo_plancha',
+  carboIds = ['arroz', 'lentejas']
+}) {
+  const entrada = PERUVIAN_ENTRADAS_DATABASE.find((e) => e.id === entradaId) || PERUVIAN_ENTRADAS_DATABASE[0];
+  const segundo = PERUVIAN_SEGUNDOS_DATABASE.find((s) => s.id === segundoId) || PERUVIAN_SEGUNDOS_DATABASE[0];
+  const carbos = (carboIds || []).map((cid) => PERUVIAN_CARBOS_DATABASE.find((c) => c.id === cid)).filter(Boolean);
+
+  const totalCalories = entrada.calories + segundo.calories + carbos.reduce((sum, c) => sum + c.calories, 0);
+  const totalProtein = parseFloat((entrada.protein + segundo.protein + carbos.reduce((sum, c) => sum + c.protein, 0)).toFixed(1));
+  const totalCarbs = parseFloat((entrada.carbs + segundo.carbs + carbos.reduce((sum, c) => sum + c.carbs, 0)).toFixed(1));
+  const totalFat = parseFloat((entrada.fat + segundo.fat + carbos.reduce((sum, c) => sum + c.fat, 0)).toFixed(1));
+  const totalFiber = parseFloat((entrada.fiber + segundo.fiber + carbos.reduce((sum, c) => sum + c.fiber, 0)).toFixed(1));
+
+  const carbNames = carbos.length > 0 ? carbos.map((c) => c.name).join(' y ') : 'Sin guarnición extra';
+  const entradaText = entrada.id !== 'none' ? `${entrada.name} + ` : '';
+  const fullName = `Menú: ${entradaText}${segundo.name} con ${carbNames}`;
+  const shortName = `${entrada.id !== 'none' ? entrada.name + ' + ' : ''}${segundo.name}`;
+
+  return {
+    id: `custom-menu-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    name: fullName,
+    shortName,
+    brand: 'Menú del Día Peruano',
+    servingDesc: `1 menú completo (${entrada.id !== 'none' ? 'Entrada + ' : ''}Segundo y guarnición)`,
+    grams: (entrada.id !== 'none' ? 250 : 0) + 160 + carbos.reduce((sum, c) => sum + (c.grams || 150), 0),
+    calories: totalCalories,
+    protein: totalProtein,
+    carbs: totalCarbs,
+    fat: totalFat,
+    fiber: totalFiber,
+    icon: segundo.icon || '🍲',
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    breakdown: `${entrada.id !== 'none' ? entrada.name + ' (' + entrada.calories + ' kcal) + ' : ''}${segundo.name} (${segundo.calories} kcal) + ${carbos.map((c) => c.name + ' (' + c.calories + ' kcal)').join(' + ')}`
+  };
+}
+
 const SPANISH_NUMBERS = {
   un: 1,
   uno: 1,
@@ -725,6 +1075,70 @@ export function parseNaturalLanguageFood(text = '') {
   const lower = text.toLowerCase().trim();
   const detectedItems = [];
   const processedKeys = new Set();
+
+  // 0. Menús Peruanos & Combos Criollos
+  if (
+    lower.includes('papa seca') ||
+    (lower.includes('lenteja') && (lower.includes('pollo') || lower.includes('camote') || lower.includes('guiso') || lower.includes('arroz'))) ||
+    lower.includes('pollo a la plancha') ||
+    lower.includes('aji de gallina') ||
+    lower.includes('ají de gallina') ||
+    lower.includes('guiso de pollo') ||
+    lower.includes('seco de pollo') ||
+    lower.includes('milanesa') ||
+    lower.includes('pescado frito') ||
+    (lower.includes('menu') && (lower.includes('pollo') || lower.includes('carne') || lower.includes('lenteja') || lower.includes('lomo')))
+  ) {
+    if (lower.includes('papa seca') && (lower.includes('lenteja') || lower.includes('camote') || lower.includes('pollo'))) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-sopa-papaseca-pollo-lenteja-camote');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    } else if (lower.includes('papa seca')) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'entrada-sopa-papa-seca');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        processedKeys.add('papa_seca');
+      }
+    } else if (lower.includes('pollo a la plancha')) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-pollo-plancha-arroz-papas');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    } else if (lower.includes('aji de gallina') || lower.includes('ají de gallina')) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-aji-gallina-arroz-papa');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    } else if (lower.includes('guiso de pollo') || (lower.includes('pollo') && lower.includes('lenteja') && !lower.includes('papa seca'))) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-guiso-pollo-lentejas-arroz');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    } else if (lower.includes('seco de pollo') || (lower.includes('seco') && (lower.includes('frejol') || lower.includes('frijol') || lower.includes('lenteja')))) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-seco-pollo-frejoles-arroz');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    } else if (lower.includes('pescado frito')) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-pescado-frito-lentejas-arroz');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    } else if (lower.includes('milanesa')) {
+      const matchItem = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'menu-milanesa-pollo-pure-arroz');
+      if (matchItem) {
+        detectedItems.push(matchItem);
+        return detectedItems;
+      }
+    }
+  }
 
   // 1. Huevos Enteros
   if (lower.includes('huevo') && !lower.includes('claras de huevo') && !lower.includes('solo claras')) {
@@ -948,6 +1362,21 @@ export function parseNaturalLanguageFood(text = '') {
       key: 'huancaina',
       keywords: ['papa a la huancaina', 'huancaina', 'huancaína'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-papa-huancaina')
+    },
+    {
+      key: 'lentejas',
+      keywords: ['lenteja', 'lentejas'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'guarnicion-lentejas-cocidas')
+    },
+    {
+      key: 'camote',
+      keywords: ['camote', 'camote sancochado'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'guarnicion-camote-sancochado')
+    },
+    {
+      key: 'papa_seca',
+      keywords: ['papa seca', 'sopa de papa seca'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'entrada-sopa-papa-seca')
     }
   ];
 
