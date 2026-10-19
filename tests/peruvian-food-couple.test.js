@@ -6,7 +6,9 @@ import {
 } from '../src/lib/food-database.js';
 import {
   calculateCouplePortions,
-  FAMILY_PROFILES
+  generateCoupleGroceryList,
+  FAMILY_PROFILES,
+  HYBRID_ATHLETE_SYSTEM
 } from '../src/lib/fitness-data.js';
 
 describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
@@ -67,12 +69,51 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(couple.batchCookingTip.includes('1 sola'));
   });
 
-  it('should verify Anicka (Hermana) profile identity and metabolic settings', () => {
+  it('should dynamically link partner name in couple portions and shared grocery list', () => {
+    const meal = {
+      id: 'meal-test-lomo',
+      name: 'Lomo Saltado con Arroz',
+      calories: 500,
+      protein: 40,
+      proteinG: 40,
+      carbs: 50,
+      carbsG: 50,
+      fat: 15,
+      fatG: 15
+    };
+
+    // When user updates partner name to Tania (or any custom name)
+    const coupleTania = calculateCouplePortions(meal, 'Tania');
+    assert.equal(coupleTania.pareja.profileName, 'Tania');
+    assert.ok(coupleTania.batchCookingTip.includes('Tania'));
+    assert.ok(coupleTania.pareja.portionDidactic.includes('Tania'));
+
+    // When grocery list is generated with partner name
+    const grocery = generateCoupleGroceryList(7, 'Tania');
+    const eggItem = grocery[0].items.find((i) => i.id === 'eggs');
+    assert.ok(eggItem.purpose.includes('Tania'));
+  });
+
+  it('should verify Anicka (Hermana) profile identity, metabolic settings, and 7-day wellness cycle', () => {
     const anicka = FAMILY_PROFILES.hermana;
     assert.ok(anicka.name.includes('Anicka'));
     assert.equal(anicka.shortName, 'Anicka');
     assert.equal(anicka.goal, 'insulin_sensitivity');
     assert.equal(anicka.activityLevel, 'light');
     assert.ok(anicka.role.includes('Bienestar') || anicka.role.includes('Movilidad'));
+
+    const anickaSplits = HYBRID_ATHLETE_SYSTEM.splits.hermana;
+    assert.ok(anickaSplits.lunes_eden_dance, 'Monday Donna Eden dance routine');
+    assert.ok(anickaSplits.martes_walk, 'Tuesday walk routine');
+    assert.ok(anickaSplits.miercoles_tapping, 'Wednesday EFT tapping routine');
+    assert.ok(anickaSplits.jueves_eden_flow, 'Thursday Donna Eden flow routine');
+    assert.ok(anickaSplits.viernes_walk_nature, 'Friday nature walk routine');
+    assert.ok(anickaSplits.sabado_hybrid_wellness, 'Saturday hybrid wellness routine');
+    assert.ok(anickaSplits.domingo_calm_pause, 'Sunday calm pause routine');
+
+    const anickaSkills = HYBRID_ATHLETE_SYSTEM.skillTrees.hermana;
+    assert.ok(anickaSkills.dona_eden_dance, 'Donna Eden skill tree');
+    assert.ok(anickaSkills.eft_tapping, 'EFT tapping skill tree');
+    assert.ok(anickaSkills.vitality_walk, 'Vitality walk skill tree');
   });
 });

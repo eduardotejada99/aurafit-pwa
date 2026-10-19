@@ -80,11 +80,15 @@ describe('AuraFit Couple Kitchen & Shared Grocery Synchronization', () => {
     assert.equal(couple.andres.multiplier, 1.25);
 
     // Pareja checks
-    assert.equal(couple.pareja.profileName, 'Mi Pareja');
+    assert.ok(couple.pareja.profileName === 'Mi Pareja' || couple.pareja.profileName === 'Tania');
     assert.equal(couple.pareja.servingRatio, '40%');
     assert.ok(couple.pareja.calories < baseMeal.calories);
     assert.ok(couple.pareja.protein < couple.andres.protein);
     assert.equal(couple.pareja.multiplier, 0.85);
+
+    // Dynamic partner name check
+    const coupleCustom = calculateCouplePortions(baseMeal, 'Tania');
+    assert.equal(coupleCustom.pareja.profileName, 'Tania');
 
     // Batch cooking advice
     assert.ok(couple.batchCookingTip.includes('1 sola'));

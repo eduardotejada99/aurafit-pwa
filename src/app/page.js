@@ -110,6 +110,21 @@ export default function HomePage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
   const [coupleModeEnabled, setCoupleModeEnabled] = useState(true);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [newMemberForm, setNewMemberForm] = useState({
+    name: '',
+    role: 'Bienestar & Nutrición',
+    avatar: '🌸',
+    pin: '1234',
+    weightKg: 60,
+    goal: 'recomposition',
+    isPartnerOfAndres: false
+  });
+
+  const partnerName = useMemo(() => {
+    const raw = familyProfiles.pareja?.name || 'Tania';
+    return raw.replace(/\s*\(Pareja\)/i, '').trim() || 'Tania';
+  }, [familyProfiles.pareja?.name]);
 
   // PIN Privacy & Biometric Security
   const [isLocked, setIsLocked] = useState(false);
@@ -247,14 +262,14 @@ export default function HomePage() {
   const [showCoupleGroceryModal, setShowCoupleGroceryModal] = useState(false);
   const [checkedGroceryItems, setCheckedGroceryItems] = useState({});
   const [couplePortionsExpanded, setCouplePortionsExpanded] = useState({});
-  const coupleGroceryList = useMemo(() => generateCoupleGroceryList(7), []);
+  const coupleGroceryList = useMemo(() => generateCoupleGroceryList(7, partnerName), [partnerName]);
 
   const handleToggleGroceryItem = (id) => {
     setCheckedGroceryItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleCopyGroceryList = () => {
-    let text = `🛒 *LISTA DE COMPRAS COMPARTIDA: ANDRÉS & PAREJA*\n(Sincronizada para la semana / Viaje a Cajabamba)\n\n`;
+    let text = `🛒 *LISTA DE COMPRAS COMPARTIDA: ${(familyProfiles.andres?.name || 'ANDRÉS').toUpperCase()} & ${partnerName.toUpperCase()}*\n(Sincronizada para la semana / Viaje a Cajabamba)\n\n`;
     coupleGroceryList.forEach((cat) => {
       text += `*${cat.icon} ${cat.category.toUpperCase()}*\n`;
       cat.items.forEach((item) => {
@@ -263,7 +278,7 @@ export default function HomePage() {
       });
       text += '\n';
     });
-    text += `💡 *Tip de Cocina en 1 Sola Sartén:*\nCocinan los mismos ingredientes juntos. Al servir: 60% para Andrés (recomposición) y 40% para su pareja (hipertrofia sin sobrecarga).`;
+    text += `💡 *Tip de Cocina en 1 Sola Sartén:*\nCocinan los mismos ingredientes juntos. Al servir: 60% para ${familyProfiles.andres?.name || 'Andrés'} (recomposición) y 40% para ${partnerName} (hipertrofia sin sobrecarga).`;
 
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text);
@@ -380,9 +395,14 @@ export default function HomePage() {
         const parsed = JSON.parse(savedProfiles);
         const merged = { ...FAMILY_PROFILES };
         Object.keys(parsed).forEach((k) => {
+          let name = parsed[k].name;
+          if (k === 'pareja' && (!name || name === 'Mi Pareja')) {
+            name = 'Tania';
+          }
           merged[k] = {
-            ...FAMILY_PROFILES[k],
+            ...(FAMILY_PROFILES[k] || {}),
             ...parsed[k],
+            name: name || parsed[k].name || FAMILY_PROFILES[k]?.name || k,
             pin: (parsed[k].pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
           };
         });
@@ -390,7 +410,7 @@ export default function HomePage() {
       }
 
       const savedActiveProfile = localStorage.getItem('aurafit_active_profile');
-      activeKey = savedActiveProfile && FAMILY_PROFILES[savedActiveProfile] ? savedActiveProfile : 'andres';
+      activeKey = savedActiveProfile && (FAMILY_PROFILES[savedActiveProfile] || localStorage.getItem(`aurafit_family_profiles`)) ? savedActiveProfile : 'andres';
       setActiveProfileId(activeKey);
       loadProfileData(activeKey);
 
@@ -435,9 +455,14 @@ export default function HomePage() {
             const parsedProfiles = res.items[SYNC_KEYS.FAMILY_PROFILES];
             const merged = { ...FAMILY_PROFILES };
             Object.keys(parsedProfiles).forEach((k) => {
+              let name = parsedProfiles[k].name;
+              if (k === 'pareja' && (!name || name === 'Mi Pareja')) {
+                name = 'Tania';
+              }
               merged[k] = {
-                ...FAMILY_PROFILES[k],
+                ...(FAMILY_PROFILES[k] || {}),
                 ...parsedProfiles[k],
+                name: name || parsedProfiles[k].name || FAMILY_PROFILES[k]?.name || k,
                 pin: (parsedProfiles[k].pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
               };
             });
@@ -527,10 +552,16 @@ export default function HomePage() {
         if (pullRes.items[SYNC_KEYS.FAMILY_PROFILES]) {
           const merged = { ...FAMILY_PROFILES };
           Object.keys(pullRes.items[SYNC_KEYS.FAMILY_PROFILES]).forEach((k) => {
+            const p = pullRes.items[SYNC_KEYS.FAMILY_PROFILES][k];
+            let name = p.name;
+            if (k === 'pareja' && (!name || name === 'Mi Pareja')) {
+              name = 'Tania';
+            }
             merged[k] = {
-              ...FAMILY_PROFILES[k],
-              ...pullRes.items[SYNC_KEYS.FAMILY_PROFILES][k],
-              pin: (pullRes.items[SYNC_KEYS.FAMILY_PROFILES][k].pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
+              ...(FAMILY_PROFILES[k] || {}),
+              ...p,
+              name: name || p.name || FAMILY_PROFILES[k]?.name || k,
+              pin: (p.pin || FAMILY_PROFILES[k]?.pin || '1234').toString()
             };
           });
           setFamilyProfiles(merged);
@@ -1033,6 +1064,62 @@ export default function HomePage() {
     } catch (e) {}
     setShowProfileModal(false);
     showToast(`✅ Perfil de ${updatedProfile.name} actualizado y sincronizado en la nube.`);
+  };
+
+  const handleAddFamilyMember = (e) => {
+    if (e) e.preventDefault();
+    if (!newMemberForm.name.trim()) {
+      showToast('⚠️ Ingresa un nombre para el nuevo miembro.');
+      return;
+    }
+    const cleanName = newMemberForm.name.trim();
+    const isPartner = Boolean(newMemberForm.isPartnerOfAndres);
+    const memberId = isPartner ? 'pareja' : 'member_' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now().toString().slice(-4);
+
+    const newProfile = {
+      id: memberId,
+      name: cleanName,
+      role: newMemberForm.role || (isPartner ? 'Hipertrofia Limpia & Protección Lumbar' : 'Bienestar & Nutrición'),
+      avatar: newMemberForm.avatar || (isPartner ? '🌸' : '👤'),
+      pin: (newMemberForm.pin || '1234').replace(/\D/g, '').slice(0, 4) || '1234',
+      gender: 'female',
+      age: 24,
+      heightCm: 160,
+      weightKg: Number(newMemberForm.weightKg) || 60,
+      targetWeightKg: Number(newMemberForm.weightKg) || 60,
+      goal: newMemberForm.goal || 'recomposition',
+      activityLevel: 'moderate',
+      targetCalories: 1900,
+      macros: { proteinGrams: 125, fatGrams: 55, carbsGrams: 215 },
+      waterDailyMl: 2500,
+      badgeText: isPartner ? `🌸 ${cleanName} (Pareja) · Modo 1 Sartén Enlazado` : `🌸 ${cleanName} · Bienestar & Nutrición`,
+      habits: [
+        { id: 'water', name: 'Hidratación Diaria', target: '2,500 ml', completed: false, icon: '💧', category: 'biohacking' },
+        { id: 'sleep', name: 'Descanso Reparador', target: '7-8h', completed: false, icon: '🌙', category: 'recuperacion' }
+      ]
+    };
+
+    setFamilyProfiles((prev) => {
+      const next = { ...prev, [memberId]: newProfile };
+      try {
+        localStorage.setItem('aurafit_family_profiles', JSON.stringify(next));
+        queueCloudSync('aurafit_family_profiles', next, activeProfileId);
+      } catch (err) {}
+      return next;
+    });
+
+    setAdminPins((prev) => ({ ...prev, [memberId]: newProfile.pin }));
+    setShowAddMemberModal(false);
+    setNewMemberForm({
+      name: '',
+      role: 'Bienestar & Nutrición',
+      avatar: '🌸',
+      pin: '1234',
+      weightKg: 60,
+      goal: 'recomposition',
+      isPartnerOfAndres: false
+    });
+    showToast(`✨ ¡${cleanName} agregado con éxito a la familia!`);
   };
 
   const showToast = (msg) => {
@@ -1848,6 +1935,15 @@ export default function HomePage() {
         <button
           type="button"
           className="profile-config-btn"
+          onClick={() => setShowAddMemberModal(true)}
+          title="Agregar nuevo familiar o vincular persona"
+          style={{ background: 'rgba(59, 130, 246, 0.12)', borderColor: 'var(--fitia-blue)', color: 'var(--fitia-blue)', fontSize: '15px', fontWeight: 900 }}
+        >
+          ➕
+        </button>
+        <button
+          type="button"
+          className="profile-config-btn"
           onClick={() => {
             setEditingProfile({ ...currentProfile });
             setShowProfileModal(true);
@@ -2492,13 +2588,13 @@ export default function HomePage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '18px' }}>👫</span>
                       <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>
-                        Cocina en Pareja & Mismo Menú
+                        Cocina en Pareja ({familyProfiles.andres?.name || 'Andrés'} & {partnerName})
                       </strong>
                     </div>
                     <span className="couple-badge-synced">100% Ingredientes Compartidos</span>
                   </div>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
-                    Compran y cocinan los mismos alimentos para ahorrar tiempo. Las porciones se modulan según el objetivo: <strong>Andrés (~125% / 60% de la olla)</strong> y <strong>su Pareja (~85% / 40% de la olla)</strong>.
+                    Compran y cocinan los mismos alimentos para ahorrar tiempo. Las porciones se modulan según el objetivo: <strong>{familyProfiles.andres?.name || 'Andrés'} (~125% / 60% de la olla)</strong> y <strong>{partnerName} (~85% / 40% de la olla)</strong>.
                   </p>
                   <button
                     type="button"
@@ -2506,7 +2602,7 @@ export default function HomePage() {
                     onClick={() => setShowCoupleGroceryModal(true)}
                   >
                     <span>🛒</span>
-                    <span>Lista de Compras Compartida (Semana / Cajabamba)</span>
+                    <span>Lista de Compras Compartida ({familyProfiles.andres?.name || 'Andrés'} & {partnerName})</span>
                   </button>
                 </div>
               )}
@@ -2853,7 +2949,7 @@ export default function HomePage() {
 
                             {/* Cocina en Pareja: Mismo Plato, 2 Porciones (Batch Cooking 1 Sartén) */}
                             {coupleModeEnabled && (activeProfileId === 'andres' || activeProfileId === 'pareja') && (() => {
-                              const couple = calculateCouplePortions(meal);
+                              const couple = calculateCouplePortions(meal, partnerName);
                               if (!couple) return null;
                               const isExp = couplePortionsExpanded[meal.id];
                               return (
@@ -2865,7 +2961,7 @@ export default function HomePage() {
                                   >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <span>👫</span>
-                                      <strong>Modo Pareja: 1 Sartén, 2 Porciones</strong>
+                                      <strong>Modo Pareja ({familyProfiles.andres?.name || 'Andrés'} & {partnerName}): 1 Sartén, 2 Porciones</strong>
                                     </span>
                                     <span style={{ fontSize: '11px', color: 'var(--fitia-blue)', fontWeight: 800 }}>
                                       {isExp ? '▲ Ocultar' : '▼ Ver desglose'}
@@ -2894,7 +2990,7 @@ export default function HomePage() {
                                             type="button"
                                             className="btn-quick-log-couple andres"
                                             onClick={() => handleAddFood({
-                                              name: `${meal.title || meal.name} (Porción Andrés 1.25x)`,
+                                              name: `${meal.title || meal.name} (Porción ${couple.andres.profileName} 1.25x)`,
                                               calories: couple.andres.calories,
                                               protein: couple.andres.protein,
                                               carbs: couple.andres.carbs,
@@ -2902,7 +2998,7 @@ export default function HomePage() {
                                               mealSlot: slot
                                             })}
                                           >
-                                            + Servir a Andrés
+                                            + Servir a {couple.andres.profileName}
                                           </button>
                                         </div>
 
@@ -2922,7 +3018,7 @@ export default function HomePage() {
                                             type="button"
                                             className="btn-quick-log-couple pareja"
                                             onClick={() => handleAddFood({
-                                              name: `${meal.title || meal.name} (Porción Pareja 0.85x)`,
+                                              name: `${meal.title || meal.name} (Porción ${couple.pareja.profileName} 0.85x)`,
                                               calories: couple.pareja.calories,
                                               protein: couple.pareja.protein,
                                               carbs: couple.pareja.carbs,
@@ -2930,7 +3026,7 @@ export default function HomePage() {
                                               mealSlot: slot
                                             })}
                                           >
-                                            + Servir a Pareja
+                                            + Servir a {couple.pareja.profileName}
                                           </button>
                                         </div>
                                       </div>
@@ -5276,7 +5372,7 @@ export default function HomePage() {
                     Lista de Compras Compartida
                   </h3>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Andrés (92kg) & Pareja (58kg) · Semana / Viaje Cajabamba
+                    {familyProfiles.andres?.name || 'Andrés'} ({familyProfiles.andres?.weightKg || 92}kg) & {partnerName} ({familyProfiles.pareja?.weightKg || 58}kg) · Semana / Viaje Cajabamba
                   </div>
                 </div>
               </div>
@@ -5292,10 +5388,10 @@ export default function HomePage() {
             {/* Banner de Sincronización y Batch Cooking */}
             <div style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.1), rgba(59,130,246,0.1))', padding: '12px 14px', borderRadius: '16px', border: '1px solid rgba(236,72,153,0.25)', marginBottom: '16px' }}>
               <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '3px' }}>
-                👫 ¿Por qué compran lo mismo?
+                👫 ¿Por qué compran lo mismo {familyProfiles.andres?.name || 'Andrés'} y {partnerName}?
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                Ahorran tiempo cocinando en <strong>1 sola sartén u olla</strong>. La diferencia no está en comprar comida separada, sino en <strong>la porción al servir</strong>: Andrés recibe el 60% (~125%) y su Pareja el 40% (~85%).
+                Ahorran tiempo cocinando en <strong>1 sola sartén u olla</strong>. La diferencia no está en comprar comida separada, sino en <strong>la porción al servir</strong>: {familyProfiles.andres?.name || 'Andrés'} recibe el 60% (~125%) y {partnerName} el 40% (~85%).
               </div>
             </div>
 
@@ -5669,14 +5765,14 @@ export default function HomePage() {
             </div>
 
             {/* Profile Switcher Tabs inside Modal */}
-            <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', marginBottom: '16px', overflowX: 'auto' }}>
               {Object.values(familyProfiles).map((prof) => (
                 <button
                   key={prof.id}
                   type="button"
                   style={{
-                    flex: 1,
-                    padding: '8px 4px',
+                    flex: '1 0 auto',
+                    padding: '8px 10px',
                     borderRadius: '10px',
                     border: 'none',
                     background: editingProfile.id === prof.id ? 'var(--bg-card)' : 'transparent',
@@ -5684,13 +5780,34 @@ export default function HomePage() {
                     fontWeight: 800,
                     fontSize: '11px',
                     cursor: 'pointer',
-                    boxShadow: editingProfile.id === prof.id ? 'var(--card-shadow)' : 'none'
+                    boxShadow: editingProfile.id === prof.id ? 'var(--card-shadow)' : 'none',
+                    whiteSpace: 'nowrap'
                   }}
                   onClick={() => setEditingProfile({ ...prof })}
                 >
                   {prof.avatar} {prof.name.split(' ')[0]}
                 </button>
               ))}
+              <button
+                type="button"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  border: '1px dashed var(--fitia-green)',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  color: 'var(--fitia-green)',
+                  fontWeight: 800,
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setShowAddMemberModal(true);
+                }}
+              >
+                ➕ Nuevo
+              </button>
             </div>
 
             {/* Admin PIN Quick Action Banner */}
@@ -5863,39 +5980,84 @@ export default function HomePage() {
                 borderRadius: '14px',
                 padding: '12px 14px',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px'
+                flexDirection: 'column',
+                gap: '10px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '22px' }}>👫</span>
-                  <div>
-                    <div style={{ fontSize: '12.5px', fontWeight: 900, color: 'var(--text-main)' }}>
-                      Modo Cocina en Pareja
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
-                      1 Sartén, 2 Porciones (Andrés 60% / Pareja 40%) en recetas y compras
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '22px' }}>👫</span>
+                    <div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 900, color: 'var(--text-main)' }}>
+                        Modo Cocina en Pareja
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                        1 Sartén, 2 Porciones ({familyProfiles.andres?.name || 'Andrés'} 60% / {partnerName} 40%) en recetas y compras
+                      </div>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleCoupleMode}
+                    style={{
+                      background: coupleModeEnabled ? '#EC4899' : 'var(--bg-card)',
+                      color: coupleModeEnabled ? '#FFFFFF' : 'var(--text-muted)',
+                      border: '1px solid ' + (coupleModeEnabled ? '#EC4899' : 'var(--border-subtle)'),
+                      borderRadius: '20px',
+                      padding: '6px 12px',
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      boxShadow: coupleModeEnabled ? '0 2px 8px rgba(236,72,153,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {coupleModeEnabled ? 'Activado ✓' : 'Desactivado'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleToggleCoupleMode}
-                  style={{
-                    background: coupleModeEnabled ? '#EC4899' : 'var(--bg-card)',
-                    color: coupleModeEnabled ? '#FFFFFF' : 'var(--text-muted)',
-                    border: '1px solid ' + (coupleModeEnabled ? '#EC4899' : 'var(--border-subtle)'),
-                    borderRadius: '20px',
-                    padding: '6px 12px',
-                    fontSize: '11px',
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    boxShadow: coupleModeEnabled ? '0 2px 8px rgba(236,72,153,0.3)' : 'none',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {coupleModeEnabled ? 'Activado ✓' : 'Desactivado'}
-                </button>
+
+                {/* Enlace explícito de Pareja de Andrés */}
+                <div style={{ background: 'rgba(236,72,153,0.06)', borderRadius: '10px', padding: '10px', border: '1px dashed rgba(236,72,153,0.3)' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: '#EC4899', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    💍 Nombre de la Pareja enlazada a Andrés:
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={familyProfiles.pareja?.name || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFamilyProfiles((prev) => {
+                          const updated = {
+                            ...prev,
+                            pareja: { ...prev.pareja, name: val }
+                          };
+                          try {
+                            localStorage.setItem('aurafit_family_profiles', JSON.stringify(updated));
+                            queueCloudSync('aurafit_family_profiles', updated, activeProfileId);
+                          } catch (err) {}
+                          return updated;
+                        });
+                        if (editingProfile && editingProfile.id === 'pareja') {
+                          setEditingProfile((prev) => ({ ...prev, name: val }));
+                        }
+                      }}
+                      placeholder="Ej. Tania"
+                      style={{
+                        flex: 1,
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--bg-card)',
+                        color: 'var(--text-main)',
+                        fontWeight: 700,
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    Enlaza a Andrés y su pareja para que las porciones y la lista de compras se sincronicen con este nombre, aunque agregues más familiares.
+                  </span>
+                </div>
               </div>
 
               {/* Cloud Synchronization & Multi-Device Settings */}
@@ -6018,28 +6180,202 @@ export default function HomePage() {
                 );
               })()}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
                 <button
                   type="button"
-                  style={{ flex: 1, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', padding: '12px', borderRadius: '12px', fontWeight: 700 }}
+                  style={{
+                    flex: 1,
+                    background: 'var(--fitia-green)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '12px 10px',
+                    borderRadius: '12px',
+                    fontWeight: 900,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(16,185,129,0.25)'
+                  }}
+                  onClick={() => {
+                    handleSaveProfileChanges(editingProfile);
+                  }}
+                >
+                  💾 Guardar Cambios
+                </button>
+                {editingProfile.id !== activeProfileId && (
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      background: 'var(--bg-card-subtle)',
+                      border: '1.5px solid var(--fitia-green)',
+                      color: 'var(--fitia-green)',
+                      padding: '12px 8px',
+                      borderRadius: '12px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                    onClick={() => {
+                      handleSaveProfileChanges(editingProfile);
+                      handleSwitchProfile(editingProfile.id);
+                    }}
+                  >
+                    🔄 Guardar y Activar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  style={{
+                    background: 'var(--bg-card-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-muted)',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
                   onClick={() => setShowProfileModal(false)}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL: AGREGAR NUEVO FAMILIAR / ENLAZAR PERSONA
+          =================================================================== */}
+      {showAddMemberModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 115, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '24px 20px', width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-main)', margin: 0 }}>
+                  ➕ Agregar Familiar
+                </h3>
+                <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 700 }}>
+                  Nueva persona para nutrición y bienestar
+                </span>
+              </div>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '22px', cursor: 'pointer' }}
+                onClick={() => setShowAddMemberModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddFamilyMember} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Nombre Completo o Apodo
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Tania, Mamá, Papá..."
+                  value={newMemberForm.name}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, name: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '14px', marginTop: '4px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Avatar (Icono)
+                  </label>
+                  <select
+                    value={newMemberForm.avatar}
+                    onChange={(e) => setNewMemberForm({ ...newMemberForm, avatar: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '14px', marginTop: '4px' }}
+                  >
+                    <option value="🌸">🌸 Flor (Femenino)</option>
+                    <option value="🦁">🦁 León (Fuerza)</option>
+                    <option value="🌿">🌿 Hoja (Vitalidad)</option>
+                    <option value="✨">✨ Estrella</option>
+                    <option value="🧘‍♀️">🧘‍♀️ Zen</option>
+                    <option value="👑">👑 Corona</option>
+                    <option value="👤">👤 Persona</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    PIN de Privacidad
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={newMemberForm.pin}
+                    onChange={(e) => setNewMemberForm({ ...newMemberForm, pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                    placeholder="1234"
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 800, fontSize: '14px', letterSpacing: '2px', textAlign: 'center', marginTop: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Meta / Enfoque
+                </label>
+                <select
+                  value={newMemberForm.goal}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, goal: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 700, fontSize: '13px', marginTop: '4px' }}
+                >
+                  <option value="recomposition">Recomposición Corporal</option>
+                  <option value="lean_bulk">Hipertrofia Limpia / Ganancia Muscular</option>
+                  <option value="insulin_sensitivity">Sensibilidad a la Insulina & Vitalidad Amable</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Peso Aproximado (kg)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={newMemberForm.weightKg}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, weightKg: parseFloat(e.target.value) || 0 })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)', color: 'var(--text-main)', fontWeight: 800, fontSize: '14px', marginTop: '4px' }}
+                />
+              </div>
+
+              {/* Opción para enlazar como Pareja de Andrés */}
+              <div style={{ background: 'rgba(236, 72, 153, 0.08)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="checkbox"
+                  id="chkIsPartner"
+                  checked={newMemberForm.isPartnerOfAndres}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, isPartnerOfAndres: e.target.checked })}
+                  style={{ width: '18px', height: '18px', accentColor: '#EC4899', cursor: 'pointer' }}
+                />
+                <label htmlFor="chkIsPartner" style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-main)', cursor: 'pointer', lineHeight: 1.3 }}>
+                  💍 <strong>Enlazar como la Pareja de Andrés</strong> (para cocina 1 sartén 60/40 y compras compartidas)
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  style={{ flex: 1, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', padding: '12px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  onClick={() => setShowAddMemberModal(false)}
                 >
                   Cancelar
                 </button>
                 <button
-                  type="button"
-                  style={{ flex: 2, background: 'var(--fitia-green)', color: '#FFFFFF', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 900, cursor: 'pointer' }}
-                  onClick={() => {
-                    handleSaveProfileChanges(editingProfile);
-                    if (editingProfile.id !== activeProfileId) {
-                      handleSwitchProfile(editingProfile.id);
-                    }
-                  }}
+                  type="submit"
+                  style={{ flex: 2, background: 'var(--fitia-green)', color: '#FFFFFF', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 900, cursor: 'pointer', fontSize: '13px' }}
                 >
-                  Guardar y Activar
+                  Guardar Familiar
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

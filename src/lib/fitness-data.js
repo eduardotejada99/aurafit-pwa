@@ -515,7 +515,7 @@ export const FAMILY_PROFILES = {
 
   pareja: {
     id: 'pareja',
-    name: 'Mi Pareja',
+    name: 'Tania',
     role: 'Hipertrofia Limpia & Protección Lumbar',
     avatar: '🌸',
     pin: '5678',
@@ -1389,7 +1389,7 @@ export function calculateWeightAnalytics(weightLogs = []) {
  * Aligns meals between Andrés (92kg Recomposición) and Pareja (58kg Hipertrofia Limpia)
  * using the SAME ingredients and single-pan batch cooking with scaled portions.
  */
-export function calculateCouplePortions(meal) {
+export function calculateCouplePortions(meal, partnerName = 'Tania') {
   if (!meal) return null;
 
   const baseCal = Number(meal.calories || 450);
@@ -1411,11 +1411,13 @@ export function calculateCouplePortions(meal) {
   const parejaCarb = Math.round(baseCarb * 0.9);
   const parejaFat = Math.round(baseFat * 0.85);
 
+  const cleanPartnerName = partnerName || 'Tania';
+
   return {
     mealId: meal.id,
     mealTitle: meal.title || meal.name,
     icon: meal.icon || '🍲',
-    batchCookingTip: '🍳 Tip 1 Sola Sartén: Cocinen la preparación combinada en 1 sola olla/sartén. Al servir, divide ~60% al plato de Andrés y ~40% al de tu pareja. ¡Mismo tiempo, macros exactos!',
+    batchCookingTip: `🍳 Tip 1 Sola Sartén: Cocinen la preparación combinada en 1 sola olla/sartén. Al servir, divide ~60% al plato de Andrés y ~40% al de ${cleanPartnerName}. ¡Mismo tiempo, macros exactos!`,
     andres: {
       profileName: 'Andrés',
       avatar: '🦁',
@@ -1429,16 +1431,16 @@ export function calculateCouplePortions(meal) {
       portionDidactic: `Porción Generosa (~125%): ${Math.round(andresProt)}g proteína, más saciedad y volumen.`
     },
     pareja: {
-      profileName: 'Mi Pareja',
+      profileName: cleanPartnerName,
       avatar: '🌸',
-      role: 'Hipertrofia Limpia (58kg)',
+      role: `Hipertrofia Limpia (${cleanPartnerName})`,
       multiplier: parejaMult,
       calories: parejaCal,
       protein: parejaProt,
       carbs: parejaCarb,
       fat: parejaFat,
       servingRatio: '40%',
-      portionDidactic: `Porción Compacta (~85%): ${Math.round(parejaProt)}g proteína, fácil asimilación digestiva.`
+      portionDidactic: `Porción Compacta de ${cleanPartnerName} (~85%): ${Math.round(parejaProt)}g proteína, fácil asimilación digestiva.`
     }
   };
 }
@@ -1447,14 +1449,15 @@ export function calculateCouplePortions(meal) {
  * 9. Unified Couple Grocery List Generator (Andrés + Pareja)
  * Computes consolidated shopping list for 7 days or Cajabamba travel
  */
-export function generateCoupleGroceryList(days = 7) {
+export function generateCoupleGroceryList(days = 7, partnerName = 'Tania') {
+  const pName = partnerName || 'Tania';
   return [
     {
       category: 'Proteínas Magras (Avícola & Pescadería)',
       icon: '🍗',
       items: [
-        { id: 'eggs', name: 'Huevos de Granja / Camperos', qty: `${days * 6} unidades (aprox. 3–4 docenas)`, purpose: 'Andrés (4/día) + Pareja (2/día). Proteína de alto valor biológico y colina.' },
-        { id: 'chicken', name: 'Pechuga de Pollo Fresca', qty: `${(days * 0.38).toFixed(1)} kg`, purpose: 'Andrés (~220g/día) + Pareja (~140g/día). Base anabólica sin grasa saturada.' },
+        { id: 'eggs', name: 'Huevos de Granja / Camperos', qty: `${days * 6} unidades (aprox. 3–4 docenas)`, purpose: `Andrés (4/día) + ${pName} (2/día). Proteína de alto valor biológico y colina.` },
+        { id: 'chicken', name: 'Pechuga de Pollo Fresca', qty: `${(days * 0.38).toFixed(1)} kg`, purpose: `Andrés (~220g/día) + ${pName} (~140g/día). Base anabólica sin grasa saturada.` },
         { id: 'tuna', name: 'Latas de Atún en Agua', qty: '8–10 latas', purpose: 'Cenas express y comidas de viaje a Cajabamba con alto Omega-3.' },
         { id: 'cheese', name: 'Queso Fresco Pasteurizado', qty: '500g', purpose: 'Acompañamiento rápido en omelettes y ensaladas.' }
       ]
@@ -1920,17 +1923,89 @@ export const HYBRID_ATHLETE_SYSTEM = {
       }
     },
     hermana: {
+      dona_eden_dance: {
+        id: 'dona_eden_dance',
+        name: 'Danza Energética Donna Eden (Medicina Energética)',
+        icon: '✨',
+        targetMuscle: 'Meridianos sutiles, sistema inmune, hemisferios cerebrales y vitalidad',
+        description: 'Protocolos de medicina energética de Donna Eden: The Four Thumps, Marcha Cruzada y Conectar Cielo y Tierra para equilibrar el flujo corporal y llenarte de alegría.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Los Cuatro Golpeteos (Four Thumps) & Cremallera Zip-Up',
+            target: '5 minutos matutinos',
+            restSeconds: 0,
+            difficulty: 'Amable',
+            cues: '1. Pómulos (enraizamiento y calma). 2. K-27 bajo clavícula (despertar vitalidad). 3. Timo (inmunidad y fuerza interior). 4. Bazo lateral (metabolismo y glucosa). Termina subiendo la cremallera energética desde el pubis al labio inferior.',
+            commonMistake: 'Golpetear con demasiada fuerza; debe ser un tap rítmico agradable con la yema de los dedos.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Marcha Cruzada (Cross Crawl) & Conectar Cielo y Tierra',
+            target: '8–10 minutos con música alegre',
+            restSeconds: 0,
+            difficulty: 'Vital',
+            cues: 'Marcha en el sitio tocando con la mano derecha la rodilla izquierda levantada y viceversa (reprograma la energía cruzada hemisférica). Luego conecta cielo y tierra: una mano empuja arriba y otra abajo con inhalación profunda.',
+            commonMistake: 'Hacer marcha ipsilateral (mismo brazo y pierna a la vez).'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Flujo Completo de Medicina Energética Donna Eden',
+            target: '12–15 minutos de danza y vitalidad plena',
+            restSeconds: 0,
+            difficulty: 'Bienestar Pleno',
+            cues: 'Secuencia completa: 4 Thumps + Cross Crawl + Postura de Wayne Cook (centrado mental) + Crown Pull (estiramiento de coronilla) + Conectar Cielo y Tierra + Zip-Up con música.',
+            commonMistake: 'Apresurarse en las transiciones; fluye al ritmo de tu respiración.'
+          }
+        ]
+      },
+      eft_tapping: {
+        id: 'eft_tapping',
+        name: 'Tapping EFT & Acupresión Somática',
+        icon: '💆‍♀️',
+        targetMuscle: 'Sistema Nervioso Parasimpático, Nervio Vago y Regulación de Cortisol',
+        description: 'Acupresión somática suave en puntos meridianos clave para enviar señales de seguridad al cerebro, calmar la mente y disolver la ansiedad.',
+        levels: [
+          {
+            level: 1,
+            title: 'Nivel 1: Tapping Rápido de 3 Puntos (Karate, Coronilla, Timo)',
+            target: '5 minutos de alivio',
+            restSeconds: 0,
+            difficulty: 'Amable',
+            cues: 'Golpetea con suavidad el borde de la mano (Punto Karate) mientras respiras hondo. Luego pasa a la coronilla y a la clavícula/timo soltando el aire con un suspiro de alivio.',
+            commonMistake: 'Contener la respiración durante el golpeteo.'
+          },
+          {
+            level: 2,
+            title: 'Nivel 2: Ronda Facial Completa de Calma & Descompresión',
+            target: '8–10 minutos',
+            restSeconds: 0,
+            difficulty: 'Vital',
+            cues: 'Recorre en secuencia: Inicio de cejas, lateral del ojo, bajo el ojo (pómulo), bajo la nariz, mentón, clavícula y bajo el brazo. Inhala en 4s y exhala en 4s en cada punto.',
+            commonMistake: 'Presionar con las uñas; usa las yemas de dos dedos.'
+          },
+          {
+            level: 3,
+            title: 'Nivel 3: Tapping Somático Profundo & Frases de Amor Propio',
+            target: '12–15 minutos',
+            restSeconds: 0,
+            difficulty: 'Bienestar Pleno',
+            cues: 'Ronda integral acompañada de afirmaciones: "Aunque sienta cansancio, mi cuerpo está seguro y en paz. Me permito soltar la prisa y llenarme de vitalidad".',
+            commonMistake: 'Juzgar las emociones que surjan; permítete sentirlas y dejarlas ir.'
+          }
+        ]
+      },
       vitality_walk: {
         id: 'vitality_walk',
-        name: 'Paseo Diario de Vitalidad & Bienestar',
+        name: 'Caminatas Progresivas de Vitalidad',
         icon: '🚶‍♀️',
         targetMuscle: 'Circulación suave, salud cardiovascular y sensibilidad a la insulina',
         description: 'Movimiento gentil para llenar el cuerpo de energía, activar el metabolismo y despejar la mente sin fatiga ni sobrecarga.',
         levels: [
           {
             level: 1,
-            title: 'Nivel 1: Paseo Suave de 10 minutos',
-            target: '10 minutos a tu propio ritmo',
+            title: 'Nivel 1: Paseo Amable en Casa o Patio (10–12 min)',
+            target: '10–12 minutos a tu propio ritmo',
             restSeconds: 0,
             difficulty: 'Amable',
             cues: 'Camina a un paso cómodo, en casa, patio o alrededor, escuchando música tranquila que te guste.',
@@ -1938,8 +2013,8 @@ export const HYBRID_ATHLETE_SYSTEM = {
           },
           {
             level: 2,
-            title: 'Nivel 2: Caminata Energizante de 15 minutos',
-            target: '15 minutos al aire libre',
+            title: 'Nivel 2: Caminata Vital al Aire Libre (15–20 min)',
+            target: '15–20 minutos al aire libre',
             restSeconds: 0,
             difficulty: 'Vital',
             cues: 'Disfruta de la luz del sol de la mañana o la tarde. Respira con calma y mantén una postura cómoda.',
@@ -1947,11 +2022,11 @@ export const HYBRID_ATHLETE_SYSTEM = {
           },
           {
             level: 3,
-            title: 'Nivel 3: Paseo con Respiraciones Conscientes (20 min)',
-            target: '20 minutos placenteros',
+            title: 'Nivel 3: Caminata con Respiración Rítmica 4-4 y Sol (25–30 min)',
+            target: '25–30 minutos placenteros',
             restSeconds: 0,
             difficulty: 'Bienestar Pleno',
-            cues: 'Inhala en 4 pasos y exhala en 4 pasos mientras caminas. Llena tus pulmones de aire fresco.',
+            cues: 'Inhala en 4 pasos y exhala en 4 pasos mientras caminas. Llena tus pulmones de aire fresco y vitalidad.',
             commonMistake: 'Sentir que es una obligación; debe ser tu momento de relax.'
           }
         ]
@@ -2913,13 +2988,179 @@ export const HYBRID_ATHLETE_SYSTEM = {
     },
 
     hermana: {
+      lunes_eden_dance: {
+        id: 'lunes_eden_dance',
+        name: 'Lunes: Danza Energética Donna Eden (The Four Thumps & Cross Crawl)',
+        shortName: 'Lun: Danza Donna Eden',
+        icon: '✨',
+        dayRecommendation: 'Lunes / Inicio de Semana',
+        durationMinutes: 12,
+        focus: 'Activación matutina de meridianos, inmunidad y coordinación cruzada hemisférica',
+        blocks: [
+          {
+            name: 'Bloque 1: Los Cuatro Golpeteos (The Four Thumps)',
+            icon: '✨',
+            exercises: [
+              { name: '1. Puntos del Estómago (Pómulos)', sets: 1, reps: '1 minuto rítmico', restSeconds: 0, substitute: 'Masaje circular suave en pómulos', note: 'Calma la mente, enraiza en la tierra y estabiliza la glucosa.' },
+              { name: '2. Puntos K-27 (Bajo las Clavículas)', sets: 1, reps: '1 minuto rítmico', restSeconds: 0, substitute: 'Presión suave en hendiduras claviculares', note: 'Despierta la energía, invierte la fatiga y activa los meridianos.' },
+              { name: '3. Glándula Timo (Centro del Pecho)', sets: 1, reps: '1 minuto rítmico', restSeconds: 0, substitute: 'Frotar con la palma de la mano', note: 'Estimula el sistema inmune, células T y vitalidad interior.' },
+              { name: '4. Puntos del Bazo (Costillas Laterales)', sets: 1, reps: '1 minuto rítmico', restSeconds: 0, substitute: 'Toques suaves a los costados bajo el pecho', note: 'Equilibra el metabolismo, la asimilación de nutrientes y el estrés.' }
+            ]
+          },
+          {
+            name: 'Bloque 2: Marcha Cruzada & Cremallera Zip-Up',
+            icon: '💃',
+            exercises: [
+              { name: 'Marcha Cruzada (Cross Crawl) con Música', sets: 1, reps: '5 minutos continuos', restSeconds: 0, substitute: 'Marcha sentada tocando rodilla opuesta', note: 'Toca mano derecha con rodilla izquierda y viceversa. Reprograma la energía cruzada.' },
+              { name: 'Subir la Cremallera (Zip-Up) de Cierre', sets: 3, reps: '3 elevaciones lentas', restSeconds: 20, substitute: 'Mano en el corazón respirando hondo', note: 'Sube las manos desde el pubis hasta el labio inferior para sellar tu energía positiva.' }
+            ]
+          }
+        ]
+      },
+      martes_walk: {
+        id: 'martes_walk',
+        name: 'Martes: Caminata Suave de Vitalidad (15–20 min)',
+        shortName: 'Mar: Caminata Vital',
+        icon: '🚶‍♀️',
+        dayRecommendation: 'Martes',
+        durationMinutes: 18,
+        focus: 'Circulación suave, captación de glucosa por el sóleo y oxigenación',
+        blocks: [
+          {
+            name: 'Paseo de Activación Circulatoria Amable',
+            icon: '🚶‍♀️',
+            exercises: [
+              { name: 'Caminata Cómoda a tu Ritmo en Casa o Jardín', sets: 1, reps: '15 minutos continuos', restSeconds: 0, substitute: 'Pasos en el sitio con música suave', note: 'Las contracciones del sóleo absorben glucosa sin fatiga.' },
+              { name: 'Respiración de Desaceleración y Calma', sets: 1, reps: '3 minutos', restSeconds: 0, substitute: 'Estiramiento suave de pantorrillas', note: 'Inhala en 4s, exhala en 4s sintiendo la ligereza en las piernas.' }
+            ]
+          }
+        ]
+      },
+      miercoles_tapping: {
+        id: 'miercoles_tapping',
+        name: 'Miércoles: Tapping EFT de Liberación y Calma Somática',
+        shortName: 'Mié: Tapping EFT',
+        icon: '💆‍♀️',
+        dayRecommendation: 'Miércoles',
+        durationMinutes: 10,
+        focus: 'Reducción de cortisol, regulación del nervio vago y bienestar emocional',
+        blocks: [
+          {
+            name: 'Secuencia Somática Anti-Cortisol (EFT)',
+            icon: '💆‍♀️',
+            exercises: [
+              { name: 'Punto Karate (Borde Lateral de la Mano)', sets: 1, reps: '2 minutos con respiración profunda', restSeconds: 0, substitute: 'Masaje suave en palma', note: 'Frase: "Aunque sienta agobio o cansancio, me acepto y me cuido con cariño".' },
+              { name: 'Ronda Facial: Coronilla, Cejas y Pómulos', sets: 2, reps: '10 toques suaves por punto', restSeconds: 15, substitute: 'Cerrar ojos con manos en las sienes', note: 'Libera la tensión acumulada de mitad de semana.' },
+              { name: 'Clavícula y Bajo el Brazo con Suspiro de Alivio', sets: 2, reps: '10 toques por punto', restSeconds: 15, substitute: 'Abrazo cruzado al pecho', note: 'Exhala largo por la boca soltando cualquier preocupación.' }
+            ]
+          }
+        ]
+      },
+      jueves_eden_flow: {
+        id: 'jueves_eden_flow',
+        name: 'Jueves: Danza y Conectar Cielo y Tierra (Donna Eden)',
+        shortName: 'Jue: Flujo Donna Eden',
+        icon: '🌿',
+        dayRecommendation: 'Jueves',
+        durationMinutes: 15,
+        focus: 'Postura Wayne Cook, Crown Pull y Conectar Cielo y Tierra para renovar el biocampo',
+        blocks: [
+          {
+            name: 'Apertura y Descompresión Energética',
+            icon: '🌿',
+            exercises: [
+              { name: 'Postura de Wayne Cook para Centrado Mental', sets: 1, reps: '4 minutos (2 min por lado)', restSeconds: 0, substitute: 'Manos en el regazo con ojos cerrados', note: 'Pierna cruzada sobre rodilla, manos en pie y tobillo. Inhala nariz, exhala boca.' },
+              { name: 'Conectar Cielo y Tierra (Connecting Heaven and Earth)', sets: 3, reps: '3 veces por lado', restSeconds: 20, substitute: 'Estiramiento lateral suave', note: 'Una mano empuja arriba y otra abajo. Abre los espacios entre las costillas.' },
+              { name: 'Estiramiento de la Coronilla (Crown Pull)', sets: 1, reps: '3 minutos', restSeconds: 0, substitute: 'Masaje capilar suave', note: 'Yemas en centro de la frente y cabeza, separando suavemente hacia los lados.' }
+            ]
+          }
+        ]
+      },
+      viernes_walk_nature: {
+        id: 'viernes_walk_nature',
+        name: 'Viernes: Caminata Vital al Aire Libre & Oxigenación',
+        shortName: 'Vie: Caminata & Aire Libre',
+        icon: '🌳',
+        dayRecommendation: 'Viernes',
+        durationMinutes: 20,
+        focus: 'Contacto con luz natural, oxigenación y respiración rítmica 4-4',
+        blocks: [
+          {
+            name: 'Paseo en Naturaleza / Luz Solar',
+            icon: '🌳',
+            exercises: [
+              { name: 'Caminata Continua a Paso Agradable', sets: 1, reps: '16 minutos', restSeconds: 0, substitute: 'Paseo en patio o balcón con brisa', note: 'Disfruta del entorno, los árboles y la luz natural sin mirar pantallas.' },
+              { name: 'Respiración Rítmica en Pasos (4-4)', sets: 1, reps: '4 minutos', restSeconds: 0, substitute: 'Pausa sentada respirando profundo', note: 'Inhala en 4 pasos, exhala en 4 pasos. Llena tus células de oxígeno limpio.' }
+            ]
+          }
+        ]
+      },
+      sabado_hybrid_wellness: {
+        id: 'sabado_hybrid_wellness',
+        name: 'Sábado: Sesión Integral (Tapping EFT + Danza de los 4 Golpeteos)',
+        shortName: 'Sáb: Tapping & Danza',
+        icon: '🌸',
+        dayRecommendation: 'Sábado / Fin de Semana',
+        durationMinutes: 15,
+        focus: 'Fusión reconfortante de acupresión y medicina energética',
+        blocks: [
+          {
+            name: 'Ritual de Fin de Semana: Danza & Acupresión',
+            icon: '🌸',
+            exercises: [
+              { name: 'Tapping Facial y Coronilla Relajante', sets: 1, reps: '5 minutos', restSeconds: 0, substitute: 'Toques en pómulos y frente', note: 'Desconecta de la rutina semanal con toques lentos y placenteros.' },
+              { name: 'Danza de los 4 Golpeteos (Donna Eden)', sets: 1, reps: '6 minutos con música', restSeconds: 0, substitute: 'Marcha suave en el sitio', note: 'Pómulos, K-27, Timo y Bazo moviendo el cuerpo con libertad.' },
+              { name: 'Abrazo al Pecho & Subir la Cremallera Zip-Up', sets: 1, reps: '4 minutos de calma', restSeconds: 0, substitute: 'Mano en el vientre respirando en paz', note: 'Agradece a tu cuerpo por su sabiduría y descanso.' }
+            ]
+          }
+        ]
+      },
+      domingo_calm_pause: {
+        id: 'domingo_calm_pause',
+        name: 'Domingo: Paseo de Calma & Descanso Serena',
+        shortName: 'Dom: Paseo & Calma',
+        icon: '🕊️',
+        dayRecommendation: 'Domingo',
+        durationMinutes: 12,
+        focus: 'Pausa reconfortante, infusión tibia y recarga para la nueva semana',
+        blocks: [
+          {
+            name: 'Descanso y Regeneración Serena',
+            icon: '🕊️',
+            exercises: [
+              { name: 'Paseo Suave y Contemplativo', sets: 1, reps: '8 minutos', restSeconds: 0, substitute: 'Estiramientos en silla relajados', note: 'Paso muy pausado, disfrutando de la tranquilidad del domingo.' },
+              { name: 'Infusión Tibia de Manzanilla / Menta', sets: 1, reps: '1 taza reconfortante', restSeconds: 0, substitute: 'Vaso de agua fresca con limón', note: 'Calma el sistema digestivo y prepara el cuerpo para un sueño profundo.' }
+            ]
+          }
+        ]
+      },
+      calm_break: {
+        id: 'calm_break',
+        name: 'Pausa Serena de Calma & Descompresión (5–10 min)',
+        shortName: 'Pausa de Calma',
+        icon: '🌸',
+        dayRecommendation: 'Días Ocupados / Recarga Rápida',
+        durationMinutes: 8,
+        focus: 'Respiración consciente 4-4, cuello suave e infusión',
+        blocks: [
+          {
+            name: 'Pausa Serena de Calma & Descompresión',
+            icon: '🌸',
+            exercises: [
+              { name: 'Respiración Relajante 4-4 Sentada Cómoda', sets: 1, reps: '3 minutos', restSeconds: 0, substitute: 'Ojos cerrados con música de calma', note: 'Inhala en 4s, exhala en 4s.' },
+              { name: 'Movilidad de Cuello y Hombros Suave', sets: 2, reps: '8 círculos lentos', restSeconds: 30, substitute: 'Estiramiento lateral suave', note: 'Libera la carga del día.' },
+              { name: 'Vaso de Agua Fresca o Infusión Tibia', sets: 1, reps: '1 taza / vaso', restSeconds: 0, substitute: 'Infusión de manzanilla o menta', note: 'Hidratación reconfortante.' }
+            ]
+          }
+        ]
+      },
       mobility_gentle: {
         id: 'mobility_gentle',
         name: 'Movilidad Amable & Tono Relajado',
         shortName: 'Movilidad Suave',
         icon: '🌿',
         dayRecommendation: 'Cualquier Día',
-        durationMinutes: 30,
+        durationMinutes: 15,
         focus: 'Movilidad articular suave, respiración y bienestar sin fatiga',
         blocks: [
           {
@@ -2929,45 +3170,6 @@ export const HYBRID_ATHLETE_SYSTEM = {
               { name: 'Círculos Suaves de Brazos y Hombros', sets: 3, reps: '10 hacia adelante y atrás', restSeconds: 30, substitute: 'Rotaciones de cuello suaves', note: 'Libera tensión en trapecios.' },
               { name: 'Estiramiento Suave de Espalda en Silla', sets: 3, reps: '30s por postura', restSeconds: 30, substitute: 'Inclinaciones laterales cómodas', note: 'Flexibilidad sin esfuerzo.' },
               { name: 'Paseo Suave en Casa o Patio', sets: 1, reps: '10 minutos', restSeconds: 0, substitute: 'Pasos en el sitio con música agradable', note: 'Movimiento gentil y vitalizante.' }
-            ]
-          }
-        ]
-      },
-      walk_energy: {
-        id: 'walk_energy',
-        name: 'Paseo de Bienestar & Respiración Calmante',
-        shortName: 'Paseo Vital',
-        icon: '🚶‍♀️',
-        dayRecommendation: 'Mañana o Tarde',
-        durationMinutes: 20,
-        focus: 'Oxigenación y calma corporal',
-        blocks: [
-          {
-            name: 'Bienestar al Aire Libre',
-            icon: '🌿',
-            exercises: [
-              { name: 'Paseo Suave al Aire Libre', sets: 1, reps: '15 minutos', restSeconds: 0, substitute: 'Movilidad en colchoneta suave', note: 'Disfrutar del aire libre a tu propio ritmo.' },
-              { name: 'Respiraciones Profundas Conscientes', sets: 3, reps: '5 ciclos lentos', restSeconds: 30, substitute: 'Estiramiento de brazos al cielo', note: 'Bajar pulsaciones y recargar energía.' }
-            ]
-          }
-        ]
-      },
-      calm_break: {
-        id: 'calm_break',
-        name: 'Pausa de Calma & Descompresión (5–10 min)',
-        shortName: 'Pausa de Calma',
-        icon: '🌸',
-        dayRecommendation: 'Días Ocupados / Recarga de Energía',
-        durationMinutes: 10,
-        focus: 'Respiración consciente, relajación de hombros y bienestar instantáneo',
-        blocks: [
-          {
-            name: 'Pausa Serena Express',
-            icon: '🌸',
-            exercises: [
-              { name: 'Respiración Relajante 4-4 Sentada Cómoda', sets: 1, reps: '3 minutos', restSeconds: 0, substitute: 'Ojos cerrados con música de calma', note: 'Inhala en 4s, exhala en 4s.' },
-              { name: 'Movilidad de Cuello y Hombros Suave', sets: 2, reps: '8 círculos lentos', restSeconds: 30, substitute: 'Estiramiento lateral suave', note: 'Libera la carga del día.' },
-              { name: 'Vaso de Agua Fresca o Infusión Tibia', sets: 1, reps: '1 taza / vaso', restSeconds: 0, substitute: 'Infusión de manzanilla o menta', note: 'Hidratación reconfortante.' }
             ]
           }
         ]
@@ -2999,7 +3201,21 @@ export function getHybridWorkoutPrescription({
   if (isMissedDay) {
     activeSplitKey = profileId === 'hermana' ? 'calm_break' : 'home_core';
   } else if (!activeSplitKey || !profileSplits[activeSplitKey]) {
-    activeSplitKey = profileId === 'pareja' ? 'glutes_legs' : profileId === 'hermana' ? 'mobility_gentle' : (context === 'home_bars' || context === 'travel') ? 'full_upper' : 'legs';
+    if (profileId === 'hermana') {
+      const dayIndex = new Date().getDay();
+      const hermanaDaySplits = [
+        'domingo_calm_pause',    // 0 = Domingo
+        'lunes_eden_dance',      // 1 = Lunes
+        'martes_walk',           // 2 = Martes
+        'miercoles_tapping',     // 3 = Miércoles
+        'jueves_eden_flow',      // 4 = Jueves
+        'viernes_walk_nature',   // 5 = Viernes
+        'sabado_hybrid_wellness' // 6 = Sábado
+      ];
+      activeSplitKey = hermanaDaySplits[dayIndex] || 'lunes_eden_dance';
+    } else {
+      activeSplitKey = profileId === 'pareja' ? 'glutes_legs' : (context === 'home_bars' || context === 'travel') ? 'full_upper' : 'legs';
+    }
   }
 
   // Get routine from split or context routine
