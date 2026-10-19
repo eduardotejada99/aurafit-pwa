@@ -4992,8 +4992,8 @@ export default function HomePage() {
                 flexDirection: 'column',
                 gap: '8px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: '22px' }}>🛡️</span>
                     <div>
                       <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
@@ -5032,8 +5032,8 @@ export default function HomePage() {
                 flexDirection: 'column',
                 gap: '8px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: '22px' }}>🦵</span>
                     <div>
                       <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
@@ -5072,8 +5072,8 @@ export default function HomePage() {
                 flexDirection: 'column',
                 gap: '8px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: '22px' }}>⚡</span>
                     <div>
                       <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
@@ -5105,19 +5105,12 @@ export default function HomePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {hybridPrescription.blocks.map((block, bIdx) => (
                 <div key={bIdx} className="hybrid-block-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="hybrid-block-header">
+                    <div className="hybrid-block-title-wrap">
                       <span style={{ fontSize: '20px' }}>{block.icon || '⚡'}</span>
-                      <h3 style={{ fontSize: '15px', fontWeight: 900 }}>{block.name}</h3>
+                      <h3 className="hybrid-block-title">{block.name}</h3>
                     </div>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      background: 'var(--fitia-green-soft)',
-                      color: 'var(--fitia-green)',
-                      padding: '3px 8px',
-                      borderRadius: '8px'
-                    }}>
+                    <span className="hybrid-block-badge">
                       {block.exercises?.length || 0} ejercicios
                     </span>
                   </div>
@@ -5133,83 +5126,56 @@ export default function HomePage() {
                           key={eIdx}
                           className={`hybrid-exercise-card ${isDone ? 'completed' : ''}`}
                         >
-                          {/* Exercise Header */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <button
-                                type="button"
-                                style={{
-                                  width: '24px',
-                                  height: '24px',
-                                  borderRadius: '50%',
-                                  border: isDone ? '2px solid var(--fitia-green)' : '2px solid var(--border-subtle)',
-                                  background: isDone ? 'var(--fitia-green)' : 'transparent',
-                                  color: '#FFFFFF',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '12px',
-                                  cursor: 'pointer',
-                                  flexShrink: 0
-                                }}
-                                onClick={() => {
-                                  if (isDone) {
-                                    setCompletedExercises(completedExercises.filter((k) => k !== exKey));
-                                  } else {
-                                    setCompletedExercises([...completedExercises, exKey]);
-                                  }
-                                }}
-                              >
-                                {isDone ? '✓' : ''}
-                              </button>
-                              <span style={{
-                                fontSize: '14px',
-                                fontWeight: 800,
-                                textDecoration: isDone ? 'line-through' : 'none',
-                                color: isDone ? 'var(--text-muted)' : 'var(--text-main)'
-                              }}>
+                          {/* Row 1: Checkbox + Full Title */}
+                          <div className="exercise-card-main-row">
+                            <button
+                              type="button"
+                              className={`exercise-check-circle ${isDone ? 'checked' : ''}`}
+                              onClick={() => {
+                                if (isDone) {
+                                  setCompletedExercises(completedExercises.filter((k) => k !== exKey));
+                                } else {
+                                  setCompletedExercises([...completedExercises, exKey]);
+                                }
+                              }}
+                              title={isDone ? 'Marcar como pendiente' : 'Marcar como completado'}
+                            >
+                              {isDone ? '✓' : ''}
+                            </button>
+                            <div className="exercise-title-wrap">
+                              <span className={`exercise-title ${isDone ? 'done' : ''}`}>
                                 {ex.name}
                               </span>
+                              {ex.equipment && (
+                                <span className="exercise-equipment-tag">
+                                  {ex.equipment === 'machine' ? '⚙️ Máquina guiada' : ex.equipment === 'calisthenics' ? '🤸‍♂️ Calistenia' : '🏋️ Peso libre'}
+                                </span>
+                              )}
                             </div>
+                          </div>
 
-                            <span style={{
-                              fontSize: '12px',
-                              fontWeight: 900,
-                              color: 'var(--fitia-orange)',
-                              background: 'var(--fitia-orange-soft)',
-                              padding: '3px 8px',
-                              borderRadius: '8px',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || 'Completar'}
+                          {/* Row 2: Target / Sets & Reps Pill */}
+                          <div className="exercise-meta-row">
+                            <span className="exercise-sets-badge">
+                              <span style={{ fontSize: '12px' }}>🔥</span>
+                              <span>{ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || 'Completar'}</span>
                             </span>
                           </div>
 
-                          {/* Note / Biomechanical cue */}
+                          {/* Row 3: Biomechanical Note */}
                           {ex.note && (
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4, paddingLeft: '34px' }}>
-                              💡 {ex.note}
-                            </p>
+                            <div className="exercise-note-box">
+                              <span className="exercise-note-icon">💡</span>
+                              <span className="exercise-note-text">{ex.note}</span>
+                            </div>
                           )}
 
-                          {/* Quick Actions (Timer & Substitute Toggle) */}
-                          <div style={{ display: 'flex', gap: '8px', paddingLeft: '34px', marginTop: '2px', flexWrap: 'wrap' }}>
+                          {/* Row 4: Quick Actions (Timer & Substitute Toggle) */}
+                          <div className="exercise-actions-row">
                             {ex.restSeconds > 0 && (
                               <button
                                 type="button"
-                                style={{
-                                  background: 'var(--bg-card)',
-                                  border: '1px solid var(--border-subtle)',
-                                  padding: '5px 10px',
-                                  borderRadius: '8px',
-                                  fontSize: '11px',
-                                  fontWeight: 800,
-                                  color: 'var(--text-main)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  cursor: 'pointer'
-                                }}
+                                className="exercise-action-pill rest"
                                 onClick={() => {
                                   setActiveTimerSeconds(ex.restSeconds);
                                   setTimerRunning(true);
@@ -5223,19 +5189,7 @@ export default function HomePage() {
                             {ex.note && (
                               <button
                                 type="button"
-                                style={{
-                                  background: 'var(--bg-card)',
-                                  border: '1px solid var(--border-subtle)',
-                                  padding: '5px 10px',
-                                  borderRadius: '8px',
-                                  fontSize: '11px',
-                                  fontWeight: 800,
-                                  color: 'var(--fitia-green)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  cursor: 'pointer'
-                                }}
+                                className="exercise-action-pill technique"
                                 onClick={() => setDetailReaderModal({
                                   title: ex.name,
                                   subtitle: `${block.name} · ${ex.sets && ex.reps ? `${ex.sets} sets × ${ex.reps}` : ex.target || 'Ejecución controlada'}`,
@@ -5272,19 +5226,7 @@ export default function HomePage() {
                             {ex.substitute && (
                               <button
                                 type="button"
-                                style={{
-                                  background: isSubOpen ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-card)',
-                                  border: isSubOpen ? '1px solid #3B82F6' : '1px solid var(--border-subtle)',
-                                  padding: '5px 10px',
-                                  borderRadius: '8px',
-                                  fontSize: '11px',
-                                  fontWeight: 800,
-                                  color: isSubOpen ? '#2563EB' : 'var(--text-muted)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  cursor: 'pointer'
-                                }}
+                                className={`exercise-action-pill substitute ${isSubOpen ? 'active' : ''}`}
                                 onClick={() => setShowSubstitutesFor(isSubOpen ? null : exKey)}
                               >
                                 <span>🔄</span>
@@ -5295,9 +5237,10 @@ export default function HomePage() {
 
                           {/* Substitute Box */}
                           {isSubOpen && ex.substitute && (
-                            <div className="substitute-box" style={{ marginLeft: '34px', marginTop: '4px' }}>
-                              <div style={{ fontWeight: 800, marginBottom: '2px', color: '#2563EB' }}>
-                                🔄 Sustituto Libre si la máquina está ocupada:
+                            <div className="substitute-box">
+                              <div style={{ fontWeight: 800, marginBottom: '2px', color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>🔄</span>
+                                <span>Sustituto Libre si la máquina está ocupada:</span>
                               </div>
                               <div>{ex.substitute}</div>
                               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
