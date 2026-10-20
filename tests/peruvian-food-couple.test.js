@@ -33,6 +33,21 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(ids.includes('peru-caldo-verde'), 'Should contain caldo verde cajamarquino');
     assert.ok(ids.includes('peru-patasca'), 'Should contain patasca andina');
     assert.ok(ids.includes('peru-menestron'), 'Should contain menestron criollo');
+    // Green juice variants
+    assert.ok(ids.includes('fit-jugo-verde-proteico'), 'Should contain protein green juice');
+    assert.ok(ids.includes('fit-jugo-verde-termogenico'), 'Should contain thermogenic green juice');
+    assert.ok(ids.includes('fit-jugo-verde-andino'), 'Should contain andean green juice');
+    assert.ok(ids.includes('fit-jugo-verde-chia-saciante'), 'Should contain chia green juice');
+    // Cajamarca and Andean fitness staples
+    assert.ok(ids.includes('fit-ceviche-chocho-cajamarca'), 'Should contain ceviche de chocho/tarwi');
+    assert.ok(ids.includes('fit-tarwi-chocho-cocido'), 'Should contain tarwi cocido puro');
+    assert.ok(ids.includes('fit-quesillo-cajamarquino'), 'Should contain quesillo cajamarquino');
+    assert.ok(ids.includes('fit-trucha-plancha-andina'), 'Should contain trucha andina a la plancha');
+    assert.ok(ids.includes('fit-mote-sancochado'), 'Should contain mote sancochado');
+    assert.ok(ids.includes('fit-cancha-serrana-sin-aceite'), 'Should contain cancha serrana sin aceite');
+    assert.ok(ids.includes('fit-choclo-con-quesillo'), 'Should contain choclo con quesillo');
+    assert.ok(ids.includes('fit-quinua-cocida'), 'Should contain quinua cocida');
+    assert.ok(ids.includes('fit-batido-avena-maca'), 'Should contain batido de maca y avena');
   });
 
   it('should parse natural language queries for green juice and Peruvian specialties', () => {
@@ -68,6 +83,22 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(parsedMoronGrams.length > 0, 'Should parse 300g moron');
     assert.equal(parsedMoronGrams[0].grams, 300);
     assert.equal(parsedMoronGrams[0].calories, 225); // 3 * 75 kcal
+
+    // 7. Ceviche de Chocho / Tarwi Cajamarquino
+    const parsedChocho = parseNaturalLanguageFood('1 plato de ceviche de chocho');
+    assert.ok(parsedChocho.length > 0, 'Should parse ceviche de chocho');
+    assert.ok(parsedChocho[0].name.toLowerCase().includes('chocho') || parsedChocho[0].name.toLowerCase().includes('tarwi'));
+    assert.equal(parsedChocho[0].protein, 22.0);
+
+    // 8. Quesillo Cajamarquino
+    const parsedQuesillo = parseNaturalLanguageFood('1 porcion de quesillo cajamarquino');
+    assert.ok(parsedQuesillo.length > 0, 'Should parse quesillo cajamarquino');
+    assert.ok(parsedQuesillo[0].name.toLowerCase().includes('quesillo'));
+
+    // 9. Jugo verde proteico
+    const parsedGreenProtein = parseNaturalLanguageFood('1 vaso de jugo verde proteico');
+    assert.ok(parsedGreenProtein.length > 0, 'Should parse protein green juice');
+    assert.equal(parsedGreenProtein[0].protein, 24.0);
   });
 
   it('should correctly calculate couple mode split (60% Andrés, 40% Pareja) for meals', () => {

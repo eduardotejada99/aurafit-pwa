@@ -877,6 +877,320 @@ export const CURATED_PERUVIAN_FOODS = [
     isUltraProcessed: false,
     icon: '🍛',
     breakdown: 'Carne de res guisada en chicha de jora y culantro, acompañada de frijol canario y arroz blanco'
+  },
+
+  // =========================================================================
+  // OPCIONES DE JUGOS VERDES FITNESS & BIOHACKING
+  // =========================================================================
+  {
+    id: 'fit-jugo-verde-proteico',
+    name: 'Jugo Verde Proteico Fitness (Espinaca, Piña, Pepino, Chía y Proteína)',
+    shortName: 'Jugo Verde Proteico',
+    brand: 'Fitness Casero',
+    servingDesc: '1 vaso grande (350ml)',
+    grams: 350,
+    calories: 195,
+    protein: 24.0,
+    carbs: 18.0,
+    fat: 2.5,
+    fiber: 4.0,
+    category: 'bebida_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥤',
+    breakdown: 'Espinaca fresca, piña, pepino, semillas de chía y 1 scoop de proteína aislada/whey'
+  },
+  {
+    id: 'fit-jugo-verde-termogenico',
+    name: 'Jugo Verde Termogénico & Quema Grasa (Apio, Pepino, Kion, Té Verde y Limón)',
+    shortName: 'Jugo Verde Termogénico',
+    brand: 'Biohacking / Casero',
+    servingDesc: '1 vaso (300ml)',
+    grams: 300,
+    calories: 45,
+    protein: 1.8,
+    carbs: 8.5,
+    fat: 0.3,
+    fiber: 2.5,
+    category: 'bebida_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍵',
+    breakdown: 'Apio crocante, pepino, kion fresco rallado, infusión fría de té verde, perejil y jugo de limón'
+  },
+  {
+    id: 'fit-jugo-verde-andino',
+    name: 'Jugo Verde Andino Antiinflamatorio (Espinaca, Piña Golden, Menta y Kion)',
+    shortName: 'Jugo Verde Andino',
+    brand: 'Tradición Andina / Fit',
+    servingDesc: '1 vaso (300ml)',
+    grams: 300,
+    calories: 90,
+    protein: 2.0,
+    carbs: 20.0,
+    fat: 0.4,
+    fiber: 3.0,
+    category: 'bebida_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥬',
+    breakdown: 'Hojas de espinaca, piña golden dulce, hojas de hierbabuena/menta fresca, pepino y toque de kion'
+  },
+  {
+    id: 'fit-jugo-verde-chia-saciante',
+    name: 'Jugo Verde Saciante con Chía Hidratada & Manzana Verde (Fibra Máxima)',
+    shortName: 'Jugo Verde con Chía',
+    brand: 'Biohacking / Fit',
+    servingDesc: '1 vaso grande (350ml)',
+    grams: 350,
+    calories: 130,
+    protein: 4.0,
+    carbs: 19.0,
+    fat: 4.5,
+    fiber: 7.5,
+    category: 'bebida_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍏',
+    breakdown: 'Manzana verde con cáscara, apio, pepino, espinaca y 1 cucharada de chía activada'
+  },
+
+  // =========================================================================
+  // SUPERALIMENTOS & COMIDA FITNESS DE CAJAMARCA Y LA SIERRA PERUANA
+  // =========================================================================
+  {
+    id: 'fit-ceviche-chocho-cajamarca',
+    name: 'Ceviche de Chocho / Tarwi Cajamarquino (Proteína Andina Pura)',
+    shortName: 'Ceviche de Chocho',
+    brand: 'Tradición Cajamarquina / Fit',
+    servingDesc: '1 plato generoso (300g)',
+    grams: 300,
+    calories: 280,
+    protein: 22.0,
+    carbs: 14.0,
+    fat: 12.0,
+    fiber: 9.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥗',
+    breakdown: 'Chocho/tarwi desamargado marinado con jugo de limón peruano, cebolla morada en pluma, culantro, tomate, ají rocoto y canchita andina'
+  },
+  {
+    id: 'fit-tarwi-chocho-cocido',
+    name: 'Porción de Tarwi / Chocho Desamargado Cocido (Puro / Balanza)',
+    shortName: 'Chocho / Tarwi Cocido',
+    brand: 'Superalimento Andino',
+    servingDesc: '1 taza / porción (150g)',
+    grams: 150,
+    calories: 195,
+    protein: 18.5,
+    carbs: 8.0,
+    fat: 9.5,
+    fiber: 7.5,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🫘',
+    breakdown: 'Granos de tarwi cocidos y desamargados listos para comer, con más de 40% de proteína en extracto seco'
+  },
+  {
+    id: 'fit-guiso-tarwi-pollo',
+    name: 'Guiso de Chocho / Tarwi con Pechuga de Pollo y Arroz',
+    shortName: 'Guiso de Chocho con Pollo',
+    brand: 'Casero Andino / Fit',
+    servingDesc: '1 plato completo (380g)',
+    grams: 380,
+    calories: 510,
+    protein: 48.0,
+    carbs: 45.0,
+    fat: 12.0,
+    fiber: 8.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍛',
+    breakdown: 'Guiso criollo de chocho licuado y entero con sofrito andino, trozos de pechuga de pollo y guarnición de arroz'
+  },
+  {
+    id: 'fit-quesillo-cajamarquino',
+    name: 'Quesillo Fresco Cajamarquino Artesanal (Proteína de Caseína Pura)',
+    shortName: 'Quesillo Cajamarquino',
+    brand: 'Tradición Cajamarquina',
+    servingDesc: '1 porción (100g)',
+    grams: 100,
+    calories: 165,
+    protein: 18.0,
+    carbs: 2.0,
+    fat: 9.5,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🧀',
+    breakdown: 'Quesillo fresco artesanal de leche de vaca de la campiña de Cajamarca, alto en caseína y bajo en sodio'
+  },
+  {
+    id: 'fit-trucha-plancha-andina',
+    name: 'Trucha Andina a la Plancha con Papitas Nativas y Ensalada',
+    shortName: 'Trucha a la Plancha',
+    brand: 'Piscigranja Andina / Fit',
+    servingDesc: '1 plato completo (350g)',
+    grams: 350,
+    calories: 440,
+    protein: 42.0,
+    carbs: 32.0,
+    fat: 14.0,
+    fiber: 4.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🐟',
+    breakdown: 'Filete fresco de trucha arcoíris andina a la plancha (Omega-3), papas nativas sancochadas y ensalada fresca con limón'
+  },
+  {
+    id: 'fit-mote-sancochado',
+    name: 'Mote Blanco Sancochado Andino (Carbohidrato Completo Saciante)',
+    shortName: 'Mote Sancochado',
+    brand: 'Tradición Andina',
+    servingDesc: '1 taza generosa (180g)',
+    grams: 180,
+    calories: 190,
+    protein: 5.5,
+    carbs: 38.0,
+    fat: 1.5,
+    fiber: 6.0,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌽',
+    breakdown: 'Granos de maíz mote blanco gigante andino sancochados, carbohidrato de absorción lenta y alto poder saciante'
+  },
+  {
+    id: 'fit-cancha-serrana-sin-aceite',
+    name: 'Cancha Serrana Tostada sin Aceite (Al Tostador Andino)',
+    shortName: 'Cancha Serrana sin Aceite',
+    brand: 'Tradición Andina',
+    servingDesc: '1 porción / puñado (50g)',
+    grams: 50,
+    calories: 180,
+    protein: 4.5,
+    carbs: 34.0,
+    fat: 2.0,
+    fiber: 5.0,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌽',
+    breakdown: 'Maíz chulpe andino tostado en tiesto o sartén seca sin añadir aceites ni mantecas, crocante y natural'
+  },
+  {
+    id: 'fit-choclo-con-quesillo',
+    name: 'Choclo Tierno Andino con Quesillo Cajamarquino',
+    shortName: 'Choclo con Quesillo',
+    brand: 'Tradición Cajamarquina',
+    servingDesc: '1 unidad mediana (Choclo 150g + 60g quesillo)',
+    grams: 210,
+    calories: 280,
+    protein: 16.0,
+    carbs: 32.0,
+    fat: 8.5,
+    fiber: 5.5,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌽',
+    breakdown: 'Choclo serrano sancochado con anís servido con tajadas de quesillo fresco cajamarquino'
+  },
+  {
+    id: 'fit-quinua-cocida',
+    name: 'Quinua Graneada / Cocida Andina (Perla de los Andes)',
+    shortName: 'Quinua Cocida',
+    brand: 'Superalimento Andino',
+    servingDesc: '1 taza (160g)',
+    grams: 160,
+    calories: 200,
+    protein: 7.5,
+    carbs: 34.0,
+    fat: 3.2,
+    fiber: 4.5,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌾',
+    breakdown: 'Quinua blanca andina cocida al dente, fuente de aminoácidos esenciales, magnesio y hierro'
+  },
+  {
+    id: 'fit-batido-avena-maca',
+    name: 'Batido de Avena con Maca Andina y Plátano (Fuerza Pre-Entreno)',
+    shortName: 'Batido Avena con Maca',
+    brand: 'Energía Andina / Fit',
+    servingDesc: '1 vaso grande (350ml)',
+    grams: 350,
+    calories: 270,
+    protein: 8.5,
+    carbs: 52.0,
+    fat: 3.0,
+    fiber: 6.5,
+    category: 'desayuno',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥤',
+    breakdown: 'Avena en hojuelas licuada con 1 cucharadita de maca andina en polvo, 1 plátano de seda maduro y canela'
+  },
+  {
+    id: 'fit-ensalada-quinua-atun',
+    name: 'Ensalada Fitness de Quinua con Atún, Palta y Tomate',
+    shortName: 'Ensalada Quinua con Atún',
+    brand: 'Fitness Andino',
+    servingDesc: '1 bowl generoso (320g)',
+    grams: 320,
+    calories: 380,
+    protein: 32.0,
+    carbs: 28.0,
+    fat: 14.0,
+    fiber: 5.5,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥗',
+    breakdown: 'Quinua andina cocida, 1 lata de atún al agua, dados de palta fuerte, tomate picado y aliño de limón'
+  },
+  {
+    id: 'fit-palta-valle-condebamba',
+    name: 'Palta Fuerte de Valle Interandino (Cajabamba / Condebamba)',
+    shortName: 'Palta de Valle Cajabamba',
+    brand: 'Valle Condebamba / Natural',
+    servingDesc: '1/2 palta grande (100g)',
+    grams: 100,
+    calories: 165,
+    protein: 2.0,
+    carbs: 5.0,
+    fat: 15.5,
+    fiber: 6.8,
+    category: 'grasa_saludable',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥑',
+    breakdown: 'Palta fuerte cremosa cultivada en los valles interandinos templados de Cajabamba, alta en ácido oleico'
+  },
+  {
+    id: 'fit-papa-nativa-sancochada',
+    name: 'Papas Nativas Andinas Sancochadas con Cáscara (Huayro / Amarilla)',
+    shortName: 'Papas Nativas Sancochadas',
+    brand: 'Agrobiodiversidad Andina',
+    servingDesc: '2 unidades medianas (160g)',
+    grams: 160,
+    calories: 135,
+    protein: 3.2,
+    carbs: 29.0,
+    fat: 0.2,
+    fiber: 3.8,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥔',
+    breakdown: 'Papas nativas de altura sancochadas con cáscara fina rica en fibra, potasio y antioxidantes naturales'
   }
 ];
 
@@ -1433,6 +1747,60 @@ export const NUTRITIONAL_DENSITY_TABLE = {
     brand: 'Tradición Cajamarquina',
     defaultGrams: 300,
     per100g: { calories: 70, protein: 4.7, carbs: 6.0, fat: 3.0, fiber: 1.2 }
+  },
+  tarwi: {
+    names: ['chocho', 'tarwi', 'ceviche de chocho', 'tarwi cocido', 'chocho cocido', 'chochito'],
+    displayName: 'Tarwi / Chocho Desamargado Cocido',
+    icon: '🫘',
+    category: 'proteina',
+    brand: 'Superalimento Andino',
+    defaultGrams: 150,
+    per100g: { calories: 130, protein: 12.3, carbs: 5.3, fat: 6.3, fiber: 5.0 }
+  },
+  trucha: {
+    names: ['trucha', 'trucha a la plancha', 'filete de trucha', 'trucha andina', 'trucha frita'],
+    displayName: 'Trucha Andina a la Plancha',
+    icon: '🐟',
+    category: 'proteina',
+    brand: 'Piscigranja Andina',
+    defaultGrams: 180,
+    per100g: { calories: 145, protein: 21.0, carbs: 0.0, fat: 6.5, fiber: 0 }
+  },
+  quesillo: {
+    names: ['quesillo', 'quesillo cajamarquino', 'quesillo fresco', 'quesillo artesanal'],
+    displayName: 'Quesillo Fresco Cajamarquino',
+    icon: '🧀',
+    category: 'proteina',
+    brand: 'Tradición Cajamarquina',
+    defaultGrams: 100,
+    per100g: { calories: 165, protein: 18.0, carbs: 2.0, fat: 9.5, fiber: 0 }
+  },
+  mote: {
+    names: ['mote', 'mote sancochado', 'mote blanco', 'motecito'],
+    displayName: 'Mote Blanco Sancochado',
+    icon: '🌽',
+    category: 'carbohidrato',
+    brand: 'Tradición Andina',
+    defaultGrams: 180,
+    per100g: { calories: 105, protein: 3.1, carbs: 21.1, fat: 0.8, fiber: 3.3 }
+  },
+  cancha_serrana: {
+    names: ['cancha serrana', 'cancha', 'maiz tostado', 'canchita'],
+    displayName: 'Cancha Serrana Tostada',
+    icon: '🌽',
+    category: 'carbohidrato',
+    brand: 'Tradición Andina',
+    defaultGrams: 50,
+    per100g: { calories: 360, protein: 9.0, carbs: 68.0, fat: 4.0, fiber: 10.0 }
+  },
+  quinua: {
+    names: ['quinua cocida', 'quinua graneada', 'quinua', 'quinoa'],
+    displayName: 'Quinua Graneada Cocida',
+    icon: '🌾',
+    category: 'carbohidrato',
+    brand: 'Superalimento Andino',
+    defaultGrams: 160,
+    per100g: { calories: 125, protein: 4.7, carbs: 21.3, fat: 2.0, fiber: 2.8 }
   }
 };
 
@@ -1914,11 +2282,77 @@ export function parseNaturalLanguageFood(text = '') {
       key: 'seco_res',
       keywords: ['seco de res', 'seco con frejoles', 'seco con frijoles'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-seco-res-frejoles')
+    },
+    {
+      key: 'tarwi_chocho',
+      keywords: ['ceviche de chocho', 'tarwi', 'chocho', 'chochito', 'guiso de chocho', 'chocho con cebolla', 'tarwi cocido'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-ceviche-chocho-cajamarca')
+    },
+    {
+      key: 'quesillo',
+      keywords: ['quesillo', 'quesillo cajamarquino', 'quesillo con miel', 'quesillo fresco'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-quesillo-cajamarquino')
+    },
+    {
+      key: 'trucha',
+      keywords: ['trucha', 'trucha a la plancha', 'trucha frita', 'trucha andina', 'filete de trucha'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-trucha-plancha-andina')
+    },
+    {
+      key: 'mote',
+      keywords: ['mote', 'mote sancochado', 'mote blanco', 'motecito'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-mote-sancochado')
+    },
+    {
+      key: 'cancha_serrana',
+      keywords: ['cancha serrana', 'canchita serrana', 'maiz tostado', 'cancha tostada'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-cancha-serrana-sin-aceite')
+    },
+    {
+      key: 'choclo_queso',
+      keywords: ['choclo con queso', 'choclo con quesillo', 'choclo tierno'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-choclo-con-quesillo')
+    },
+    {
+      key: 'quinua',
+      keywords: ['quinua', 'quinoa', 'quinua cocida', 'quinua atamalada', 'ensalada de quinua'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-quinua-cocida')
+    },
+    {
+      key: 'maca',
+      keywords: ['maca', 'batido de maca', 'avena con maca', 'maca andina'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-batido-avena-maca')
+    },
+    {
+      key: 'jugo_verde_proteico',
+      keywords: ['jugo verde proteico', 'batido verde proteico', 'jugo verde con proteina', 'jugo verde fit'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-jugo-verde-proteico')
+    },
+    {
+      key: 'jugo_verde_termogenico',
+      keywords: ['jugo verde termogenico', 'jugo verde quema grasa', 'jugo verde con kion'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-jugo-verde-termogenico')
+    },
+    {
+      key: 'jugo_verde_andino',
+      keywords: ['jugo verde andino', 'jugo verde con pina', 'jugo verde con menta'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-jugo-verde-andino')
+    },
+    {
+      key: 'jugo_verde_chia',
+      keywords: ['jugo verde con chia', 'jugo verde saciante', 'jugo verde manzana'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-jugo-verde-chia-saciante')
     }
   ];
 
   const normLower = normalizeSearchText(lower);
-  for (const p of additionalPatterns) {
+  const sortedPatterns = [...additionalPatterns].sort((a, b) => {
+    const maxA = Math.max(...a.keywords.map((k) => k.length));
+    const maxB = Math.max(...b.keywords.map((k) => k.length));
+    return maxB - maxA;
+  });
+
+  for (const p of sortedPatterns) {
     if (!processedKeys.has(p.key)) {
       const isMatch = p.keywords.some((kw) => {
         const normKw = normalizeSearchText(kw);
