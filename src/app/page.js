@@ -208,6 +208,9 @@ export default function HomePage() {
   }, [currentProfile]);
 
   const [habits, setHabits] = useState(FAMILY_PROFILES.andres.habits);
+  const [habitsCompletedByDate, setHabitsCompletedByDate] = useState({});
+  const [completedExercisesByDate, setCompletedExercisesByDate] = useState({});
+  const [sleepByDate, setSleepByDate] = useState({});
   // Daily Water Tracker: Starts at 0 every single day!
   const [waterMl, setWaterMl] = useState(0);
   const [streakDays, setStreakDays] = useState(1);
@@ -249,9 +252,61 @@ export default function HomePage() {
 
   const activeDateKey = selectedDateKey || getLocalDateKey();
   const todayDateKey = getLocalDateKey();
-  const activeWaterMl = activeDateKey === todayDateKey
-    ? Math.max(waterMl, waterByDate[todayDateKey] || 0)
-    : (waterByDate[activeDateKey] || 0);
+  const activeWaterMl = Number(waterByDate[activeDateKey]) || 0;
+
+  const activeCompletedExercises = useMemo(() => {
+    return completedExercisesByDate[activeDateKey] || [];
+  }, [completedExercisesByDate, activeDateKey]);
+
+  const activeDayHabits = useMemo(() => {
+    const dayRecord = habitsCompletedByDate[activeDateKey] || {};
+    return habits.map((h) => {
+      const record = dayRecord[h.id];
+      const isDone = record !== undefined ? Boolean(record.completed) : false;
+      return {
+        ...h,
+        completed: isDone,
+        time: record?.time || null
+      };
+    });
+  }, [habits, habitsCompletedByDate, activeDateKey]);
+
+  const completedHabitsCount = useMemo(() => {
+    return activeDayHabits.filter((h) => h.completed).length;
+  }, [activeDayHabits]);
+
+  const isCurrentDayWorkoutDone = useMemo(() => {
+    if (activeDateKey === todayDateKey) {
+      return Boolean(todayWorkoutDone || weeklyWorkoutLogs[todayDateKey]?.done);
+    }
+    return Boolean(weeklyWorkoutLogs[activeDateKey]?.done);
+  }, [activeDateKey, todayDateKey, todayWorkoutDone, weeklyWorkoutLogs]);
+
+  const activeDayWorkoutMinutes = useMemo(() => {
+    return weeklyWorkoutLogs[activeDateKey]?.minutes || workoutDurationMins;
+  }, [weeklyWorkoutLogs, activeDateKey, workoutDurationMins]);
+
+  const activeDaySplit = useMemo(() => {
+    if (activeDateKey !== todayDateKey && weeklyWorkoutLogs[activeDateKey]?.split) {
+      return weeklyWorkoutLogs[activeDateKey].split;
+    }
+    return selectedSplit;
+  }, [activeDateKey, todayDateKey, weeklyWorkoutLogs, selectedSplit]);
+
+  const activeDayIsMissed = useMemo(() => {
+    if (activeDateKey !== todayDateKey && weeklyWorkoutLogs[activeDateKey]) {
+      return Boolean(weeklyWorkoutLogs[activeDateKey].isMissedDay);
+    }
+    return isMissedDay;
+  }, [activeDateKey, todayDateKey, weeklyWorkoutLogs, isMissedDay]);
+
+  const activeSleepHours = useMemo(() => {
+    return sleepByDate[activeDateKey]?.hours || sleepHours;
+  }, [sleepByDate, activeDateKey, sleepHours]);
+
+  const activeSleepQuality = useMemo(() => {
+    return sleepByDate[activeDateKey]?.quality || sleepQuality;
+  }, [sleepByDate, activeDateKey, sleepQuality]);
 
   // Daily Logged Foods State (persistent per profile)
   const [loggedFoods, setLoggedFoods] = useState([]);
@@ -288,18 +343,17 @@ export default function HomePage() {
 
   // Unified Intelligent Daily Score: AuraScore del Día (0-100)
   const dailyAuraScore = useMemo(() => {
-    const completedHabitsCount = habits.filter((h) => h.completed).length;
     return calculateDailyAuraScore({
       nutritionScore: nutritionalScore.score,
-      workoutDone: todayWorkoutDone,
-      workoutMinutes: workoutDurationMins,
-      sleepHours,
-      sleepQuality,
+      workoutDone: isCurrentDayWorkoutDone,
+      workoutMinutes: activeDayWorkoutMinutes,
+      sleepHours: activeSleepHours,
+      sleepQuality: activeSleepQuality,
       completedHabits: completedHabitsCount,
       totalHabits: habits.length,
       profile: currentProfile
     });
-  }, [nutritionalScore.score, todayWorkoutDone, workoutDurationMins, sleepHours, sleepQuality, habits, currentProfile]);
+  }, [nutritionalScore.score, isCurrentDayWorkoutDone, activeDayWorkoutMinutes, activeSleepHours, activeSleepQuality, completedHabitsCount, habits.length, currentProfile]);
 
   // Food Search Modal (+2M Database)
   const [showFoodSearchModal, setShowFoodSearchModal] = useState(false);
@@ -411,7 +465,19 @@ export default function HomePage() {
   });
   const [selectedLastreKg, setSelectedLastreKg] = useState(10); // Lastre activo recomendado para intermedio
   const [showSubstitutesFor, setShowSubstitutesFor] = useState(null); // exercise name or null
-  const [completedExercises, setCompletedExercises] = useState([]); // array of exercise identifiers
+  const completedExercises = activeCompletedExercises;
+  const setCompletedExercises = (updater) => {
+    setCompletedExercisesByDate((prev) => {
+      const currentList = prev[activeDateKey] || [];
+      const next = typeof updater === 'function' ? updater(currentList) : updater;
+      const updatedByDate = { ...prev, [activeDateKey]: next };
+      try {
+        localStorage.setItem(`aurafit_completed_exercises_${activeProfileId}_${activeDateKey}`, JSON.stringify(next));
+        localStorage.setItem(`aurafit_completed_exercises_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+      } catch (e) {}
+      return updatedByDate;
+    });
+  };
   const [exerciseLogs, setExerciseLogs] = useState({}); // { [exName]: { weightKg, reps, date, hasDropSet, dropWeightKg, dropReps } }
   const [exerciseInputs, setExerciseInputs] = useState({}); // { [exKey]: { weight: '', reps: '', dropWeight: '', dropReps: '', showDropSet: false } }
   const [exerciseFilterMode, setExerciseFilterMode] = useState('all'); // 'all' | 'pending' | 'completed'
@@ -421,15 +487,15 @@ export default function HomePage() {
   const hybridPrescription = useMemo(() => {
     return getHybridWorkoutPrescription({
       profile: currentProfile,
-      selectedSplit,
-      isMissedDay,
-      sleepHours: Number(sleepHours || 7.5),
-      sleepQuality: sleepQuality || 'deep',
+      selectedSplit: activeDaySplit,
+      isMissedDay: activeDayIsMissed,
+      sleepHours: Number(activeSleepHours || 7.5),
+      sleepQuality: activeSleepQuality || 'deep',
       recentHeavyDays: Number(recentHeavyDays || 0),
       context: workoutContext,
       durationMode: workoutDurationMode
     });
-  }, [currentProfile, selectedSplit, isMissedDay, sleepHours, sleepQuality, recentHeavyDays, workoutContext, workoutDurationMode]);
+  }, [currentProfile, activeDaySplit, activeDayIsMissed, activeSleepHours, activeSleepQuality, recentHeavyDays, workoutContext, workoutDurationMode]);
 
   // Dynamic Weekly Workout Balance Analytics (e.g., Legs Monday -> suggests Pull/Back or Push)
   const weeklyWorkoutBalance = useMemo(() => {
@@ -446,15 +512,15 @@ export default function HomePage() {
       loggedFoods: activeDayFoods,
       targets,
       waterMl: activeWaterMl,
-      sleepHours,
-      sleepQuality,
-      selectedSplit,
-      isMissedDay,
-      todayWorkoutDone,
-      habits,
+      sleepHours: activeSleepHours,
+      sleepQuality: activeSleepQuality,
+      selectedSplit: activeDaySplit,
+      isMissedDay: activeDayIsMissed,
+      todayWorkoutDone: isCurrentDayWorkoutDone,
+      habits: activeDayHabits,
       weeklyLogs: weeklyWorkoutLogs
     });
-  }, [currentProfile, activeDayFoods, targets, activeWaterMl, sleepHours, sleepQuality, selectedSplit, isMissedDay, todayWorkoutDone, habits, weeklyWorkoutLogs]);
+  }, [currentProfile, activeDayFoods, targets, activeWaterMl, activeSleepHours, activeSleepQuality, activeDaySplit, activeDayIsMissed, isCurrentDayWorkoutDone, activeDayHabits, weeklyWorkoutLogs]);
 
   // Weight tracking state (dynamically initialized relative to current date and base profile weight)
   const [weightLogs, setWeightLogs] = useState(() => {
@@ -691,9 +757,21 @@ export default function HomePage() {
 
     doInitialCloudSync();
 
-    // Auto-pull when user returns to app (strictly targeting current active profile)
+    // Auto-pull when user returns to app and check for midnight day rollover
+    let lastCheckedDate = getLocalDateKey();
+    const handleDayCheck = () => {
+      const currentDate = getLocalDateKey();
+      if (currentDate !== lastCheckedDate) {
+        lastCheckedDate = currentDate;
+        const currentActiveProfile = localStorage.getItem('aurafit_active_profile') || 'andres';
+        loadProfileData(currentActiveProfile);
+      }
+    };
+    const dayIntervalId = setInterval(handleDayCheck, 60000);
+
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
+        handleDayCheck();
         const currentActiveProfile = localStorage.getItem('aurafit_active_profile') || 'andres';
         pullCloudData(currentActiveProfile).then((res) => {
           if (res && res.ok && res.items && Object.keys(res.items).length > 0) {
@@ -708,6 +786,7 @@ export default function HomePage() {
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      clearInterval(dayIntervalId);
       window.removeEventListener('aurafit_update_ready', onUpdateReady);
       window.removeEventListener('aurafit_updated', onUpdated);
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -984,20 +1063,31 @@ export default function HomePage() {
 
       const todayKey = getLocalDateKey();
 
-      // 4. Habits daily reset check (Preserve custom habits, reset daily completion checks!)
+      // 4. Habits: Load definitions and date-by-date completions
+      let parsedHabitsByDate = {};
+      const savedHabitsByDate = localStorage.getItem(`aurafit_habits_by_date_${profileKey}`);
+      if (savedHabitsByDate) {
+        try { parsedHabitsByDate = JSON.parse(savedHabitsByDate); } catch (e) {}
+      }
+
       const savedHabits = localStorage.getItem(`aurafit_habits_${profileKey}`);
       const savedHabitsDate = localStorage.getItem(`aurafit_habits_date_${profileKey}`);
       if (savedHabits) {
         try {
           const parsed = JSON.parse(savedHabits);
-          if (savedHabitsDate === todayKey) {
-            setHabits(parsed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setHabits(parsed.map((h) => ({ ...h, completed: false, time: null })));
+            const recDate = savedHabitsDate || '2026-10-19';
+            if (!parsedHabitsByDate[recDate]) {
+              parsedHabitsByDate[recDate] = {};
+            }
+            parsed.forEach((h) => {
+              if (h && h.completed) {
+                parsedHabitsByDate[recDate][h.id] = { completed: true, time: h.time || '10:00' };
+              }
+            });
           } else {
-            // New calendar day! Reset completion checkboxes to false, preserve all habit definitions!
-            const freshHabits = parsed.map((h) => ({ ...h, completed: false, time: null }));
-            setHabits(freshHabits);
-            localStorage.setItem(`aurafit_habits_${profileKey}`, JSON.stringify(freshHabits));
-            localStorage.setItem(`aurafit_habits_date_${profileKey}`, todayKey);
+            setHabits(prof.habits || []);
           }
         } catch (e) {
           setHabits(prof.habits || []);
@@ -1006,32 +1096,82 @@ export default function HomePage() {
         setHabits(prof.habits || []);
       }
 
+      // Restore Monday 2026-10-19 from legacy global 'aurafit_habits' if not filled yet
+      const legacyGlobalHabits = localStorage.getItem('aurafit_habits');
+      if (legacyGlobalHabits) {
+        try {
+          const parsedLegacy = JSON.parse(legacyGlobalHabits);
+          if (Array.isArray(parsedLegacy) && parsedLegacy.some((h) => h && h.completed)) {
+            if (!parsedHabitsByDate['2026-10-19']) parsedHabitsByDate['2026-10-19'] = {};
+            parsedLegacy.forEach((h) => {
+              if (h && h.completed && !parsedHabitsByDate['2026-10-19'][h.id]) {
+                parsedHabitsByDate['2026-10-19'][h.id] = { completed: true, time: h.time || '10:00' };
+              }
+            });
+          }
+        } catch (e) {}
+      }
+
+      setHabitsCompletedByDate(parsedHabitsByDate);
+      localStorage.setItem(`aurafit_habits_by_date_${profileKey}`, JSON.stringify(parsedHabitsByDate));
+
       // 5. Water by date tracker: Starts at 0 on a brand new day, but strictly preserves any recorded water
       const savedWaterByDate = localStorage.getItem(`aurafit_water_by_date_${profileKey}`);
       let parsedWaterByDate = {};
       if (savedWaterByDate) {
         try { parsedWaterByDate = JSON.parse(savedWaterByDate); } catch (e) {}
       }
-      setWaterByDate(parsedWaterByDate);
 
       const savedWaterDaily = localStorage.getItem(`aurafit_water_daily_${profileKey}`);
-      let dailyWater = 0;
       if (savedWaterDaily) {
         try {
           const parsed = JSON.parse(savedWaterDaily);
-          if (parsed.date === todayKey && (typeof parsed.ml === 'number' || typeof parsed.amount === 'number')) {
-            dailyWater = parsed.ml ?? parsed.amount ?? 0;
+          if (parsed && parsed.date && (typeof parsed.ml === 'number' || typeof parsed.amount === 'number')) {
+            const mlVal = parsed.ml ?? parsed.amount ?? 0;
+            if (!parsedWaterByDate[parsed.date] || mlVal > parsedWaterByDate[parsed.date]) {
+              parsedWaterByDate[parsed.date] = mlVal;
+            }
           }
         } catch (e) {}
       }
-      const finalTodayWater = Math.max(dailyWater, parsedWaterByDate[todayKey] || 0);
-      setWaterMl(finalTodayWater);
 
-      // 6. Sleep & Recovery State for current profile (checked by date)
+      // If yesterday 2026-10-19 had water in scalar, preserve it
+      if (!parsedWaterByDate['2026-10-19']) {
+        const legacyWater = localStorage.getItem(`aurafit_water_${profileKey}`);
+        if (legacyWater) {
+          const parsedScalar = parseInt(legacyWater, 10);
+          if (!isNaN(parsedScalar) && parsedScalar > 0) {
+            parsedWaterByDate['2026-10-19'] = parsedScalar;
+          }
+        }
+      }
+
+      // Today (todayKey) starts at 0 unless explicitly logged today:
+      if (parsedWaterByDate[todayKey] === undefined) {
+        parsedWaterByDate[todayKey] = 0;
+      }
+
+      setWaterByDate(parsedWaterByDate);
+      setWaterMl(parsedWaterByDate[todayKey] || 0);
+      localStorage.setItem(`aurafit_water_by_date_${profileKey}`, JSON.stringify(parsedWaterByDate));
+
+      // 6. Sleep & Recovery State for current profile
+      const savedSleepByDate = localStorage.getItem(`aurafit_sleep_by_date_${profileKey}`);
+      let parsedSleepByDate = {};
+      if (savedSleepByDate) {
+        try { parsedSleepByDate = JSON.parse(savedSleepByDate); } catch (e) {}
+      }
+
       const savedSleep = localStorage.getItem(`aurafit_sleep_${profileKey}`);
       if (savedSleep) {
         try {
           const parsed = JSON.parse(savedSleep);
+          if (parsed.date) {
+            parsedSleepByDate[parsed.date] = {
+              hours: parsed.hours || 7.5,
+              quality: parsed.quality || 'deep'
+            };
+          }
           if (parsed.date === todayKey) {
             if (parsed.hours) setSleepHours(parsed.hours);
             if (parsed.quality) setSleepQuality(parsed.quality);
@@ -1047,12 +1187,35 @@ export default function HomePage() {
         setSleepHours(7.5);
         setSleepQuality('deep');
       }
+      setSleepByDate(parsedSleepByDate);
 
-      // Daily Workout Completion Tracking for current profile
+      // Daily & Weekly Workout Logs for current profile
+      let parsedWeeklyLogs = {};
+      const savedWeek = localStorage.getItem(`aurafit_workout_week_${profileKey}`);
+      if (savedWeek) {
+        try {
+          parsedWeeklyLogs = JSON.parse(savedWeek) || {};
+        } catch (e) {
+          parsedWeeklyLogs = {};
+        }
+      }
+
       const savedWorkout = localStorage.getItem(`aurafit_workout_${profileKey}`);
       if (savedWorkout) {
         try {
           const parsed = JSON.parse(savedWorkout);
+          if (parsed && parsed.date) {
+            if (!parsedWeeklyLogs[parsed.date]) {
+              parsedWeeklyLogs[parsed.date] = {
+                split: profileKey === 'andres' ? 'legs' : profileKey === 'pareja' ? 'glutes_legs' : 'mobility_gentle',
+                title: 'Entrenamiento Completado',
+                done: !!parsed.done,
+                minutes: parsed.minutes || 45
+              };
+            } else if (parsed.done && !parsedWeeklyLogs[parsed.date].done) {
+              parsedWeeklyLogs[parsed.date].done = true;
+            }
+          }
           if (parsed.date === todayKey) {
             setTodayWorkoutDone(!!parsed.done);
             if (parsed.minutes) setWorkoutDurationMins(parsed.minutes);
@@ -1064,17 +1227,12 @@ export default function HomePage() {
         setTodayWorkoutDone(false);
       }
 
-      // Weekly Workout Logs & Split for current profile
-      const savedWeek = localStorage.getItem(`aurafit_workout_week_${profileKey}`);
-      if (savedWeek) {
-        try {
-          setWeeklyWorkoutLogs(JSON.parse(savedWeek));
-        } catch (e) {
-          setWeeklyWorkoutLogs({});
-        }
-      } else {
-        setWeeklyWorkoutLogs({});
+      if (parsedWeeklyLogs[todayKey]?.done) {
+        setTodayWorkoutDone(true);
       }
+
+      setWeeklyWorkoutLogs(parsedWeeklyLogs);
+      localStorage.setItem(`aurafit_workout_week_${profileKey}`, JSON.stringify(parsedWeeklyLogs));
 
       const savedSplit = localStorage.getItem(`aurafit_selected_split_${profileKey}`);
       setSelectedSplit(savedSplit || null);
@@ -1082,17 +1240,47 @@ export default function HomePage() {
       const savedMissed = localStorage.getItem(`aurafit_missed_day_${profileKey}`);
       setIsMissedDay(savedMissed === todayKey);
 
-      // Completed exercises for today & profile (persisted so checks NEVER disappear!)
-      const savedCompleted = localStorage.getItem(`aurafit_completed_exercises_${profileKey}_${todayKey}`);
-      if (savedCompleted) {
-        try {
-          setCompletedExercises(JSON.parse(savedCompleted));
-        } catch (e) {
-          setCompletedExercises([]);
-        }
-      } else {
-        setCompletedExercises([]);
+      // Completed exercises for all dates & profile (persisted so checks NEVER disappear!)
+      let parsedCompletedByDate = {};
+      const savedCompletedByDate = localStorage.getItem(`aurafit_completed_exercises_by_date_${profileKey}`);
+      if (savedCompletedByDate) {
+        try { parsedCompletedByDate = JSON.parse(savedCompletedByDate); } catch (e) {}
       }
+
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          const prefix = `aurafit_completed_exercises_${profileKey}_`;
+          if (k && k.startsWith(prefix) && !k.includes('by_date')) {
+            const dateKey = k.replace(prefix, '');
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+              const val = localStorage.getItem(k);
+              if (val) {
+                try {
+                  const list = JSON.parse(val);
+                  if (Array.isArray(list) && list.length > 0) {
+                    parsedCompletedByDate[dateKey] = Array.from(new Set([...(parsedCompletedByDate[dateKey] || []), ...list]));
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      // If today has saved exercises
+      const todaySavedExercises = localStorage.getItem(`aurafit_completed_exercises_${profileKey}_${todayKey}`);
+      if (todaySavedExercises) {
+        try {
+          const list = JSON.parse(todaySavedExercises);
+          if (Array.isArray(list) && list.length > 0) {
+            parsedCompletedByDate[todayKey] = Array.from(new Set([...(parsedCompletedByDate[todayKey] || []), ...list]));
+          }
+        } catch (e) {}
+      }
+
+      setCompletedExercisesByDate(parsedCompletedByDate);
+      localStorage.setItem(`aurafit_completed_exercises_by_date_${profileKey}`, JSON.stringify(parsedCompletedByDate));
 
       // Exercise performance logs (weights, reps, dropsets) for current profile
       const savedExLogs = localStorage.getItem(`aurafit_exercise_logs_${profileKey}`);
@@ -1833,27 +2021,35 @@ export default function HomePage() {
   }, [showWimHofModal, wimHofPhase]);
 
   const toggleHabit = (id) => {
-    setHabits((prev) => {
-      const next = prev.map((h) => {
-        if (h.id === id) {
-          const updatedDone = !h.completed;
-          return {
-            ...h,
-            completed: updatedDone,
-            time: updatedDone ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null
-          };
-        }
-        return h;
-      });
+    const currentRecord = habitsCompletedByDate[activeDateKey]?.[id];
+    const isDone = Boolean(currentRecord?.completed);
+    const updatedDone = !isDone;
+    const updatedTime = updatedDone ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
+
+    setHabitsCompletedByDate((prev) => {
+      const dayRecord = { ...(prev[activeDateKey] || {}) };
+      dayRecord[id] = { completed: updatedDone, time: updatedTime };
+      const nextByDate = { ...prev, [activeDateKey]: dayRecord };
+
       try {
-        const todayKey = getLocalDateKey();
-        localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(next));
-        localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, todayKey);
-        localStorage.setItem('aurafit_habits', JSON.stringify(next));
-        queueCloudSync(`aurafit_habits_${activeProfileId}`, next, activeProfileId);
+        localStorage.setItem(`aurafit_habits_by_date_${activeProfileId}`, JSON.stringify(nextByDate));
+        queueCloudSync(`aurafit_habits_by_date_${activeProfileId}`, nextByDate, activeProfileId);
+
+        if (activeDateKey === getLocalDateKey()) {
+          const legacyHabits = habits.map((h) => ({
+            ...h,
+            completed: h.id === id ? updatedDone : Boolean(dayRecord[h.id]?.completed),
+            time: h.id === id ? updatedTime : (dayRecord[h.id]?.time || null)
+          }));
+          localStorage.setItem(`aurafit_habits_${activeProfileId}`, JSON.stringify(legacyHabits));
+          localStorage.setItem(`aurafit_habits_date_${activeProfileId}`, activeDateKey);
+          localStorage.setItem('aurafit_habits', JSON.stringify(legacyHabits));
+          queueCloudSync(`aurafit_habits_${activeProfileId}`, legacyHabits, activeProfileId);
+        }
       } catch (e) {}
-      recordActivityToday();
-      return next;
+
+      if (updatedDone) recordActivityToday();
+      return nextByDate;
     });
   };
 
@@ -1977,7 +2173,7 @@ export default function HomePage() {
 
   const addWater = (ml) => {
     const todayKey = getLocalDateKey();
-    const targetKey = selectedDateKey || todayKey;
+    const targetKey = activeDateKey;
 
     // Retrieve fresh water records from state or localStorage
     let currentByDate = { ...waterByDate };
@@ -1988,15 +2184,12 @@ export default function HomePage() {
       } catch (e) {}
     }
 
-    const currentAmount = targetKey === todayKey
-      ? Math.max(waterMl, currentByDate[todayKey] || 0)
-      : (currentByDate[targetKey] || 0);
-
+    const currentAmount = Number(currentByDate[targetKey]) || 0;
     const maxWater = (currentProfile.waterDailyMl || 3000) + 1500;
     const updated = Math.min(currentAmount + ml, maxWater);
     const updatedByDate = { ...currentByDate, [targetKey]: updated };
 
-    // Update React states cleanly outside setter reducers
+    // Update React states cleanly
     if (targetKey === todayKey) {
       setWaterMl(updated);
     }
@@ -2022,7 +2215,7 @@ export default function HomePage() {
 
   const handleResetWater = () => {
     const todayKey = getLocalDateKey();
-    const targetKey = selectedDateKey || todayKey;
+    const targetKey = activeDateKey;
 
     let currentByDate = { ...waterByDate };
     if (Object.keys(currentByDate).length === 0 && typeof window !== 'undefined') {
@@ -2052,72 +2245,94 @@ export default function HomePage() {
   };
 
   const handleUpdateSleepHours = (delta) => {
-    setSleepHours((prev) => {
-      const next = Math.min(12, Math.max(4, Math.round((prev + delta) * 10) / 10));
-      try {
-        const todayKey = getLocalDateKey();
-        localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: next, quality: sleepQuality }));
-        queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayKey, hours: next, quality: sleepQuality }, activeProfileId);
-      } catch (e) {}
-      return next;
-    });
+    const targetKey = activeDateKey;
+    const currentVal = sleepByDate[targetKey]?.hours || sleepHours;
+    const next = Math.min(12, Math.max(4, Math.round((currentVal + delta) * 10) / 10));
+    const currentQual = sleepByDate[targetKey]?.quality || sleepQuality;
+    const updatedByDate = { ...sleepByDate, [targetKey]: { hours: next, quality: currentQual } };
+    setSleepByDate(updatedByDate);
+    if (targetKey === todayDateKey) setSleepHours(next);
+    try {
+      localStorage.setItem(`aurafit_sleep_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+      if (targetKey === todayDateKey) {
+        localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayDateKey, hours: next, quality: currentQual }));
+        queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayDateKey, hours: next, quality: currentQual }, activeProfileId);
+      }
+    } catch (e) {}
   };
 
   const handleSetSleepQuality = (qual) => {
-    setSleepQuality(qual);
+    const targetKey = activeDateKey;
+    const currentHrs = sleepByDate[targetKey]?.hours || sleepHours;
+    const updatedByDate = { ...sleepByDate, [targetKey]: { hours: currentHrs, quality: qual } };
+    setSleepByDate(updatedByDate);
+    if (targetKey === todayDateKey) setSleepQuality(qual);
     try {
-      const todayKey = getLocalDateKey();
-      localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: sleepHours, quality: qual }));
-      queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayKey, hours: sleepHours, quality: qual }, activeProfileId);
+      localStorage.setItem(`aurafit_sleep_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+      if (targetKey === todayDateKey) {
+        localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayDateKey, hours: currentHrs, quality: qual }));
+        queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayDateKey, hours: currentHrs, quality: qual }, activeProfileId);
+      }
     } catch (e) {}
     showToast(`💤 Calidad de descanso registrada como ${qual === 'deep' ? 'Profunda & Reparadora' : qual === 'normal' ? 'Normal' : 'Ligera'}.`);
   };
 
   const handleToggleTodayWorkout = () => {
-    setTodayWorkoutDone((prev) => {
-      const next = !prev;
-      const todayKey = getLocalDateKey();
-      try {
-        localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: todayKey, done: next, minutes: workoutDurationMins }));
-        queueCloudSync(`aurafit_workout_${activeProfileId}`, { date: todayKey, done: next, minutes: workoutDurationMins }, activeProfileId);
-      } catch (e) {}
+    const isDone = isCurrentDayWorkoutDone;
+    const next = !isDone;
+    const targetKey = activeDateKey;
 
-      // Dynamically record in weekly workout logs for balance analytics and week strip dots!
-      const currentSplitId = selectedSplit || (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle');
-      const updatedWeek = {
-        ...weeklyWorkoutLogs,
-        [todayKey]: {
-          split: currentSplitId,
-          title: hybridPrescription.routineTitle,
-          done: next,
-          isMissedDay: isMissedDay,
-          minutes: workoutDurationMins
-        }
-      };
-      setWeeklyWorkoutLogs(updatedWeek);
+    if (targetKey === todayDateKey) {
+      setTodayWorkoutDone(next);
       try {
-        localStorage.setItem(`aurafit_workout_week_${activeProfileId}`, JSON.stringify(updatedWeek));
-        queueCloudSync(`aurafit_workout_week_${activeProfileId}`, updatedWeek, activeProfileId);
+        localStorage.setItem(`aurafit_workout_${activeProfileId}`, JSON.stringify({ date: targetKey, done: next, minutes: activeDayWorkoutMinutes }));
+        queueCloudSync(`aurafit_workout_${activeProfileId}`, { date: targetKey, done: next, minutes: activeDayWorkoutMinutes }, activeProfileId);
       } catch (e) {}
+    }
 
-      if (next) recordActivityToday();
-      showToast(next ? '🏋️‍♂️ ¡Entrenamiento del día registrado y contabilizado en la semana!' : '🏋️‍♂️ Registro de entrenamiento actualizado.');
-      return next;
-    });
+    const currentSplitId = activeDaySplit || (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle');
+    const existingLog = weeklyWorkoutLogs[targetKey] || {};
+    const updatedWeek = {
+      ...weeklyWorkoutLogs,
+      [targetKey]: {
+        ...existingLog,
+        split: existingLog.split || currentSplitId,
+        title: existingLog.title || hybridPrescription.routineTitle,
+        done: next,
+        isMissedDay: existingLog.isMissedDay || false,
+        minutes: existingLog.minutes || activeDayWorkoutMinutes
+      }
+    };
+    setWeeklyWorkoutLogs(updatedWeek);
+    try {
+      localStorage.setItem(`aurafit_workout_week_${activeProfileId}`, JSON.stringify(updatedWeek));
+      queueCloudSync(`aurafit_workout_week_${activeProfileId}`, updatedWeek, activeProfileId);
+    } catch (e) {}
+
+    if (next) recordActivityToday();
+    showToast(next ? '🏋️‍♂️ ¡Entrenamiento del día registrado y contabilizado!' : '🏋️‍♂️ Registro de entrenamiento actualizado.');
   };
 
   const handleToggleExercise = (exKey) => {
-    setCompletedExercises((prev) => {
-      const isDone = prev.includes(exKey);
-      const next = isDone ? prev.filter((k) => k !== exKey) : [...prev, exKey];
-      const todayKey = getLocalDateKey();
+    const targetKey = activeDateKey;
+    setCompletedExercisesByDate((prev) => {
+      const currentList = prev[targetKey] || [];
+      const isDone = currentList.includes(exKey);
+      const next = isDone ? currentList.filter((k) => k !== exKey) : [...currentList, exKey];
+      const updatedByDate = { ...prev, [targetKey]: next };
+
       try {
-        localStorage.setItem(`aurafit_completed_exercises_${activeProfileId}_${todayKey}`, JSON.stringify(next));
-        queueCloudSync(`aurafit_completed_exercises_${activeProfileId}`, { date: todayKey, completed: next }, activeProfileId);
+        localStorage.setItem(`aurafit_completed_exercises_${activeProfileId}_${targetKey}`, JSON.stringify(next));
+        localStorage.setItem(`aurafit_completed_exercises_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+        queueCloudSync(`aurafit_completed_exercises_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
+        if (targetKey === getLocalDateKey()) {
+          queueCloudSync(`aurafit_completed_exercises_${activeProfileId}`, { date: targetKey, completed: next }, activeProfileId);
+        }
       } catch (e) {}
+
       if (!isDone) recordActivityToday();
       showToast(!isDone ? '✓ Ejercicio completado y guardado.' : 'Ejercicio marcado como pendiente.');
-      return next;
+      return updatedByDate;
     });
   };
 
@@ -2138,9 +2353,9 @@ export default function HomePage() {
       showToast('⚠️ Ingresa el peso (kg) y repeticiones realizadas.');
       return;
     }
-    const todayKey = getLocalDateKey();
+    const targetKey = activeDateKey;
     const entry = {
-      date: todayKey,
+      date: targetKey,
       weightKg: cleanWeight,
       reps: cleanReps,
       hasDropSet: Boolean(hasDropSet),
@@ -2284,7 +2499,18 @@ export default function HomePage() {
 
       const weekLog = weeklyWorkoutLogs[dateKey];
       const hasFood = loggedFoods.some((f) => f.date === dateKey);
-      const done = (weekLog && (weekLog.done || weekLog.isMissedDay)) || hasFood || (isToday && (todayWorkoutDone || waterMl > 0 || habits.some((h) => h.completed)));
+      const hasWater = Number(waterByDate[dateKey]) > 0;
+      const dayHabitsRecord = habitsCompletedByDate[dateKey] || {};
+      const hasHabits = Object.values(dayHabitsRecord).some((v) => v?.completed);
+      const dayExercises = completedExercisesByDate[dateKey] || [];
+      const hasExercises = dayExercises.length > 0;
+
+      const done = (weekLog && (weekLog.done || weekLog.isMissedDay)) ||
+        hasFood ||
+        hasWater ||
+        hasHabits ||
+        hasExercises ||
+        (isToday && (todayWorkoutDone || waterMl > 0));
 
       days.push({
         day: dayLabels[i],
@@ -2295,9 +2521,7 @@ export default function HomePage() {
       });
     }
     return days;
-  }, [weeklyWorkoutLogs, todayWorkoutDone, loggedFoods, waterMl, habits]);
-
-  const completedHabitsCount = habits.filter((h) => h.completed).length;
+  }, [weeklyWorkoutLogs, todayWorkoutDone, loggedFoods, waterByDate, habitsCompletedByDate, completedExercisesByDate, waterMl]);
 
   // 100% Dynamic Menstrual Cycle Calculation for Active Profile
   const activeCycleConfig = useMemo(() => {
@@ -4347,7 +4571,7 @@ export default function HomePage() {
                       />
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
-                      {todayWorkoutDone ? `✅ ${workoutDurationMins}m completado` : '⏳ Sesión pendiente'}
+                      {isCurrentDayWorkoutDone ? `✅ ${activeDayWorkoutMinutes}m completado` : '⏳ Sesión pendiente'}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
@@ -4360,13 +4584,13 @@ export default function HomePage() {
                         borderRadius: '6px',
                         fontSize: '10px',
                         fontWeight: 800,
-                        border: todayWorkoutDone ? '1px solid #F97316' : '1px solid var(--border-subtle)',
-                        background: todayWorkoutDone ? 'rgba(249, 115, 22, 0.15)' : 'var(--bg-card-subtle)',
-                        color: todayWorkoutDone ? '#F97316' : 'var(--text-muted)',
+                        border: isCurrentDayWorkoutDone ? '1px solid #F97316' : '1px solid var(--border-subtle)',
+                        background: isCurrentDayWorkoutDone ? 'rgba(249, 115, 22, 0.15)' : 'var(--bg-card-subtle)',
+                        color: isCurrentDayWorkoutDone ? '#F97316' : 'var(--text-muted)',
                         cursor: 'pointer'
                       }}
                     >
-                      {todayWorkoutDone ? '✓ Hecho' : '+ Marcar'}
+                      {isCurrentDayWorkoutDone ? '✓ Hecho' : '+ Marcar'}
                     </button>
                     <button
                       type="button"
@@ -4375,7 +4599,7 @@ export default function HomePage() {
                     >
                       −
                     </button>
-                    <span style={{ fontSize: '10px', fontWeight: 800 }}>{workoutDurationMins}m</span>
+                    <span style={{ fontSize: '10px', fontWeight: 800 }}>{activeDayWorkoutMinutes}m</span>
                     <button
                       type="button"
                       onClick={() => handleAdjustWorkoutDuration(10)}
@@ -4402,7 +4626,7 @@ export default function HomePage() {
                       />
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
-                      {sleepHours}h ({sleepQuality === 'deep' ? 'Profundo' : sleepQuality === 'normal' ? 'Normal' : 'Inquieto'})
+                      {activeSleepHours}h ({activeSleepQuality === 'deep' ? 'Profundo' : activeSleepQuality === 'normal' ? 'Normal' : 'Inquieto'})
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
@@ -4414,7 +4638,7 @@ export default function HomePage() {
                     >
                       −
                     </button>
-                    <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-main)' }}>{sleepHours} hrs</span>
+                    <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-main)' }}>{activeSleepHours} hrs</span>
                     <button
                       type="button"
                       className="btn-portion-step"
@@ -4465,7 +4689,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <span style={{ fontSize: '14px', fontWeight: 900, color: '#6366F1' }}>
-                  {sleepHours} Horas
+                  {activeSleepHours} Horas
                 </span>
               </div>
 
@@ -4475,7 +4699,7 @@ export default function HomePage() {
                   type="button"
                   className="btn-sleep-step"
                   onClick={() => handleUpdateSleepHours(-0.5)}
-                  disabled={sleepHours <= 4}
+                  disabled={activeSleepHours <= 4}
                 >
                   −
                 </button>
@@ -4484,12 +4708,19 @@ export default function HomePage() {
                     <button
                       key={val}
                       type="button"
-                      className={`btn-portion-pill ${sleepHours === val ? 'active' : ''}`}
+                      className={`btn-portion-pill ${activeSleepHours === val ? 'active' : ''}`}
                       onClick={() => {
-                        setSleepHours(val);
+                        const targetKey = activeDateKey;
+                        const currentQual = sleepByDate[targetKey]?.quality || sleepQuality;
+                        const updatedByDate = { ...sleepByDate, [targetKey]: { hours: val, quality: currentQual } };
+                        setSleepByDate(updatedByDate);
+                        if (targetKey === todayDateKey) setSleepHours(val);
                         try {
-                          const todayKey = getLocalDateKey();
-                          localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayKey, hours: val, quality: sleepQuality }));
+                          localStorage.setItem(`aurafit_sleep_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+                          if (targetKey === todayDateKey) {
+                            localStorage.setItem(`aurafit_sleep_${activeProfileId}`, JSON.stringify({ date: todayDateKey, hours: val, quality: currentQual }));
+                            queueCloudSync(`aurafit_sleep_${activeProfileId}`, { date: todayDateKey, hours: val, quality: currentQual }, activeProfileId);
+                          }
                         } catch (e) {}
                       }}
                     >
@@ -4501,7 +4732,7 @@ export default function HomePage() {
                   type="button"
                   className="btn-sleep-step"
                   onClick={() => handleUpdateSleepHours(0.5)}
-                  disabled={sleepHours >= 12}
+                  disabled={activeSleepHours >= 12}
                 >
                   +
                 </button>
@@ -4517,7 +4748,7 @@ export default function HomePage() {
                   <button
                     key={item.key}
                     type="button"
-                    className={`btn-sleep-quality ${sleepQuality === item.key ? 'active' : ''}`}
+                    className={`btn-sleep-quality ${activeSleepQuality === item.key ? 'active' : ''}`}
                     onClick={() => handleSetSleepQuality(item.key)}
                   >
                     {item.label}
@@ -4587,7 +4818,7 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
-              {habits.map((habit) => (
+              {activeDayHabits.map((habit) => (
                 <div
                   key={habit.id}
                   style={{

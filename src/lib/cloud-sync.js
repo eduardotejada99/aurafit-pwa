@@ -6,6 +6,8 @@ export const SYNC_KEYS = {
   INGREDIENTS: 'aurafit_ingredients',
   FOODS_PREFIX: 'aurafit_foods_',
   HABITS_PREFIX: 'aurafit_habits_',
+  HABITS_BY_DATE_PREFIX: 'aurafit_habits_by_date_',
+  COMPLETED_EXERCISES_BY_DATE_PREFIX: 'aurafit_completed_exercises_by_date_',
   WEIGHTS_PREFIX: 'aurafit_weights_',
   WATER_PREFIX: 'aurafit_water_by_date_',
   SLEEP_PREFIX: 'aurafit_sleep_',
@@ -101,10 +103,16 @@ export function getLocalSyncBundle(profileKeys = ['andres', 'pareja', 'anicka'])
   profileKeys.forEach((k) => {
     copyIfPresent(`${SYNC_KEYS.FOODS_PREFIX}${k}`);
     copyIfPresent(`${SYNC_KEYS.HABITS_PREFIX}${k}`);
+    copyIfPresent(`${SYNC_KEYS.HABITS_BY_DATE_PREFIX}${k}`);
+    copyIfPresent(`${SYNC_KEYS.COMPLETED_EXERCISES_BY_DATE_PREFIX}${k}`);
     copyIfPresent(`${SYNC_KEYS.WEIGHTS_PREFIX}${k}`);
     copyIfPresent(`${SYNC_KEYS.WATER_PREFIX}${k}`);
     copyIfPresent(`${SYNC_KEYS.SLEEP_PREFIX}${k}`);
+    copyIfPresent(`aurafit_sleep_by_date_${k}`);
     copyIfPresent(`${SYNC_KEYS.WORKOUT_PREFIX}${k}`);
+    copyIfPresent(`aurafit_workout_week_${k}`);
+    copyIfPresent(`aurafit_selected_split_${k}`);
+    copyIfPresent(`aurafit_exercise_logs_${k}`);
   });
 
   return bundle;
@@ -200,7 +208,7 @@ export function mergeCloudIntoLocalStorage(cloudItems = {}) {
       }
 
       // 3. Habits: Preserve completion checks and custom habits across devices
-      if (key.startsWith(SYNC_KEYS.HABITS_PREFIX)) {
+      if (key.startsWith(SYNC_KEYS.HABITS_PREFIX) && !key.startsWith(SYNC_KEYS.HABITS_BY_DATE_PREFIX)) {
         let localHabits = [];
         if (current) {
           try { localHabits = JSON.parse(current); } catch (e) {}
@@ -242,7 +250,60 @@ export function mergeCloudIntoLocalStorage(cloudItems = {}) {
         return;
       }
 
-      // 4. Default: Safe update
+      // 4. Habits by Date: Monotonic date-by-date dictionary merge
+      if (key.startsWith(SYNC_KEYS.HABITS_BY_DATE_PREFIX)) {
+        let localMap = {};
+        if (current) {
+          try { localMap = JSON.parse(current); } catch (e) {}
+        }
+        let cloudMap = typeof val === 'object' && val !== null ? val : {};
+        if (typeof val === 'string') {
+          try { cloudMap = JSON.parse(val); } catch (e) {}
+        }
+
+        const mergedMap = { ...localMap };
+        Object.keys(cloudMap).forEach((dateKey) => {
+          mergedMap[dateKey] = {
+            ...(localMap[dateKey] || {}),
+            ...(cloudMap[dateKey] || {})
+          };
+        });
+
+        const serialized = JSON.stringify(mergedMap);
+        if (current !== serialized) {
+          localStorage.setItem(key, serialized);
+          updatedKeys.push(key);
+        }
+        return;
+      }
+
+      // 5. Completed Exercises by Date: Union list merge per date
+      if (key.startsWith(SYNC_KEYS.COMPLETED_EXERCISES_BY_DATE_PREFIX)) {
+        let localMap = {};
+        if (current) {
+          try { localMap = JSON.parse(current); } catch (e) {}
+        }
+        let cloudMap = typeof val === 'object' && val !== null ? val : {};
+        if (typeof val === 'string') {
+          try { cloudMap = JSON.parse(val); } catch (e) {}
+        }
+
+        const mergedMap = { ...localMap };
+        Object.keys(cloudMap).forEach((dateKey) => {
+          const lList = Array.isArray(localMap[dateKey]) ? localMap[dateKey] : [];
+          const cList = Array.isArray(cloudMap[dateKey]) ? cloudMap[dateKey] : [];
+          mergedMap[dateKey] = Array.from(new Set([...lList, ...cList]));
+        });
+
+        const serialized = JSON.stringify(mergedMap);
+        if (current !== serialized) {
+          localStorage.setItem(key, serialized);
+          updatedKeys.push(key);
+        }
+        return;
+      }
+
+      // 6. Default: Safe update
       const serialized = typeof val === 'string' ? val : JSON.stringify(val);
       if (current !== serialized) {
         localStorage.setItem(key, serialized);
