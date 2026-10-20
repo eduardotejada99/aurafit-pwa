@@ -235,6 +235,10 @@ export default function HomePage() {
   // Menstrual Cycle & Female Hormonal Adaptive Training State
   const [cycleConfigs, setCycleConfigs] = useState(() => ({ ...DEFAULT_CYCLE_CONFIGS }));
   const [showCycleConfigModal, setShowCycleConfigModal] = useState(false);
+  const [showCycleDatePickerModal, setShowCycleDatePickerModal] = useState(false);
+  const [customPeriodDateInput, setCustomPeriodDateInput] = useState(() => getLocalDateKey());
+  const [previousPeriodStartDate, setPreviousPeriodStartDate] = useState(null);
+  const [showSncPillarsModal, setShowSncPillarsModal] = useState(false);
   const [isCycleExpanded, setIsCycleExpanded] = useState(false);
   const [cycleForm, setCycleForm] = useState({
     enabled: true,
@@ -1083,6 +1087,10 @@ export default function HomePage() {
       } else {
         setExerciseLogs({});
       }
+
+      // Previous period start date (for instant undo)
+      const savedPrevCycleStart = localStorage.getItem(`aurafit_prev_cycle_start_${profileKey}`);
+      setPreviousPeriodStartDate(savedPrevCycleStart || null);
 
       // Dynamic Streak from activity history
       const savedActivity = localStorage.getItem(`aurafit_activity_days_${profileKey}`);
@@ -2313,19 +2321,54 @@ export default function HomePage() {
     return map;
   }, [activeCycleConfig, currentProfile.gender, weekDays, activeProfileId]);
 
-  const handleMarkPeriodStartedToday = () => {
-    const todayStr = getLocalDateKey();
+  const handleMarkPeriodStartDate = (dateStr) => {
+    const targetDate = dateStr || getLocalDateKey();
+    const prevDate = activeCycleConfig?.lastPeriodStartDate || null;
+    if (prevDate && prevDate !== targetDate) {
+      setPreviousPeriodStartDate(prevDate);
+      try {
+        localStorage.setItem(`aurafit_prev_cycle_start_${activeProfileId}`, prevDate);
+      } catch (e) {}
+    }
+
     const updated = {
       ...activeCycleConfig,
       enabled: true,
-      lastPeriodStartDate: todayStr
+      lastPeriodStartDate: targetDate
     };
     const nextConfigs = { ...cycleConfigs, [activeProfileId]: updated };
     setCycleConfigs(nextConfigs);
     try {
       localStorage.setItem(`aurafit_cycle_${activeProfileId}`, JSON.stringify(updated));
     } catch (e) {}
-    showToast(`🩸 Periodo registrado: Día 1 iniciado hoy (${todayStr})`);
+    setShowCycleDatePickerModal(false);
+    showToast(`🩸 Periodo registrado: inicio el ${targetDate}`);
+  };
+
+  const handleMarkPeriodStartedToday = () => {
+    handleMarkPeriodStartDate(getLocalDateKey());
+  };
+
+  const handleUndoPeriodStartDate = () => {
+    if (!previousPeriodStartDate) {
+      showToast('⚠️ No hay fecha previa registrada');
+      return;
+    }
+    const restoredDate = previousPeriodStartDate;
+    const updated = {
+      ...activeCycleConfig,
+      enabled: true,
+      lastPeriodStartDate: restoredDate
+    };
+    const nextConfigs = { ...cycleConfigs, [activeProfileId]: updated };
+    setCycleConfigs(nextConfigs);
+    try {
+      localStorage.setItem(`aurafit_cycle_${activeProfileId}`, JSON.stringify(updated));
+      localStorage.removeItem(`aurafit_prev_cycle_start_${activeProfileId}`);
+    } catch (e) {}
+    setPreviousPeriodStartDate(null);
+    setShowCycleDatePickerModal(false);
+    showToast(`↩️ Fecha restaurada a ${restoredDate}`);
   };
 
   const handleOpenCycleModal = () => {
@@ -2617,21 +2660,82 @@ export default function HomePage() {
 
           {/* 1-Tap Quick Action & Expand Toggle */}
           <div className="cycle-actions-strip">
-            <button
-              type="button"
-              className={`cycle-quick-btn ${activeCycleInfo.cycleDay === 1 ? 'active-day-one' : ''}`}
-              onClick={handleMarkPeriodStartedToday}
-            >
-              <span>🩸</span>
-              <span>{activeCycleInfo.cycleDay === 1 ? '✓ Periodo iniciado hoy (Día 1)' : 'Inició mi periodo hoy'}</span>
-            </button>
+            <div style={{ display: 'flex', gap: '6px', flex: 1, minWidth: 0 }}>
+              <button
+                type="button"
+                className={`cycle-quick-btn ${activeCycleConfig?.lastPeriodStartDate === activeDateKey ? 'active-day-one' : ''}`}
+                style={{ flex: 1, minWidth: 0 }}
+                onClick={() => {
+                  if (activeCycleConfig?.lastPeriodStartDate === activeDateKey) {
+                    setCustomPeriodDateInput(activeCycleConfig.lastPeriodStartDate);
+                    setShowCycleDatePickerModal(true);
+                  } else {
+                    handleMarkPeriodStartDate(activeDateKey);
+                  }
+                }}
+              >
+                <span>🩸</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {activeCycleConfig?.lastPeriodStartDate === activeDateKey
+                    ? `✓ Día 1 (${activeDateKey}) · ✏️`
+                    : activeDateKey === todayDateKey
+                    ? 'Inició mi periodo hoy'
+                    : `Inició el ${activeDateKey}`}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="cycle-undo-btn"
+                onClick={() => {
+                  setCustomPeriodDateInput(activeCycleConfig?.lastPeriodStartDate || getLocalDateKey());
+                  setShowCycleDatePickerModal(true);
+                }}
+                title="Cambiar fecha exacta de inicio del ciclo"
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: '12px',
+                  background: 'var(--bg-card-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-main)',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                ✏️ Fecha
+              </button>
+
+              {previousPeriodStartDate && (
+                <button
+                  type="button"
+                  className="cycle-undo-btn"
+                  onClick={handleUndoPeriodStartDate}
+                  title={`Deshacer y volver a ${previousPeriodStartDate}`}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: '12px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#DC2626',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  ↩️ Deshacer
+                </button>
+              )}
+            </div>
 
             <button
               type="button"
               className="cycle-toggle-details-btn"
               onClick={() => setIsCycleExpanded(!isCycleExpanded)}
             >
-              <span>{isCycleExpanded ? 'Ocultar Estrategia' : 'Ver Mapa Hormonal & Entrenamiento'}</span>
+              <span>{isCycleExpanded ? 'Ocultar' : 'Ver Mapa'}</span>
               <span>{isCycleExpanded ? '▴' : '▾'}</span>
             </button>
           </div>
@@ -4773,7 +4877,7 @@ export default function HomePage() {
             =================================================================== */}
         {activeTab === 'workout' && (
           <>
-            {/* 1. ATHLETE IDENTITY HERO */}
+            {/* 1. ATHLETE IDENTITY HERO (COMPACT & DIRECT) */}
             <div style={{
               background: currentProfile.id === 'pareja' 
                 ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)'
@@ -4781,670 +4885,164 @@ export default function HomePage() {
                 ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%)'
                 : 'linear-gradient(135deg, rgba(255, 107, 0, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: '20px',
-              padding: '18px 20px',
+              borderRadius: '16px',
+              padding: '14px 16px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               boxShadow: 'var(--card-shadow)'
             }}>
-              <div>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <span style={{
-                  fontSize: '11px',
+                  fontSize: '10.5px',
                   fontWeight: 900,
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
                   color: currentProfile.id === 'pareja' ? '#EC4899' : currentProfile.id === 'hermana' ? '#10B981' : '#FF6B00'
                 }}>
-                  {currentProfile.id === 'pareja' ? '🌸 Atleta Funcional Femenina' : currentProfile.id === 'hermana' ? '🌿 Movilidad & Vitalidad' : '🦁 Sistema Atleta Híbrido (Dejan Stipke)'}
+                  {currentProfile.id === 'pareja' ? '🌸 Atleta Funcional' : currentProfile.id === 'hermana' ? '🌿 Movilidad & Vitalidad' : '🦁 Atleta Híbrido'}
                 </span>
-                <h2 style={{ fontSize: '18px', fontWeight: 900, marginTop: '2px' }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 900, margin: '2px 0 0 0', lineHeight: 1.25 }}>
                   {hybridPrescription.routineTitle}
                 </h2>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {hybridPrescription.focus}
                 </p>
               </div>
               <div style={{
-                fontSize: '32px',
+                fontSize: '28px',
                 background: 'var(--bg-card)',
-                width: '54px',
-                height: '54px',
-                borderRadius: '16px',
+                width: '46px',
+                height: '46px',
+                borderRadius: '14px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '1px solid var(--border-subtle)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                flexShrink: 0
               }}>
                 {currentProfile.avatar}
               </div>
             </div>
 
-            {/* HORMONAL CYCLE TRAINING ADAPTATION BANNER */}
-            {activeCycleInfo && (currentProfile.gender === 'female' || activeCycleConfig?.enabled) && (
-              <div
-                className="cycle-workout-banner"
-                style={{
-                  borderLeft: `4px solid ${activeCycleInfo.color}`,
-                  background: `linear-gradient(135deg, ${activeCycleInfo.bgColor} 0%, var(--bg-card) 60%)`
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: activeCycleInfo.color, letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    {activeCycleInfo.icon} Sinergia Ciclo & Entrenamiento · Día {activeCycleInfo.cycleDay} ({activeCycleInfo.phaseName})
-                  </span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)' }}>
-                    {activeCycleInfo.phaseSubtitle}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, margin: 0 }}>
-                  {activeCycleInfo.workoutAdvice}
-                </p>
-              </div>
-            )}
-
-            {/* 1.5. BALANCE SEMANAL & CONTROL TOTAL DEL SPLIT (USUARIO TIENE EL MANDO) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* BALANCE SEMANAL INTELIGENTE BANNER */}
-              <div style={{
-                background: 'var(--bg-card)',
-                border: '1.5px solid var(--fitia-green)',
-                borderRadius: '18px',
-                padding: '14px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                width: '100%',
-                boxSizing: 'border-box',
-                overflow: 'hidden',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--fitia-green)', letterSpacing: '0.5px' }}>
-                    📊 Balance Semanal Adaptativo
-                  </span>
-                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                    {currentProfile.id === 'hermana'
-                      ? '🌸 Vitalidad Serena Diaria'
-                      : currentProfile.id === 'pareja'
-                      ? `Glúteo: ${weeklyWorkoutBalance.glutesCount || 0} · Piernas: ${weeklyWorkoutBalance.pureLegsCount || 0} · Espalda: ${weeklyWorkoutBalance.pullCount || 0} · Pecho: ${weeklyWorkoutBalance.pushCount || 0}`
-                      : `Piernas: ${weeklyWorkoutBalance.pureLegsCount || 0} · Pecho: ${weeklyWorkoutBalance.pushCount || 0} · Espalda: ${weeklyWorkoutBalance.pullCount || 0} · Glúteo: ${weeklyWorkoutBalance.glutesCount || 0}`}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
-                  {weeklyWorkoutBalance.weeklySummaryText}
-                </p>
-                {weeklyWorkoutBalance.recommendedSplit && selectedSplit !== weeklyWorkoutBalance.recommendedSplit && !isMissedDay && (
-                  <button
-                    type="button"
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      background: 'var(--fitia-green-soft)',
-                      border: '1px solid var(--fitia-green)',
-                      color: 'var(--fitia-green)',
-                      padding: '8px 12px',
-                      borderRadius: '10px',
-                      fontSize: '11.5px',
-                      fontWeight: 800,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      lineHeight: 1.3
-                    }}
-                    onClick={() => handleSelectSplit(weeklyWorkoutBalance.recommendedSplit)}
-                  >
-                    {currentProfile.id === 'hermana'
-                      ? `🌸 Aplicar Rutina Sugerida (${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || 'Movilidad Suave'})`
-                      : `⚡ Aplicar Split Recomendado (${HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || weeklyWorkoutBalance.recommendedSplit})`}
-                  </button>
-                )}
+            {/* 2. SELECTOR DE SPLITS (COMPACTO & EN 1 TOQUE) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
+                {Object.entries(HYBRID_ATHLETE_SYSTEM.splits[activeProfileId] || {}).map(([sKey, sObj]) => {
+                  const isSel = (selectedSplit === sKey) || (!selectedSplit && sKey === (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle'));
+                  return (
+                    <button
+                      key={sKey}
+                      type="button"
+                      style={{
+                        padding: '9px 6px',
+                        borderRadius: '11px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        textAlign: 'center',
+                        background: isSel ? 'var(--fitia-green)' : 'var(--bg-card)',
+                        color: isSel ? '#FFFFFF' : 'var(--text-main)',
+                        border: isSel ? '1px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        boxShadow: isSel ? '0 2px 6px rgba(16, 185, 129, 0.25)' : 'none'
+                      }}
+                      onClick={() => handleSelectSplit(sKey)}
+                    >
+                      <span style={{ fontSize: '13px' }}>{sObj.icon || '⚡'}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {sObj.shortName || sObj.name || sKey}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* CONTROLADOR DE SPLITS DISPONIBLES (USER FULL CONTROL) */}
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '18px', padding: '14px 14px', boxShadow: 'var(--card-shadow)', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '4px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)' }}>
-                    {currentProfile.id === 'hermana' ? '🌸 Tu Momento de Bienestar de Hoy:' : '🎯 Tu Split de Hoy:'}
+              {/* Botón de Día Ocupado / Pausa */}
+              {isMissedDay && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#DC2626', fontWeight: 800 }}>
+                    ⚡ Modo Día Ocupado Activo: {currentProfile.id === 'hermana' ? 'Pausa 5m' : 'Planchas 12m'}
                   </span>
-                  <span style={{ fontSize: '11px', color: isMissedDay ? '#DC2626' : 'var(--fitia-green)', fontWeight: 800 }}>
-                    {isMissedDay ? (currentProfile.id === 'hermana' ? '🌸 Pausa 5m' : '⚡ Planchas 12m') : 'Personalizable'}
-                  </span>
-                </div>
-
-                {/* Grid of Split Options for Active Profile */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
-                  {Object.entries(HYBRID_ATHLETE_SYSTEM.splits[activeProfileId] || {}).map(([sKey, sObj]) => {
-                    const isSel = (selectedSplit === sKey) || (!selectedSplit && sKey === (activeProfileId === 'andres' ? 'legs' : activeProfileId === 'pareja' ? 'glutes_legs' : 'mobility_gentle'));
-                    return (
-                      <button
-                        key={sKey}
-                        type="button"
-                        style={{
-                          minWidth: 0,
-                          width: '100%',
-                          padding: '9px 8px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          textAlign: 'left',
-                          background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
-                          color: isSel ? '#FFFFFF' : 'var(--text-main)',
-                          border: isSel ? '1px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxSizing: 'border-box',
-                          transition: 'all 0.15s ease'
-                        }}
-                        onClick={() => handleSelectSplit(sKey)}
-                      >
-                        <span style={{ fontSize: '15px', flexShrink: 0 }}>{sObj.icon || '⚡'}</span>
-                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {sObj.shortName || sObj.name || sKey}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* BOTÓN: NO PUDE ENTRENAR HOY / DÍA OCUPADO */}
-                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-subtle)' }}>
                   <button
                     type="button"
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '10px 12px',
-                      borderRadius: '12px',
-                      fontSize: '11.5px',
-                      fontWeight: 800,
-                      background: isMissedDay ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-card-subtle)',
-                      color: isMissedDay ? '#DC2626' : 'var(--text-muted)',
-                      border: isMissedDay ? '1.5px solid #DC2626' : '1px solid var(--border-subtle)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '8px',
-                      cursor: 'pointer'
-                    }}
+                    style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: '11px', fontWeight: 900, cursor: 'pointer' }}
                     onClick={handleToggleMissedDay}
                   >
-                    <span style={{ minWidth: 0, flex: 1, textAlign: 'left', lineHeight: 1.25 }}>
-                      {isMissedDay
-                        ? (currentProfile.id === 'hermana' ? '🌸 Pausa Serena Activa (5-10 min)' : '⚡ Modo Día Ocupado Activo (12 min Planchas)')
-                        : (currentProfile.id === 'hermana' ? '🌸 ¿Día complicado? Pausa de calma' : '❌ ¿Día complicado? No pude entrenar')}
-                    </span>
-                    <span style={{ fontSize: '11px', fontWeight: 900, flexShrink: 0 }}>
-                      {isMissedDay ? 'Desactivar ↩️' : (currentProfile.id === 'hermana' ? 'Pausa 5m →' : 'Planchas 12m →')}
-                    </span>
+                    Desactivar ↩️
                   </button>
-                  {isMissedDay && (
-                    <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px', fontSize: '11.5px', color: '#B45309', lineHeight: 1.4 }}>
-                      💡 <strong>Prescripción Dinámica:</strong> {currentProfile.id === 'hermana'
-                        ? 'Pausa amable de 5-10 min con respiración relajante 4-4, movilidad suave e infusión tibia. Cero exigencia, oxigena el cuerpo y recarga tu energía.'
-                        : 'Rutina express de 10-12 min de planchas y core isométrico en casa. Cero fricción, mantiene el SNC despierto y se sincroniza la nutrición para preservar la masa magra.'}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* CARD: LOS 4 PILARES DEL CUERPO ÓPTIMO (INTERCONEXIÓN SISTÉMICA) */}
-              <div style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '18px',
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                boxShadow: 'var(--card-shadow)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '20px' }}>🧬</span>
-                    <div>
-                      <h4 style={{ fontSize: '14px', fontWeight: 900, margin: 0 }}>
-                        Los 4 Pilares del Cuerpo Óptimo
-                      </h4>
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-                        Nutrición celular, fuerza híbrida, SNC y biohacking
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{
-                    background: 'var(--fitia-green-soft)',
-                    color: 'var(--fitia-green)',
-                    fontWeight: 900,
-                    fontSize: '12px',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
-                    border: '1px solid var(--fitia-green)'
-                  }}>
-                    {systemicPillars.totalAuraScore || 70}/100 PTS
-                  </div>
-                </div>
-
-                {/* 4 Pillars Mini Gauges */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '6px', width: '100%', boxSizing: 'border-box' }}>
-                  {[
-                    { name: 'Nutrición', pts: systemicPillars.breakdown?.nutrition ?? 15, icon: '🥗', color: '#10B981' },
-                    { name: 'Fuerza', pts: systemicPillars.breakdown?.workout ?? 15, icon: '🦁', color: '#F97316' },
-                    { name: 'Sueño/SNC', pts: systemicPillars.breakdown?.sleep ?? 20, icon: '💤', color: '#6366F1' },
-                    { name: 'Hábitos', pts: systemicPillars.breakdown?.habits ?? 15, icon: '🧘', color: '#3B82F6' }
-                  ].map((p, pIdx) => (
-                    <div key={pIdx} style={{
-                      background: 'var(--bg-card-subtle)',
-                      borderRadius: '10px',
-                      padding: '8px 4px',
-                      textAlign: 'center',
-                      border: '1px solid var(--border-subtle)',
-                      minWidth: 0,
-                      overflow: 'hidden',
-                      boxSizing: 'border-box'
-                    }}>
-                      <span style={{ fontSize: '14px' }}>{p.icon}</span>
-                      <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.name}</div>
-                      <div style={{ fontSize: '11.5px', fontWeight: 900, color: p.color, marginTop: '2px' }}>{p.pts}/25</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Dynamic Cross-Pillar Synergies */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {(systemicPillars.synergies || []).map((syn, sIdx) => (
-                    <div
-                      key={syn.id || sIdx}
-                      style={{
-                        background: 'var(--bg-card-subtle)',
-                        borderLeft: '3px solid var(--fitia-green)',
-                        padding: '10px 12px',
-                        borderRadius: '0 10px 10px 0',
-                        fontSize: '11.5px',
-                        lineHeight: 1.35,
-                        cursor: 'pointer',
-                        transition: 'background 0.15s ease'
-                      }}
-                      onClick={() => setDetailReaderModal({
-                        title: syn.title,
-                        subtitle: 'Sinergia Sistémica de Rendimiento & Recuperación Celular',
-                        icon: syn.icon || '⚡',
-                        badge: 'Sinergia AuraScore',
-                        badgeBg: 'rgba(16, 185, 129, 0.15)',
-                        badgeColor: 'var(--fitia-green)',
-                        sections: [
-                          {
-                            heading: 'Mecanismo Biológico y Fisiológico',
-                            icon: '🧬',
-                            text: syn.text
-                          },
-                          {
-                            heading: 'Impacto en tu Día',
-                            icon: '💡',
-                            tip: 'Al sincronizar estos dos pilares sistémicos, optimizas tu curva de glucosa, disponibilidad mitocondrial de ATP y estabilidad del sistema nervioso central.'
-                          }
-                        ],
-                        actionText: '✓ Entendido / Cerrar Guía'
-                      })}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                        <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>
-                          {syn.icon} {syn.title}
-                        </div>
-                        <span style={{ fontSize: '10px', color: 'var(--fitia-green)', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                          📖 Ver Guía
-                        </span>
-                      </div>
-                      <div style={{ color: 'var(--text-muted)' }}>
-                        {syn.text}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. CNS AUTO-REGULATION & READINESS CARD */}
-            <div className="hybrid-readiness-hero">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '20px' }}>🧠</span>
-                  <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 900 }}>Auto-Regulación SNC & Preparación</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Evaluación neuromuscular según sueño y fatiga acumulada
-                    </p>
-                  </div>
-                </div>
-                <div style={{
-                  background: hybridPrescription.badgeColor,
-                  color: '#FFFFFF',
-                  padding: '5px 12px',
-                  borderRadius: '999px',
-                  fontSize: '12px',
-                  fontWeight: 900,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                }}>
-                  {hybridPrescription.readinessScore} / 100 SNC
-                </div>
-              </div>
-
-              {/* Intensity Mode Indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'var(--bg-card)',
-                padding: '10px 14px',
-                borderRadius: '12px',
-                border: '1px solid var(--border-subtle)'
-              }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)' }}>
-                  Modo Prescrito Hoy:
-                </span>
-                <span style={{ fontSize: '13px', fontWeight: 900, color: hybridPrescription.badgeColor }}>
-                  {hybridPrescription.intensityMode}
-                </span>
-              </div>
-
-              {/* Interactive Sleep Sync Override */}
-              <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800 }}>
-                    🛌 Sueño Sincronizado: <strong>{sleepHours}h</strong> ({sleepQuality === 'deep' ? 'Profundo' : sleepQuality === 'normal' ? 'Normal' : 'Ligero / Inquieto'})
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ajuste Rápido</span>
-                </div>
-                
-                {/* Hours row */}
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                  {[5.5, 6.5, 7.5, 8.5].map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '6px 4px',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        background: sleepHours === h ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
-                        color: sleepHours === h ? '#FFFFFF' : 'var(--text-main)',
-                        border: '1px solid var(--border-subtle)',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setSleepHours(h)}
-                    >
-                      {h}h
-                    </button>
-                  ))}
-                </div>
-
-                {/* Quality row */}
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[
-                    { id: 'deep', label: 'Profundo 🌙' },
-                    { id: 'normal', label: 'Normal 💤' },
-                    { id: 'light', label: 'Inquieto ⚠️' }
-                  ].map((q) => (
-                    <button
-                      key={q.id}
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '6px 4px',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        background: sleepQuality === q.id ? '#3B82F6' : 'var(--bg-card-subtle)',
-                        color: sleepQuality === q.id ? '#FFFFFF' : 'var(--text-main)',
-                        border: '1px solid var(--border-subtle)',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setSleepQuality(q.id)}
-                    >
-                      {q.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Consecutive Heavy Days Tracker - Solo para Andrés y Pareja */}
-              {currentProfile.id !== 'hermana' ? (
-                <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 800 }}>
-                      🏋️ Días pesados seguidos esta semana:
-                    </span>
-                    <span style={{ fontSize: '12px', fontWeight: 900, color: recentHeavyDays >= 2 ? '#F59E0B' : 'var(--text-main)' }}>
-                      {recentHeavyDays === 0 ? '0 días' : recentHeavyDays === 1 ? '1 día' : '2+ días (Fatiga)'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {[
-                      { val: 0, label: '0 días' },
-                      { val: 1, label: '1 día' },
-                      { val: 2, label: '2+ días pesados ⚡' }
-                    ].map((d) => (
-                      <button
-                        key={d.val}
-                        type="button"
-                        style={{
-                          flex: 1,
-                          padding: '8px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: 800,
-                          background: recentHeavyDays === d.val ? (d.val >= 2 ? '#F59E0B' : 'var(--fitia-green)') : 'var(--bg-card-subtle)',
-                          color: recentHeavyDays === d.val ? '#FFFFFF' : 'var(--text-main)',
-                          border: '1px solid var(--border-subtle)',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => setRecentHeavyDays(d.val)}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 800 }}>
-                      🌿 Nivel de Energía & Bienestar:
-                    </span>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-green)' }}>
-                      Vitalidad Serena
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Cero sobrecarga articular ni fatiga pesada. Actividad orientada a la salud, circulación y relajación.
-                  </div>
-                </div>
-              )}
-
-              {/* Smart Alerts & Warnings */}
-              {(hybridPrescription.warnings.length > 0 || hybridPrescription.recommendations.length > 0) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {hybridPrescription.warnings.map((warn, i) => (
-                    <div key={i} style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '10px 12px', fontSize: '12px', color: '#DC2626', fontWeight: 700 }}>
-                      {warn}
-                    </div>
-                  ))}
-                  {hybridPrescription.recommendations.map((rec, i) => (
-                    <div key={i} style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '12px', color: '#B45309', fontWeight: 700 }}>
-                      {rec}
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
 
-            {/* 3. CONTEXT & DURATION SELECTORS (SOLO PARA ANDRÉS Y PAREJA; OCULTO PARA ANICKA) */}
-            {currentProfile.id !== 'hermana' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', paddingLeft: '4px' }}>
-                  📍 ¿Dónde entrenas hoy?
-                </div>
-                <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
-                  {[
-                    { id: 'gym', label: 'Gimnasio', icon: '🏋️' },
-                    { id: 'home_bars', label: currentProfile.id === 'andres' ? 'Calistenia (Barras & Lastre)' : 'En Casa (Funcional)', icon: currentProfile.id === 'andres' ? '🤸‍♂️' : '🏡' },
-                    { id: 'travel', label: 'Cajabamba / Viaje', icon: '🏔️' }
-                  ].map((ctx) => {
-                    const isSel = workoutContext === ctx.id;
-                    return (
-                      <button
-                        key={ctx.id}
-                        type="button"
-                        className="hybrid-context-tab"
-                        style={{
-                          background: isSel ? 'var(--bg-card)' : 'transparent',
-                          color: isSel ? 'var(--text-main)' : 'var(--text-muted)',
-                          boxShadow: isSel ? 'var(--card-shadow)' : 'none'
-                        }}
-                        onClick={() => setWorkoutContext(ctx.id)}
-                      >
-                        <span>{ctx.icon}</span>
-                        <span>{ctx.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* 3. WORKOUT QUICK TOOLBAR (ACCESO DIRECTO A MODALES SIN SOBRECARGA) */}
+            <div className="workout-quick-toolbar">
+              {/* Botón para abrir modal de diagnóstico SNC, Sueño y Pilares */}
+              <button
+                type="button"
+                className="workout-toolbar-pill snc"
+                onClick={() => setShowSncPillarsModal(true)}
+                title="Abrir diagnóstico SNC, regular sueño y ver 4 Pilares"
+              >
+                <span>🧠</span>
+                <span>SNC: {hybridPrescription.readinessScore}/100</span>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <span>🧬 4 Pilares</span>
+                <span style={{ fontSize: '10px', marginLeft: '2px' }}>⚙️</span>
+              </button>
 
-                {/* Duration Switcher (2h vs 45m) */}
-                <div style={{ display: 'flex', background: 'var(--bg-card-subtle)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
-                  <button
-                    type="button"
-                    style={{
-                      flex: 1,
-                      padding: '9px 12px',
-                      borderRadius: '10px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      background: workoutDurationMode === 'full' ? 'var(--bg-card)' : 'transparent',
-                      color: workoutDurationMode === 'full' ? 'var(--text-main)' : 'var(--text-muted)',
-                      boxShadow: workoutDurationMode === 'full' ? 'var(--card-shadow)' : 'none',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => setWorkoutDurationMode('full')}
-                  >
-                    ⏱️ Sesión Completa (~90–120 min)
-                  </button>
-                  <button
-                    type="button"
-                    style={{
-                      flex: 1,
-                      padding: '9px 12px',
-                      borderRadius: '10px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      background: workoutDurationMode === 'express' ? 'var(--bg-card)' : 'transparent',
-                      color: workoutDurationMode === 'express' ? 'var(--text-main)' : 'var(--text-muted)',
-                      boxShadow: workoutDurationMode === 'express' ? 'var(--card-shadow)' : 'none',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => setWorkoutDurationMode('express')}
-                  >
-                    ⚡ Sesión Express (45 min)
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Tarjeta Serena Exclusiva para Anicka */
-              <div style={{
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <span style={{ fontSize: '26px' }}>🌸</span>
-                <div>
-                  <strong style={{ fontSize: '13px', color: 'var(--text-main)', display: 'block' }}>
-                    Ruta de Movilidad & Bienestar Amable
-                  </strong>
-                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', lineHeight: 1.35 }}>
-                    Sesiones suaves de 15 a 25 min para realizar cómodamente en casa o en un paseo tranquilo, sin pesas ni impacto articular.
-                  </span>
-                </div>
-              </div>
-            )}
+              {/* Contexto & Duración rápido */}
+              {currentProfile.id !== 'hermana' && (
+                <button
+                  type="button"
+                  className="workout-toolbar-pill"
+                  onClick={() => setShowSncPillarsModal(true)}
+                  title="Cambiar lugar o duración de entrenamiento"
+                >
+                  <span>{workoutContext === 'gym' ? '🏋️ Gimnasio' : workoutContext === 'home_bars' ? '🤸 Barras' : '🏔️ Viaje'}</span>
+                  <span>•</span>
+                  <span>{workoutDurationMode === 'full' ? '90m' : '45m'}</span>
+                </button>
+              )}
 
-            {/* Banner Específico para Andrés: Calistenia Intermedia con Lastre */}
-            {currentProfile.id === 'andres' && workoutContext === 'home_bars' && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.08))',
-                border: '1.5px solid rgba(245, 158, 11, 0.4)',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '22px' }}>🤸‍♂️</span>
-                    <div>
-                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
-                        Calistenia Intermedia con Lastre (Barras en Casa)
-                      </strong>
-                      <span style={{ fontSize: '11px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
-                        ⚡ Sobrecarga Progresiva Pesada (+kg) · Enfoque Dejan Stipke
-                      </span>
-                    </div>
-                  </div>
-                  <span style={{
-                    background: 'rgba(245, 158, 11, 0.2)',
-                    color: '#D97706',
-                    padding: '3px 8px',
-                    borderRadius: '8px',
-                    fontSize: '10.5px',
-                    fontWeight: 900
-                  }}>
-                    INTERMEDIO
-                  </span>
-                </div>
+              {/* Botón para día ocupado si no está activo */}
+              {!isMissedDay && (
+                <button
+                  type="button"
+                  className="workout-toolbar-pill"
+                  onClick={handleToggleMissedDay}
+                  title="¿Sin tiempo hoy? Activa sesión rápida de 12 min"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <span>❌</span>
+                  <span>Día ocupado</span>
+                </button>
+              )}
 
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  Entrenamiento en barra fija y paralelas con tu <strong>cinturón de lastre</strong>. Prioriza rango de movimiento estricto, 2s de descenso excéntrico y descansos de 120s para reponer fosfocreatina.
-                </div>
+              {/* Banner de Ciclo Hormonal para Perfiles Femeninos */}
+              {activeCycleInfo && (currentProfile.gender === 'female' || activeCycleConfig?.enabled) && (
+                <button
+                  type="button"
+                  className="workout-toolbar-pill"
+                  onClick={handleOpenCycleModal}
+                  title="Ajustar y ver detalles del ciclo hormonal"
+                  style={{ color: activeCycleInfo.color, borderColor: activeCycleInfo.borderColor }}
+                >
+                  <span>{activeCycleInfo.icon}</span>
+                  <span>Fase {activeCycleInfo.phaseName} (Día {activeCycleInfo.cycleDay})</span>
+                </button>
+              )}
+            </div>
 
-                {/* Selector rápido de peso de lastre */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-main)' }}>⚖️ Tu Lastre Hoy:</span>
-                  {[5, 10, 15, 20, 25].map((kg) => (
-                    <button
-                      key={kg}
-                      type="button"
-                      style={{
-                        padding: '4px 9px',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: 900,
-                        cursor: 'pointer',
-                        background: selectedLastreKg === kg ? 'var(--fitia-orange)' : 'var(--bg-card)',
-                        color: selectedLastreKg === kg ? '#FFFFFF' : 'var(--text-main)',
-                        border: selectedLastreKg === kg ? '1px solid var(--fitia-orange)' : '1px solid var(--border-subtle)',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onClick={() => {
-                        setSelectedLastreKg(kg);
-                        showToast(`⚖️ Lastre fijado en +${kg} kg. ¡Rango objetivo: 6-8 reps estrictas!`);
-                      }}
-                    >
-                      +{kg} kg
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Contextual Focus Chips (Clean & Non-Redundant) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Pastilla contextual elegante de 1 sola línea */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {currentProfile.id === 'pareja' && (
                 <div className="workout-compact-chip green">
                   <span>🛡️ <strong>Blindaje Lumbar Activo:</strong> Sin carga axial ni Hip Thrust</span>
@@ -5453,13 +5051,13 @@ export default function HomePage() {
               )}
               {(hybridPrescription.selectedSplit === 'legs' || hybridPrescription.selectedSplit === 'piernas' || hybridPrescription.selectedSplit === 'glutes') && (
                 <div className="workout-compact-chip blue">
-                  <span>🦵 <strong>Tren Inferior:</strong> Máquinas Guiadas, Sobrecarga Progresiva & Drop Sets</span>
+                  <span>🦵 <strong>Tren Inferior:</strong> Máquinas con sobrecarga progresiva y drop sets</span>
                   <span style={{ fontSize: '10px', background: 'rgba(59,130,246,0.18)', padding: '2px 7px', borderRadius: '6px' }}>MÁQUINAS</span>
                 </div>
               )}
               {(hybridPrescription.selectedSplit === 'push' || hybridPrescription.selectedSplit === 'pull' || hybridPrescription.selectedSplit === 'full_upper') && (
                 <div className="workout-compact-chip orange">
-                  <span>⚡ <strong>Tren Superior Híbrido:</strong> Calistenia con Lastre & Pesas Libres</span>
+                  <span>⚡ <strong>Tren Superior:</strong> Calistenia con lastre y fuerza pesada</span>
                   <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.18)', padding: '2px 7px', borderRadius: '6px' }}>HÍBRIDO</span>
                 </div>
               )}
@@ -5560,15 +5158,7 @@ export default function HomePage() {
                             </span>
                           </div>
 
-                          {/* Row 3: Biomechanical Note */}
-                          {ex.note && (
-                            <div className="exercise-note-box">
-                              <span className="exercise-note-icon">💡</span>
-                              <span className="exercise-note-text">{ex.note}</span>
-                            </div>
-                          )}
-
-                          {/* Row 4: Registro de Sobrecarga Progresiva & Doble Progresión */}
+                          {/* Row 3: Registro de Sobrecarga Progresiva & Doble Progresión */}
                           <div className="exercise-log-panel">
                             <div className="exercise-log-inputs">
                               <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>
@@ -9736,6 +9326,600 @@ export default function HomePage() {
                 }}
               >
                 {detailReaderModal.actionText || '✓ Entendido / Cerrar Guía'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL DE SELECCIÓN Y EDICIÓN RÁPIDA DE FECHA DE INICIO DE CICLO
+          =================================================================== */}
+      {showCycleDatePickerModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowCycleDatePickerModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '440px', maxHeight: '85vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px' }}>🩸</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 900 }}>Fecha de Inicio de Periodo</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Calibra con precisión tu fase hormonal
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCycleDatePickerModal(false)}
+                style={{
+                  background: 'var(--bg-card-subtle)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '15px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Accesos rápidos */}
+            <div style={{ marginBottom: '14px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Accesos rápidos:
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '6px' }}>
+                {(() => {
+                  const todayStr = getLocalDateKey();
+                  const yesterdayObj = new Date();
+                  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+                  const yesterdayStr = `${yesterdayObj.getFullYear()}-${String(yesterdayObj.getMonth() + 1).padStart(2, '0')}-${String(yesterdayObj.getDate()).padStart(2, '0')}`;
+                  
+                  const twoDaysAgoObj = new Date();
+                  twoDaysAgoObj.setDate(twoDaysAgoObj.getDate() - 2);
+                  const twoDaysAgoStr = `${twoDaysAgoObj.getFullYear()}-${String(twoDaysAgoObj.getMonth() + 1).padStart(2, '0')}-${String(twoDaysAgoObj.getDate()).padStart(2, '0')}`;
+
+                  return [
+                    { label: '🩸 Hoy', date: todayStr },
+                    { label: 'Ayer', date: yesterdayStr },
+                    { label: 'Hace 2 d.', date: twoDaysAgoStr }
+                  ].map((btn) => (
+                    <button
+                      key={btn.date}
+                      type="button"
+                      onClick={() => {
+                        setCustomPeriodDateInput(btn.date);
+                        handleMarkPeriodStartDate(btn.date);
+                      }}
+                      style={{
+                        padding: '10px 6px',
+                        borderRadius: '12px',
+                        border: customPeriodDateInput === btn.date ? '2px solid #EC4899' : '1px solid var(--border-subtle)',
+                        background: customPeriodDateInput === btn.date ? 'rgba(236, 72, 153, 0.12)' : 'var(--bg-card-subtle)',
+                        color: customPeriodDateInput === btn.date ? '#EC4899' : 'var(--text-main)',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {btn.label}
+                    </button>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            {/* Selector de Fecha manual */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                O elige cualquier fecha del calendario:
+              </label>
+              <input
+                type="date"
+                value={customPeriodDateInput}
+                onChange={(e) => setCustomPeriodDateInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-main)',
+                  fontSize: '14px',
+                  fontWeight: 700
+                }}
+              />
+            </div>
+
+            {/* Acciones principales */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => handleMarkPeriodStartDate(customPeriodDateInput)}
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  fontSize: '13.5px',
+                  background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                  boxShadow: '0 4px 14px rgba(236, 72, 153, 0.35)'
+                }}
+              >
+                ✓ Guardar Fecha ({customPeriodDateInput})
+              </button>
+
+              {previousPeriodStartDate && (
+                <button
+                  type="button"
+                  onClick={handleUndoPeriodStartDate}
+                  style={{
+                    width: '100%',
+                    padding: '11px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    borderRadius: '12px',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    color: '#DC2626',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ↩️ Deshacer (Restaurar {previousPeriodStartDate})
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowCycleDatePickerModal(false)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer'
+                }}
+              >
+                Cerrar sin cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL DE DIAGNÓSTICO SNC, SUEÑO, CONTEXTO Y 4 PILARES
+          (Elimina toda sobrecarga del tab Workout para entrenar directo)
+          =================================================================== */}
+      {showSncPillarsModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowSncPillarsModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet workout-snc-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '500px', maxHeight: '88vh', overflowY: 'auto' }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '26px' }}>🧠</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 900 }}>Auto-Regulación SNC & 4 Pilares</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                    Diagnóstico biológico y arquitectura híbrida
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSncPillarsModal(false)}
+                style={{
+                  background: 'var(--bg-card-subtle)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '15px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* 1. AUTO-REGULACIÓN SNC & PREPARACIÓN */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-main)' }}>
+                    Preparación Neuromuscular
+                  </span>
+                  <span style={{
+                    background: hybridPrescription.badgeColor || 'var(--fitia-green)',
+                    color: '#FFFFFF',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    fontSize: '11.5px',
+                    fontWeight: 900
+                  }}>
+                    {hybridPrescription.readinessScore} / 100 SNC
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-muted)' }}>Modo Hoy:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: hybridPrescription.badgeColor }}>
+                    {hybridPrescription.intensityMode}
+                  </span>
+                </div>
+
+                {/* Controles de Sueño */}
+                <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 800 }}>
+                      🌙 Sueño: <strong>{sleepHours}h</strong> ({sleepQuality === 'deep' ? 'Profundo' : sleepQuality === 'normal' ? 'Normal' : 'Inquieto'})
+                    </span>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Ajuste Rápido</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                    {[5.5, 6.5, 7.5, 8.5].map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        style={{
+                          flex: 1,
+                          padding: '6px 4px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          background: sleepHours === h ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
+                          color: sleepHours === h ? '#FFFFFF' : 'var(--text-main)',
+                          border: '1px solid var(--border-subtle)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => setSleepHours(h)}
+                      >
+                        {h}h
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {[
+                      { id: 'deep', label: 'Profundo 🌙' },
+                      { id: 'normal', label: 'Normal 💤' },
+                      { id: 'light', label: 'Inquieto ⚠️' }
+                    ].map((q) => (
+                      <button
+                        key={q.id}
+                        type="button"
+                        style={{
+                          flex: 1,
+                          padding: '6px 4px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          background: sleepQuality === q.id ? '#3B82F6' : 'var(--bg-card-subtle)',
+                          color: sleepQuality === q.id ? '#FFFFFF' : 'var(--text-main)',
+                          border: '1px solid var(--border-subtle)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => setSleepQuality(q.id)}
+                      >
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Días pesados seguidos */}
+                {currentProfile.id !== 'hermana' && (
+                  <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 800 }}>
+                        🏋️ Días pesados seguidos esta semana:
+                      </span>
+                      <span style={{ fontSize: '12px', fontWeight: 900, color: heavyDaysInRow >= 3 ? '#DC2626' : 'var(--fitia-green)' }}>
+                        {heavyDaysInRow} {heavyDaysInRow === 1 ? 'día' : 'días'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {[0, 1, 2, 3, 4].map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          style={{
+                            flex: 1,
+                            padding: '6px 4px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            background: heavyDaysInRow === d ? '#FF6B00' : 'var(--bg-card-subtle)',
+                            color: heavyDaysInRow === d ? '#FFFFFF' : 'var(--text-main)',
+                            border: '1px solid var(--border-subtle)',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => setHeavyDaysInRow(d)}
+                        >
+                          {d}d
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recomendación biológica */}
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4, background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '10px', borderLeft: `3px solid ${hybridPrescription.badgeColor || 'var(--fitia-green)'}` }}>
+                  {hybridPrescription.recommendation}
+                </div>
+              </div>
+
+              {/* 2. ENTORNO Y DURACIÓN DE SESIÓN */}
+              {currentProfile.id !== 'hermana' && (
+                <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Entorno & Duración
+                  </span>
+                  
+                  {/* Contexto Selector */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    {[
+                      { id: 'gym', label: '🏋️ Gimnasio' },
+                      { id: 'home_bars', label: '🤸 Barras' },
+                      { id: 'travel', label: '🏔️ Viaje' }
+                    ].map((ctx) => (
+                      <button
+                        key={ctx.id}
+                        type="button"
+                        style={{
+                          padding: '9px 6px',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          textAlign: 'center',
+                          background: workoutContext === ctx.id ? 'var(--fitia-green)' : 'var(--bg-card)',
+                          color: workoutContext === ctx.id ? '#FFFFFF' : 'var(--text-main)',
+                          border: workoutContext === ctx.id ? '1px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          setWorkoutContext(ctx.id);
+                          showToast(`📍 Entorno: ${ctx.label}`);
+                        }}
+                      >
+                        {ctx.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Duración Selector */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                    {[
+                      { id: 'full', label: '⏱️ Sesión Completa (90m)' },
+                      { id: 'express', label: '⚡ Sesión Express (45m)' }
+                    ].map((dur) => (
+                      <button
+                        key={dur.id}
+                        type="button"
+                        style={{
+                          padding: '9px 6px',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          textAlign: 'center',
+                          background: workoutDurationMode === dur.id ? '#3B82F6' : 'var(--bg-card)',
+                          color: workoutDurationMode === dur.id ? '#FFFFFF' : 'var(--text-main)',
+                          border: workoutDurationMode === dur.id ? '1px solid #3B82F6' : '1px solid var(--border-subtle)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          setWorkoutDurationMode(dur.id);
+                          showToast(`⏱️ Duración: ${dur.label}`);
+                        }}
+                      >
+                        {dur.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Selector de Lastre si aplica */}
+                  {activeProfileId === 'andres' && (
+                    <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                        ⚖️ Tu Lastre Hoy en Dominadas/Fondos:
+                      </span>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {[5, 10, 15, 20, 25].map((kg) => (
+                          <button
+                            key={kg}
+                            type="button"
+                            style={{
+                              flex: 1,
+                              padding: '6px 4px',
+                              borderRadius: '8px',
+                              fontSize: '11px',
+                              fontWeight: 900,
+                              background: selectedLastreKg === kg ? 'var(--fitia-orange)' : 'var(--bg-card-subtle)',
+                              color: selectedLastreKg === kg ? '#FFFFFF' : 'var(--text-main)',
+                              border: selectedLastreKg === kg ? '1px solid var(--fitia-orange)' : '1px solid var(--border-subtle)',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              setSelectedLastreKg(kg);
+                              showToast(`⚖️ Lastre fijado en +${kg} kg`);
+                            }}
+                          >
+                            +{kg}kg
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 3. LOS 4 PILARES DEL CUERPO ÓPTIMO */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '18px' }}>🧬</span>
+                    <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      4 Pilares Sistémicos
+                    </span>
+                  </div>
+                  <span style={{
+                    background: 'var(--fitia-green-soft)',
+                    color: 'var(--fitia-green)',
+                    fontWeight: 900,
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    borderRadius: '999px',
+                    border: '1px solid var(--fitia-green)'
+                  }}>
+                    {systemicPillars.totalAuraScore || 70}/100 PTS
+                  </span>
+                </div>
+
+                {/* 4 Mini Gauges */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '6px' }}>
+                  {[
+                    { name: 'Nutrición', pts: systemicPillars.breakdown?.nutrition ?? 15, icon: '🥩', color: '#10B981' },
+                    { name: 'Fuerza', pts: systemicPillars.breakdown?.workout ?? 15, icon: '🦁', color: '#F97316' },
+                    { name: 'Sueño/SNC', pts: systemicPillars.breakdown?.sleep ?? 20, icon: '🧠', color: '#6366F1' },
+                    { name: 'Hábitos', pts: systemicPillars.breakdown?.habits ?? 15, icon: '🧘', color: '#3B82F6' }
+                  ].map((p, pIdx) => (
+                    <div key={pIdx} style={{
+                      background: 'var(--bg-card)',
+                      borderRadius: '10px',
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      <span style={{ fontSize: '14px' }}>{p.icon}</span>
+                      <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '2px' }}>{p.name}</div>
+                      <div style={{ fontSize: '11px', fontWeight: 900, color: p.color, marginTop: '2px' }}>{p.pts}/25</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sinergias Biológicas Interactivas */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                  {(systemicPillars.synergies || []).map((syn, sIdx) => (
+                    <div
+                      key={syn.id || sIdx}
+                      style={{
+                        background: 'var(--bg-card)',
+                        borderLeft: '3px solid var(--fitia-green)',
+                        padding: '9px 11px',
+                        borderRadius: '0 10px 10px 0',
+                        fontSize: '11px',
+                        lineHeight: 1.35,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setDetailReaderModal({
+                        title: syn.title,
+                        subtitle: 'Sinergia Sistémica de Rendimiento & Recuperación Celular',
+                        icon: syn.icon || '⚡',
+                        badge: 'Sinergia AuraScore',
+                        badgeBg: 'rgba(16, 185, 129, 0.15)',
+                        badgeColor: 'var(--fitia-green)',
+                        sections: [
+                          {
+                            heading: 'Mecanismo Biológico y Fisiológico',
+                            icon: '🧬',
+                            text: syn.text
+                          },
+                          {
+                            heading: 'Impacto en tu Día',
+                            icon: '💡',
+                            tip: 'Al sincronizar estos dos pilares sistémicos, optimizas tu curva de glucosa, disponibilidad mitocondrial de ATP y estabilidad del sistema nervioso central.'
+                          }
+                        ],
+                        actionText: '✓ Entendido / Cerrar Guía'
+                      })}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                        <strong style={{ color: 'var(--text-main)', fontSize: '11px' }}>{syn.icon} {syn.title}</strong>
+                        <span style={{ fontSize: '10px', color: 'var(--fitia-green)', fontWeight: 800 }}>📖 Guía</span>
+                      </div>
+                      <div style={{ color: 'var(--text-muted)' }}>{syn.text}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. BALANCE SEMANAL */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--fitia-green)' }}>
+                    📊 Balance Semanal
+                  </span>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    {currentProfile.id === 'hermana'
+                      ? 'Vitalidad Diaria'
+                      : `Glúteo: ${weeklyWorkoutBalance.glutesCount || 0} · Piernas: ${weeklyWorkoutBalance.pureLegsCount || 0} · Espalda: ${weeklyWorkoutBalance.pullCount || 0} · Pecho: ${weeklyWorkoutBalance.pushCount || 0}`}
+                  </span>
+                </div>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-main)', lineHeight: 1.4, margin: 0 }}>
+                  {weeklyWorkoutBalance.weeklySummaryText}
+                </p>
+                {weeklyWorkoutBalance.recommendedSplit && selectedSplit !== weeklyWorkoutBalance.recommendedSplit && !isMissedDay && (
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%',
+                      background: 'var(--fitia-green-soft)',
+                      border: '1px solid var(--fitia-green)',
+                      color: 'var(--fitia-green)',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      handleSelectSplit(weeklyWorkoutBalance.recommendedSplit);
+                      setShowSncPillarsModal(false);
+                    }}
+                  >
+                    ⚡ Aplicar Split Recomendado ({HYBRID_ATHLETE_SYSTEM.splits[activeProfileId]?.[weeklyWorkoutBalance.recommendedSplit]?.shortName || weeklyWorkoutBalance.recommendedSplit})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Dismiss Button */}
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: '100%', padding: '13px', fontSize: '13px' }}
+                onClick={() => setShowSncPillarsModal(false)}
+              >
+                ✓ Listo / Volver al Entrenamiento
               </button>
             </div>
           </div>

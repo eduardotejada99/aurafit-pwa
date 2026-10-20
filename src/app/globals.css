@@ -3759,6 +3759,101 @@ button:active, .touchable:active {
   text-align: center;
 }
 
+/* Workout Quick Toolbar & Pills */
+.workout-quick-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.workout-toolbar-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.workout-toolbar-pill:hover {
+  background: var(--bg-card-subtle);
+  border-color: var(--fitia-green);
+  transform: translateY(-1px);
+}
+
+.workout-toolbar-pill:active {
+  transform: scale(0.98);
+}
+
+.workout-toolbar-pill.snc {
+  background: var(--fitia-green-soft);
+  border-color: var(--fitia-green);
+  color: var(--fitia-green);
+}
+
+.workout-toolbar-pill.snc:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.workout-snc-modal-card {
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+}
+
+/* Cycle Quick Actions */
+.cycle-actions-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cycle-quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: rgba(236, 72, 153, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  color: #EC4899;
+}
+
+.cycle-quick-btn:hover {
+  background: rgba(236, 72, 153, 0.18);
+}
+
+.cycle-quick-btn.active-day-one {
+  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.35);
+}
+
+.cycle-undo-btn {
+  transition: all 0.15s ease;
+}
+
+.cycle-undo-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+
 
 
 
