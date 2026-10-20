@@ -48,6 +48,15 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(ids.includes('fit-choclo-con-quesillo'), 'Should contain choclo con quesillo');
     assert.ok(ids.includes('fit-quinua-cocida'), 'Should contain quinua cocida');
     assert.ok(ids.includes('fit-batido-avena-maca'), 'Should contain batido de maca y avena');
+    // Diverse Peruvian & Andean Fitness Proteins
+    assert.ok(ids.includes('prot-pechuga-pavo'), 'Should contain pechuga de pavo');
+    assert.ok(ids.includes('prot-lechon-horno-magro'), 'Should contain lechon asado magro');
+    assert.ok(ids.includes('prot-cuy-asado-andino'), 'Should contain cuy andino asado');
+    assert.ok(ids.includes('prot-bonito-plancha'), 'Should contain filete de bonito');
+    assert.ok(ids.includes('prot-pota-plancha'), 'Should contain pota cocida/plancha');
+    assert.ok(ids.includes('prot-sangrecita-preparada'), 'Should contain sangrecita preparada');
+    assert.ok(ids.includes('prot-higado-res-plancha'), 'Should contain higado de res');
+    assert.ok(ids.includes('prot-huevos-duros-2unidades'), 'Should contain huevos duros');
   });
 
   it('should parse natural language queries for green juice and Peruvian specialties', () => {
@@ -99,6 +108,43 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     const parsedGreenProtein = parseNaturalLanguageFood('1 vaso de jugo verde proteico');
     assert.ok(parsedGreenProtein.length > 0, 'Should parse protein green juice');
     assert.equal(parsedGreenProtein[0].protein, 24.0);
+
+    // 10. Pavo (gram scale & default)
+    const parsedPavoGrams = parseNaturalLanguageFood('200g pavo');
+    assert.ok(parsedPavoGrams.length > 0, 'Should parse 200g pavo');
+    assert.equal(parsedPavoGrams[0].grams, 200);
+    assert.ok(parsedPavoGrams[0].protein > 40);
+
+    // 11. Lechón al horno
+    const parsedLechon = parseNaturalLanguageFood('150g lechon');
+    assert.ok(parsedLechon.length > 0, 'Should parse lechón');
+    assert.ok(parsedLechon[0].name.toLowerCase().includes('lechon') || parsedLechon[0].name.toLowerCase().includes('lechón'));
+    assert.equal(parsedLechon[0].grams, 150);
+
+    // 12. Cuy asado andino
+    const parsedCuy = parseNaturalLanguageFood('1 presa de cuy asado');
+    assert.ok(parsedCuy.length > 0, 'Should parse cuy asado');
+    assert.ok(parsedCuy[0].name.toLowerCase().includes('cuy'));
+
+    // 13. Filete de bonito (Omega-3)
+    const parsedBonito = parseNaturalLanguageFood('1 filete de bonito');
+    assert.ok(parsedBonito.length > 0, 'Should parse bonito');
+    assert.ok(parsedBonito[0].name.toLowerCase().includes('bonito'));
+
+    // 14. Pota a la plancha
+    const parsedPota = parseNaturalLanguageFood('180g pota');
+    assert.ok(parsedPota.length > 0, 'Should parse pota');
+    assert.equal(parsedPota[0].grams, 180);
+
+    // 15. Sangrecita de pollo
+    const parsedSangrecita = parseNaturalLanguageFood('1 porcion de sangrecita');
+    assert.ok(parsedSangrecita.length > 0, 'Should parse sangrecita');
+    assert.ok(parsedSangrecita[0].name.toLowerCase().includes('sangrecita'));
+
+    // 16. Hígado de res
+    const parsedHigado = parseNaturalLanguageFood('150g higado de res');
+    assert.ok(parsedHigado.length > 0, 'Should parse higado');
+    assert.equal(parsedHigado[0].grams, 150);
   });
 
   it('should correctly calculate couple mode split (60% Andrés, 40% Pareja) for meals', () => {

@@ -1191,6 +1191,208 @@ export const CURATED_PERUVIAN_FOODS = [
     isUltraProcessed: false,
     icon: '🥔',
     breakdown: 'Papas nativas de altura sancochadas con cáscara fina rica en fibra, potasio y antioxidantes naturales'
+  },
+
+  // =========================================================================
+  // PROTEÍNAS FITNESS PERUANAS (PAVO, LECHÓN, CERDO MAGRO, CUY, PESCADOS, ETC.)
+  // =========================================================================
+  {
+    id: 'prot-pechuga-pavo',
+    name: 'Pechuga de Pavo a la Plancha / Horneada Magra',
+    shortName: 'Pechuga de Pavo',
+    brand: 'San Fernando / Casero',
+    servingDesc: '1 filete generoso (150g)',
+    grams: 150,
+    calories: 170,
+    protein: 34.0,
+    carbs: 0.0,
+    fat: 3.5,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🦃',
+    breakdown: 'Filete magro de pechuga de pavo nacional a la plancha o al horno con sal marina, romero y ajo; altísima biodisponibilidad y cero carbohidratos'
+  },
+  {
+    id: 'prot-pavo-horno-magro',
+    name: 'Pavo Criollo Asado al Horno (Carne Magra sin Piel)',
+    shortName: 'Pavo Asado al Horno',
+    brand: 'Tradicional / Casero',
+    servingDesc: '1 porción en rodajas (180g)',
+    grams: 180,
+    calories: 245,
+    protein: 41.0,
+    carbs: 1.5,
+    fat: 8.0,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🦃',
+    breakdown: 'Carne magra de pavo marinado con ají panca, vinagre, ajo y especias peruanas, horneado lentamente'
+  },
+  {
+    id: 'prot-lechon-horno-magro',
+    name: 'Lechón Asado al Horno (Carne Magra sin Cuero ni Grasa Visible)',
+    shortName: 'Lechón Asado Magro',
+    brand: 'Tradición Cajamarquina / Serrana',
+    servingDesc: '1 porción limpia (150g)',
+    grams: 150,
+    calories: 275,
+    protein: 36.0,
+    carbs: 0.0,
+    fat: 14.0,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍖',
+    breakdown: 'Carne desgrasada y tierna de lechón tierno horneado con hierbas andinas (huacatay, chicha de jora, ajo); rica en zinc, creatina natural y vitamina B12'
+  },
+  {
+    id: 'prot-lomo-cerdo-magro',
+    name: 'Lomo de Cerdo Magro a la Plancha (Proteína Magra Económica)',
+    shortName: 'Lomo de Cerdo a la Plancha',
+    brand: 'Natural / Balanza',
+    servingDesc: '1 bife mediano (150g)',
+    grams: 150,
+    calories: 210,
+    protein: 34.0,
+    carbs: 0.0,
+    fat: 7.5,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥩',
+    breakdown: 'Corte extra magro de lomo de cerdo sin grasa periférica; rico en tiamina B1 y aminoácidos ramificados (BCAA)'
+  },
+  {
+    id: 'prot-cuy-asado-andino',
+    name: 'Cuy Asado / al Horno Andino (Carne Magra Tradición Cajamarquina)',
+    shortName: 'Cuy Asado Andino',
+    brand: 'Tradición Cajamarquina',
+    servingDesc: '1 presa generosa (180g sin hueso)',
+    grams: 180,
+    calories: 250,
+    protein: 38.0,
+    carbs: 0.0,
+    fat: 10.0,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍖',
+    breakdown: 'Carne de cuy andino criada en valle interandino; 21% de proteína neta, colesterol mínimo y colágeno de soporte articular'
+  },
+  {
+    id: 'prot-bonito-plancha',
+    name: 'Filete de Bonito a la Plancha (Pescado Azul Peruano Omega-3)',
+    shortName: 'Bonito a la Plancha',
+    brand: 'Mar Peruano / Fresco',
+    servingDesc: '1 filete grande (180g)',
+    grams: 180,
+    calories: 248,
+    protein: 42.0,
+    carbs: 0.0,
+    fat: 8.6,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🐟',
+    breakdown: 'Pescado azul de alta mar peruana; potente concentración de EPA/DHA antiinflamatorio y proteína de asimilación rápida'
+  },
+  {
+    id: 'prot-pota-plancha',
+    name: 'Pota / Calamar Gigante Cocido o a la Plancha (Proteína Pura 0% Grasa)',
+    shortName: 'Pota Cocida / a la Plancha',
+    brand: 'Mar Peruano / Fit',
+    servingDesc: '1 porción limpia (180g)',
+    grams: 180,
+    calories: 160,
+    protein: 32.5,
+    carbs: 1.8,
+    fat: 2.0,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🦑',
+    breakdown: 'Láminas de pota peruana fresca cocidas o salteadas al sartén con limón y ajo; la proteína marina más económica, magra y densa del Perú'
+  },
+  {
+    id: 'prot-langostinos-plancha',
+    name: 'Langostinos a la Plancha / Cocidos (Proteína Magra Tumbesina)',
+    shortName: 'Langostinos a la Plancha',
+    brand: 'Mar del Norte / Tumbes',
+    servingDesc: '1 porción (150g limpios)',
+    grams: 150,
+    calories: 145,
+    protein: 31.5,
+    carbs: 1.2,
+    fat: 1.5,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🦐',
+    breakdown: 'Colitas de langostino salteadas con ajo, perejil y gotas de limón; altísimo selenio y pureza proteica'
+  },
+  {
+    id: 'prot-sangrecita-preparada',
+    name: 'Sangrecita de Pollo Criolla Preparada (Récord de Hierro y Proteína)',
+    shortName: 'Sangrecita Preparada',
+    brand: 'Tradición Peruana / Fit',
+    servingDesc: '1 porción (150g)',
+    grams: 150,
+    calories: 135,
+    protein: 22.5,
+    carbs: 3.8,
+    fat: 3.2,
+    fiber: 1.0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🩸',
+    breakdown: 'Sangrecita sancochada y salteada con cebollita china, hierbabuena y orégano; más de 29mg de hierro por 100g para prevenir fatiga y oxigenar en altura'
+  },
+  {
+    id: 'prot-higado-res-plancha',
+    name: 'Hígado de Res a la Plancha / Encebollado Criollo',
+    shortName: 'Hígado de Res',
+    brand: 'Natural / Balanza',
+    servingDesc: '1 filete generoso (150g)',
+    grams: 150,
+    calories: 205,
+    protein: 31.5,
+    carbs: 5.5,
+    fat: 5.5,
+    fiber: 0.5,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥩',
+    breakdown: 'Bife de hígado de vacuno cocido a la plancha con cebolla caramelizada; bomba natural de vitamina A, B12, folatos y cobre'
+  },
+  {
+    id: 'prot-huevos-duros-2unidades',
+    name: 'Huevos Duros Enteros Sancochados (2 unidades)',
+    shortName: '2 Huevos Duros',
+    brand: 'Granja Nacional',
+    servingDesc: '2 unidades medianas (110g)',
+    grams: 110,
+    calories: 155,
+    protein: 13.0,
+    carbs: 1.2,
+    fat: 10.6,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥚',
+    breakdown: '2 huevos enteros cocidos en agua con colina, lecitina y albúmina de valor biológico 100'
   }
 ];
 
@@ -1801,6 +2003,96 @@ export const NUTRITIONAL_DENSITY_TABLE = {
     brand: 'Superalimento Andino',
     defaultGrams: 160,
     per100g: { calories: 125, protein: 4.7, carbs: 21.3, fat: 2.0, fiber: 2.8 }
+  },
+  pavo: {
+    names: ['pavo', 'pechuga de pavo', 'carne de pavo', 'pavo al horno', 'pavo cocido', 'pavo asado', 'pavo deshilachado'],
+    displayName: 'Pechuga de Pavo a la Plancha / Horneada',
+    icon: '🦃',
+    category: 'proteina',
+    brand: 'Natural / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 115, protein: 22.7, carbs: 0.0, fat: 2.3, fiber: 0 }
+  },
+  lechon: {
+    names: ['lechon', 'lechón', 'lechon al horno', 'lechón al horno', 'lechon asado', 'lechón asado', 'carne de lechon', 'carne de lechón'],
+    displayName: 'Lechón Asado Magro al Horno',
+    icon: '🍖',
+    category: 'proteina',
+    brand: 'Tradición Cajamarquina',
+    defaultGrams: 150,
+    per100g: { calories: 185, protein: 24.0, carbs: 0.0, fat: 9.5, fiber: 0 }
+  },
+  lomo_cerdo: {
+    names: ['lomo de cerdo', 'cerdo magro', 'carne de cerdo', 'chuleta de cerdo', 'cerdo a la plancha', 'chancho magro', 'cerdo', 'chancho'],
+    displayName: 'Lomo de Cerdo Magro a la Plancha',
+    icon: '🥩',
+    category: 'proteina',
+    brand: 'Natural / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 140, protein: 22.7, carbs: 0.0, fat: 5.0, fiber: 0 }
+  },
+  cuy: {
+    names: ['cuy', 'cuy asado', 'cuy al horno', 'cuy chactado', 'carne de cuy'],
+    displayName: 'Cuy Asado Andino Magro',
+    icon: '🍖',
+    category: 'proteina',
+    brand: 'Tradición Cajamarquina',
+    defaultGrams: 180,
+    per100g: { calories: 140, protein: 21.0, carbs: 0.0, fat: 5.5, fiber: 0 }
+  },
+  bonito: {
+    names: ['bonito', 'pescado bonito', 'filete de bonito', 'bonito a la plancha'],
+    displayName: 'Filete de Bonito a la Plancha (Omega-3)',
+    icon: '🐟',
+    category: 'proteina',
+    brand: 'Mar Peruano',
+    defaultGrams: 180,
+    per100g: { calories: 138, protein: 23.3, carbs: 0.0, fat: 4.8, fiber: 0 }
+  },
+  pota: {
+    names: ['pota', 'calamar gigante', 'pota cocida', 'pota a la plancha', 'chicharron de pota'],
+    displayName: 'Pota / Calamar Cocido o a la Plancha',
+    icon: '🦑',
+    category: 'proteina',
+    brand: 'Mar Peruano',
+    defaultGrams: 180,
+    per100g: { calories: 90, protein: 18.0, carbs: 1.0, fat: 1.1, fiber: 0 }
+  },
+  langostinos: {
+    names: ['langostinos', 'langostino', 'camarones', 'camaron', 'camarón', 'langostinos a la plancha'],
+    displayName: 'Langostinos a la Plancha / Cocidos',
+    icon: '🦐',
+    category: 'proteina',
+    brand: 'Mar del Norte',
+    defaultGrams: 150,
+    per100g: { calories: 97, protein: 21.0, carbs: 0.8, fat: 1.0, fiber: 0 }
+  },
+  sangrecita: {
+    names: ['sangrecita', 'sangrecita de pollo', 'sangrecita criolla'],
+    displayName: 'Sangrecita de Pollo Criolla',
+    icon: '🩸',
+    category: 'proteina',
+    brand: 'Tradición Peruana',
+    defaultGrams: 150,
+    per100g: { calories: 90, protein: 15.0, carbs: 2.5, fat: 2.1, fiber: 0.7 }
+  },
+  higado: {
+    names: ['higado', 'hígado', 'higado de res', 'hígado de res', 'higado encebollado', 'hígado encebollado', 'higado de pollo', 'hígado de pollo'],
+    displayName: 'Hígado de Res a la Plancha',
+    icon: '🥩',
+    category: 'proteina',
+    brand: 'Natural / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 136, protein: 21.0, carbs: 3.7, fat: 3.7, fiber: 0.3 }
+  },
+  huevo_duro: {
+    names: ['huevo duro', 'huevos duros', 'huevo sancochado', 'huevos sancochados', 'huevo cocido', 'huevos cocidos'],
+    displayName: 'Huevo Sancochado / Duro',
+    icon: '🥚',
+    category: 'proteina',
+    brand: 'Granja Nacional',
+    defaultGrams: 110,
+    per100g: { calories: 143, protein: 12.6, carbs: 1.1, fat: 9.8, fiber: 0 }
   }
 };
 
@@ -2342,6 +2634,56 @@ export function parseNaturalLanguageFood(text = '') {
       key: 'jugo_verde_chia',
       keywords: ['jugo verde con chia', 'jugo verde saciante', 'jugo verde manzana'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-jugo-verde-chia-saciante')
+    },
+    {
+      key: 'pavo',
+      keywords: ['pechuga de pavo', 'pavo al horno', 'pavo asado', 'pavo deshilachado', 'carne de pavo', 'pavo'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-pechuga-pavo')
+    },
+    {
+      key: 'lechon',
+      keywords: ['lechon al horno', 'lechón al horno', 'lechon asado', 'lechón asado', 'carne de lechon', 'carne de lechón', 'lechon', 'lechón'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-lechon-horno-magro')
+    },
+    {
+      key: 'lomo_cerdo',
+      keywords: ['lomo de cerdo', 'cerdo magro', 'carne de cerdo', 'chuleta de cerdo', 'cerdo a la plancha', 'chancho magro', 'cerdo', 'chancho'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-lomo-cerdo-magro')
+    },
+    {
+      key: 'cuy',
+      keywords: ['cuy asado', 'cuy al horno', 'cuy chactado', 'carne de cuy', 'cuy'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-cuy-asado-andino')
+    },
+    {
+      key: 'bonito',
+      keywords: ['bonito a la plancha', 'pescado bonito', 'filete de bonito', 'bonito'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-bonito-plancha')
+    },
+    {
+      key: 'pota',
+      keywords: ['pota a la plancha', 'pota cocida', 'calamar a la plancha', 'chicharron de pota', 'pota'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-pota-plancha')
+    },
+    {
+      key: 'langostinos',
+      keywords: ['langostinos a la plancha', 'langostinos cocidos', 'langostinos', 'camarones'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-langostinos-plancha')
+    },
+    {
+      key: 'sangrecita',
+      keywords: ['sangrecita de pollo', 'sangrecita criolla', 'sangrecita'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-sangrecita-preparada')
+    },
+    {
+      key: 'higado',
+      keywords: ['higado de res', 'hígado de res', 'higado encebollado', 'hígado encebollado', 'higado a la plancha', 'hígado a la plancha', 'higado', 'hígado'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-higado-res-plancha')
+    },
+    {
+      key: 'huevos_duros',
+      keywords: ['huevo duro', 'huevos duros', 'huevo sancochado', 'huevos sancochados', 'huevo cocido', 'huevos cocidos'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'prot-huevos-duros-2unidades')
     }
   ];
 
