@@ -20,6 +20,7 @@ import {
   getHybridWorkoutPrescription,
   analyzeWeeklyWorkoutBalance,
   calculateSystemicPillars,
+  calculateRecompositionDiagnostic,
   getLocalDateKey,
   calculateMenstrualCyclePhase,
   DEFAULT_CYCLE_CONFIGS,
@@ -242,6 +243,7 @@ export default function HomePage() {
   const [customPeriodDateInput, setCustomPeriodDateInput] = useState(() => getLocalDateKey());
   const [previousPeriodStartDate, setPreviousPeriodStartDate] = useState(null);
   const [showSncPillarsModal, setShowSncPillarsModal] = useState(false);
+  const [showRecompositionModal, setShowRecompositionModal] = useState(false);
   const [isCycleExpanded, setIsCycleExpanded] = useState(false);
   const [cycleForm, setCycleForm] = useState({
     enabled: true,
@@ -540,6 +542,20 @@ export default function HomePage() {
   });
   const [newWeightInput, setNewWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
+
+  // 15. Intelligent Body Recomposition & Hypertrophy Diagnostic Engine
+  const recompositionDiagnostic = useMemo(() => {
+    return calculateRecompositionDiagnostic({
+      profile: currentProfile,
+      weeklyLogs: weeklyWorkoutLogs,
+      completedExercises: activeCompletedExercises,
+      exerciseLogs,
+      loggedFoods: activeDayFoods,
+      weightHistory: weightLogs,
+      targetCalories: targets.targetCalories || 2150,
+      targetProtein: targets.macros?.proteinGrams || 195
+    });
+  }, [currentProfile, weeklyWorkoutLogs, activeCompletedExercises, exerciseLogs, activeDayFoods, weightLogs, targets]);
 
   // Custom Habits Modal State
   const [showAddHabitModal, setShowAddHabitModal] = useState(false);
@@ -5416,6 +5432,26 @@ export default function HomePage() {
 
             {/* 3. WORKOUT QUICK TOOLBAR (ACCESO DIRECTO A MODALES SIN SOBRECARGA) */}
             <div className="workout-quick-toolbar">
+              {/* Botón para abrir modal de Diagnóstico Inteligente de Recomposición (Músculo & Grasa) */}
+              <button
+                type="button"
+                className="workout-toolbar-pill recomposition"
+                onClick={() => setShowRecompositionModal(true)}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(245, 158, 11, 0.12) 100%)',
+                  borderColor: 'rgba(16, 185, 129, 0.4)',
+                  color: 'var(--text-main)',
+                  fontWeight: 800
+                }}
+                title="Diagnóstico de Recomposición: revisa qué grupo se quedó corto y qué ajuste calórico/cardio hacer"
+              >
+                <span>🧬</span>
+                <span>Coach Recomposición</span>
+                <span style={{ fontSize: '10px', background: 'var(--fitia-green)', color: '#fff', padding: '1px 5px', borderRadius: '4px' }}>
+                  {recompositionDiagnostic.shortGroups.length > 0 ? `⚠️ ${recompositionDiagnostic.shortGroups.length} faltan` : '✅ 100%'}
+                </span>
+              </button>
+
               {/* Botón para abrir modal de diagnóstico SNC, Sueño y Pilares */}
               <button
                 type="button"
@@ -5517,6 +5553,75 @@ export default function HomePage() {
                   <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.18)', padding: '2px 7px', borderRadius: '6px' }}>HÍBRIDO</span>
                 </div>
               )}
+            </div>
+
+            {/* TARJETA DESTACADA: DIAGNÓSTICO INTELIGENTE DE RECOMPOSICIÓN (MÚSCULO & QUEMA DE GRASA) */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.06) 50%, rgba(245, 158, 11, 0.08) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: '16px',
+              padding: '13px 15px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              boxShadow: 'var(--card-shadow)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '22px' }}>🧬</span>
+                  <div>
+                    <div style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--fitia-green)' }}>
+                      Diagnóstico Inteligente Semanal
+                    </div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 900, color: 'var(--text-main)', marginTop: '1px' }}>
+                      Recomposición: Musculatura & Quema de Grasa
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRecompositionModal(true)}
+                  style={{
+                    background: 'var(--fitia-green)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '6px 11px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    flexShrink: 0
+                  }}
+                >
+                  Ver Diagnóstico 📊
+                </button>
+              </div>
+
+              {/* 2 Indicadores Clave Rápidos */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700 }}>🎯 Estado Hipertrofia:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: recompositionDiagnostic.shortGroups.length > 0 ? '#F59E0B' : '#10B981' }}>
+                    {recompositionDiagnostic.shortGroups.length > 0
+                      ? `⚠️ ${recompositionDiagnostic.shortGroups.length} grupo(s) rezagados`
+                      : '✅ Volumen Semanal Completo'}
+                  </span>
+                </div>
+                <div style={{ background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700 }}>🔥 Quema de Grasa:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#FF6B00' }}>
+                    Finisher Zona 2 (10m)
+                  </span>
+                </div>
+              </div>
+
+              {/* Recomendación inmediata en 1 línea */}
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                💡 <strong>Ajuste Clave:</strong> {recompositionDiagnostic.threeKeyAdjustments[0]?.detail || 'Mantén tu entrenamiento habitual y aplica sobrecarga progresiva.'}
+              </div>
             </div>
 
             {/* Barra de Filtro de Ejercicios */}
@@ -10494,6 +10599,323 @@ export default function HomePage() {
                 onClick={() => setShowSncPillarsModal(false)}
               >
                 ✓ Listo / Volver al Entrenamiento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          MODAL DE DIAGNÓSTICO INTELIGENTE DE RECOMPOSICIÓN (MÚSCULO & GRASA)
+          =================================================================== */}
+      {showRecompositionModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowRecompositionModal(false)}
+          onTouchMove={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div
+            className="modal-sheet workout-snc-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '520px', maxHeight: '88vh', overflowY: 'auto' }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '28px' }}>🧬</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 900 }}>Diagnóstico Inteligente de Recomposición</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                    Musculatura (Hipertrofia) & Quema de Grasa · Análisis de tu entrenamiento habitual
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRecompositionModal(false)}
+                style={{
+                  background: 'var(--bg-card-subtle)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '15px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Resumen General Score */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%)',
+                borderRadius: '16px',
+                padding: '14px',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--fitia-green)' }}>
+                    Índice de Recomposición Semanal
+                  </span>
+                  <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px' }}>
+                    {recompositionDiagnostic.shortGroups.length === 0
+                      ? '✨ Estímulo Muscular & Metabólico Óptimo'
+                      : `⚠️ ${recompositionDiagnostic.shortGroups.length} grupo(s) necesitan más series`}
+                  </div>
+                </div>
+                <div style={{
+                  background: 'var(--fitia-green)',
+                  color: '#FFFFFF',
+                  padding: '6px 12px',
+                  borderRadius: '999px',
+                  fontSize: '13px',
+                  fontWeight: 900,
+                  flexShrink: 0
+                }}>
+                  {recompositionDiagnostic.recompositionScore} / 100 PTS
+                </div>
+              </div>
+
+              {/* 1. PLAN DE ACCIÓN DE LA SEMANA (LOS 3 AJUSTES CLAVE) */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '18px' }}>🎯</span>
+                  <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Tus 3 Ajustes Exactos para esta Semana
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {recompositionDiagnostic.threeKeyAdjustments.map((adj) => (
+                    <div
+                      key={adj.id}
+                      style={{
+                        background: 'var(--bg-card)',
+                        padding: '11px 13px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-subtle)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '16px' }}>{adj.icon}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)' }}>
+                            {adj.title}
+                          </span>
+                        </div>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          background: adj.id === 'ajuste-grasa' ? 'rgba(255, 107, 0, 0.15)' : 'var(--fitia-green-soft)',
+                          color: adj.id === 'ajuste-grasa' ? '#FF6B00' : 'var(--fitia-green)',
+                          padding: '2px 8px',
+                          borderRadius: '6px'
+                        }}>
+                          {adj.actionPill}
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                        {adj.detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. AUDITORÍA DE GRUPOS MUSCULARES (VOLUMEN & SERIES SEMANALES) */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '18px' }}>📊</span>
+                    <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Auditoría de Series por Músculo
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    Meta: 12-18 series/sem
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {recompositionDiagnostic.groupsList.map((grp) => (
+                    <div
+                      key={grp.key}
+                      style={{
+                        background: 'var(--bg-card)',
+                        padding: '9px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-subtle)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px' }}>{grp.icon}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {grp.name}
+                          </span>
+                        </div>
+                        <span style={{
+                          fontSize: '10.5px',
+                          fontWeight: 800,
+                          color: grp.statusColor
+                        }}>
+                          {grp.completedSets} / {grp.optimalMin} series ({grp.statusBadge})
+                        </span>
+                      </div>
+
+                      {/* Barra de progreso visual */}
+                      <div style={{
+                        width: '100%',
+                        height: '6px',
+                        background: 'var(--bg-card-subtle)',
+                        borderRadius: '999px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${grp.progressPercent}%`,
+                          height: '100%',
+                          background: grp.statusColor,
+                          borderRadius: '999px',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Banner si hay grupos rezagados */}
+                {recompositionDiagnostic.shortGroups.length > 0 && (
+                  <div style={{
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '10px',
+                    padding: '9px 12px',
+                    fontSize: '11px',
+                    color: '#D97706',
+                    lineHeight: 1.35
+                  }}>
+                    ⚠️ <strong>Atención a rezagos:</strong> Esta semana se quedaron cortos en estímulo:{' '}
+                    <strong>{recompositionDiagnostic.shortGroups.map((g) => g.name).join(', ')}</strong>.
+                    Para no frenar el crecimiento muscular, añade 3-4 series en tus próximas sesiones de gimnasio.
+                  </div>
+                )}
+              </div>
+
+              {/* 3. AUDITORÍA DE SOBRECARGA PROGRESIVA (TUS CARGAS REALES) */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '18px' }}>⚖️</span>
+                    <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Sobrecarga en Máquinas & Pesas
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--fitia-green)', fontWeight: 800 }}>
+                    Doble Progresión
+                  </span>
+                </div>
+
+                {recompositionDiagnostic.overloadAudits.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {recompositionDiagnostic.overloadAudits.map((item, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: 'var(--bg-card)',
+                          padding: '10px 12px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-subtle)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '3px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {item.exerciseName}
+                          </span>
+                          <span style={{ fontSize: '11.5px', fontWeight: 900, color: 'var(--fitia-green)' }}>
+                            {item.lastWeightKg} kg × {item.lastReps} reps
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.35 }}>
+                          {item.nextGoal}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    background: 'var(--bg-card)',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: '1px dashed var(--border-subtle)',
+                    fontSize: '11.5px',
+                    color: 'var(--text-muted)',
+                    textAlign: 'center',
+                    lineHeight: 1.4
+                  }}>
+                    📝 <em>Anota tus kilos y repeticiones en las tarjetas de ejercicio del Workout para que el sistema audite tu sobrecarga progresiva y te indique cuándo subir de peso.</em>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. QUEMA DE GRASA & ESTRATEGIA METABÓLICA */}
+              <div style={{ background: 'var(--bg-card-subtle)', borderRadius: '16px', padding: '14px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '18px' }}>🔥</span>
+                  <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#FF6B00' }}>
+                    Estrategia para Quemar Grasa
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', fontSize: '11px', lineHeight: 1.4 }}>
+                    <strong style={{ color: '#FF6B00', display: 'block', marginBottom: '3px' }}>🏃 Protocolo Cardio Zona 2:</strong>
+                    {recompositionDiagnostic.fatLossDiagnostic.metabolicCardioAdvice}
+                  </div>
+
+                  <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', fontSize: '11px', lineHeight: 1.4 }}>
+                    <strong style={{ color: 'var(--fitia-green)', display: 'block', marginBottom: '3px' }}>🥩 Blindaje Muscular:</strong>
+                    {recompositionDiagnostic.fatLossDiagnostic.proteinStatus}
+                  </div>
+
+                  <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', fontSize: '11px', lineHeight: 1.4 }}>
+                    <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '3px' }}>⚖️ Ajuste Calórico Recomendado:</strong>
+                    {recompositionDiagnostic.fatLossDiagnostic.calorieAdjustmentAdvice}
+                  </div>
+
+                  <div style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', fontSize: '11px', lineHeight: 1.4 }}>
+                    <strong style={{ color: '#3B82F6', display: 'block', marginBottom: '3px' }}>🚶 Pasos y Movimiento NEAT:</strong>
+                    {recompositionDiagnostic.fatLossDiagnostic.neatStepsRecommendation}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dismiss Button */}
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: '100%', padding: '13px', fontSize: '13px' }}
+                onClick={() => setShowRecompositionModal(false)}
+              >
+                ✓ Listo / Aplicar en mi Entrenamiento
               </button>
             </div>
           </div>

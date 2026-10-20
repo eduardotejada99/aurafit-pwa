@@ -4347,5 +4347,278 @@ export function calculateMenstrualCyclePhase({
   };
 }
 
+/**
+ * 15. Intelligent Body Recomposition & Hypertrophy Diagnostic Engine
+ * Diagnóstico inteligente de recomposición corporal (Musculatura & Quema de Grasa)
+ * Analiza el entrenamiento de gimnasio con pesas y máquinas habitual del usuario,
+ * audita el volumen de series por grupo muscular, sobrecarga progresiva y gasto metabólico,
+ * y diagnostica qué grupo se quedó corto y qué ajuste calórico/cardio aplicar.
+ */
+export function calculateRecompositionDiagnostic({
+  profile = null,
+  weeklyLogs = {},
+  completedExercises = [],
+  exerciseLogs = {},
+  loggedFoods = [],
+  weightHistory = [],
+  targetCalories = 2150,
+  targetProtein = 195
+}) {
+  const profileId = profile?.id || 'andres';
+  const isFemale = profile?.gender === 'female' || profileId === 'pareja' || profileId === 'hermana';
+
+  // 1. Definition of Muscle Groups & Optimal Weekly Sets for Hypertrophy
+  const muscleGroupsConfig = {
+    pecho: {
+      name: 'Pecho / Pectoral',
+      icon: '🛡️',
+      optimalMin: 12,
+      optimalMax: 18,
+      keywords: ['press', 'pecho', 'banca', 'aperturas', 'pec deck', 'fondos', 'cruces', 'inclinado', 'declinado', 'chest', 'push']
+    },
+    espalda: {
+      name: 'Espalda / Dorsales',
+      icon: '🦅',
+      optimalMin: 14,
+      optimalMax: 20,
+      keywords: ['remo', 'espalda', 'dorsal', 'jalon', 'jalón', 'dominadas', 'pull', 'traccion', 'tracción', 'lat', 't-bar', 'polea alta']
+    },
+    piernas: {
+      name: isFemale ? 'Piernas & Glúteos' : 'Piernas (Cuádriceps & Femorales)',
+      icon: '🦵',
+      optimalMin: 12,
+      optimalMax: 20,
+      keywords: ['sentadilla', 'prensa', 'hack', 'extension', 'extensión', 'femoral', 'curl femoral', 'pierna', 'piernas', 'leg', 'zancada', 'bulgara', 'búlgara', 'squat', 'adductor', 'abductor', 'gluteo', 'glúteo', 'hip thrust']
+    },
+    hombros: {
+      name: 'Hombros / Deltoides',
+      icon: '⚡',
+      optimalMin: 10,
+      optimalMax: 16,
+      keywords: ['militar', 'press hombro', 'elevacion', 'elevación', 'lateral', 'pajaro', 'pájaro', 'face pull', 'deltoides', 'hombro', 'hombros', 'shoulder']
+    },
+    brazos: {
+      name: 'Brazos (Bíceps & Tríceps)',
+      icon: '💪',
+      optimalMin: 8,
+      optimalMax: 14,
+      keywords: ['curl', 'biceps', 'bíceps', 'triceps', 'tríceps', 'copa', 'frances', 'francés', 'martillo', 'polea tríceps', 'braquial', 'arm']
+    },
+    core: {
+      name: 'Core & Estabilidad',
+      icon: '🧱',
+      optimalMin: 6,
+      optimalMax: 12,
+      keywords: ['plancha', 'core', 'abdominal', 'abdominales', 'rueda', 'elevacion de piernas', 'mcgill', 'bird dog', 'crunch', 'pallof']
+    }
+  };
+
+  // 2. Count completed sets per muscle group
+  const completedList = (completedExercises || []).map((e) => String(e).toLowerCase());
+  const logEntries = Object.values(weeklyLogs || {});
+  const weeklyCompletedEntries = logEntries.filter((l) => l && (l.done || l.status === 'completed'));
+  
+  const groupStats = {};
+  for (const [key, cfg] of Object.entries(muscleGroupsConfig)) {
+    groupStats[key] = {
+      key,
+      name: cfg.name,
+      icon: cfg.icon,
+      optimalMin: cfg.optimalMin,
+      optimalMax: cfg.optimalMax,
+      completedSets: 0,
+      matchedExercises: []
+    };
+  }
+
+  const processedExerciseNames = new Set();
+
+  const matchGroup = (name) => {
+    const lower = String(name || '').toLowerCase();
+    for (const [key, cfg] of Object.entries(muscleGroupsConfig)) {
+      if (cfg.keywords.some((kw) => lower.includes(kw))) {
+        return key;
+      }
+    }
+    return null;
+  };
+
+  for (const [exName, data] of Object.entries(exerciseLogs || {})) {
+    const grp = matchGroup(exName);
+    if (grp) {
+      const setsCount = 4;
+      groupStats[grp].completedSets += setsCount;
+      groupStats[grp].matchedExercises.push({
+        name: exName,
+        sets: setsCount,
+        weightKg: data.weightKg,
+        reps: data.reps,
+        date: data.date
+      });
+      processedExerciseNames.add(exName.toLowerCase());
+    }
+  }
+
+  for (const exKey of completedList) {
+    const isAlreadyCounted = Array.from(processedExerciseNames).some((p) => exKey.includes(p));
+    if (!isAlreadyCounted) {
+      const grp = matchGroup(exKey);
+      if (grp) {
+        groupStats[grp].completedSets += 3;
+        groupStats[grp].matchedExercises.push({
+          name: exKey,
+          sets: 3
+        });
+        processedExerciseNames.add(exKey);
+      }
+    }
+  }
+
+  weeklyCompletedEntries.forEach((entry) => {
+    const splitKey = entry.split || '';
+    if ((splitKey === 'legs' || splitKey === 'piernas') && groupStats.piernas.completedSets === 0) {
+      groupStats.piernas.completedSets += 14;
+    }
+    if ((splitKey === 'push' || splitKey === 'pecho') && groupStats.pecho.completedSets === 0) {
+      groupStats.pecho.completedSets += 12;
+      groupStats.hombros.completedSets += 6;
+      groupStats.brazos.completedSets += 4;
+    }
+    if ((splitKey === 'pull' || splitKey === 'espalda') && groupStats.espalda.completedSets === 0) {
+      groupStats.espalda.completedSets += 14;
+      groupStats.brazos.completedSets += 4;
+    }
+  });
+
+  const groupsList = Object.values(groupStats).map((grp) => {
+    const pct = Math.min(100, Math.round((grp.completedSets / grp.optimalMin) * 100));
+    const deficit = Math.max(0, grp.optimalMin - grp.completedSets);
+    let status = 'optimal';
+    let statusBadge = '✅ Óptimo';
+    let statusColor = '#10B981';
+
+    if (grp.completedSets === 0) {
+      status = 'unworked';
+      statusBadge = '❌ Sin Estímulo';
+      statusColor = '#EF4444';
+    } else if (deficit > 0) {
+      status = 'short';
+      statusBadge = `⚠️ Faltan ${deficit} series`;
+      statusColor = '#F59E0B';
+    } else if (grp.completedSets > grp.optimalMax + 4) {
+      status = 'excessive';
+      statusBadge = '⚡ Posible Fatiga';
+      statusColor = '#8B5CF6';
+    }
+
+    return {
+      ...grp,
+      progressPercent: pct,
+      deficitSets: deficit,
+      status,
+      statusBadge,
+      statusColor
+    };
+  });
+
+  const shortGroups = groupsList.filter((g) => g.status === 'short' || g.status === 'unworked');
+
+  const overloadAudits = [];
+  for (const [exName, data] of Object.entries(exerciseLogs || {})) {
+    const w = Number(data.weightKg) || 0;
+    const r = Number(data.reps) || 0;
+    let nextGoal = '';
+    let status = 'progress';
+
+    if (r >= 8) {
+      nextGoal = `🎯 Techo superado (${r} reps). Siguiente sesión: sube +2.5 kg a +5 kg (apunta a ${w + 2.5} kg × 6-8 reps).`;
+      status = 'ready_to_increase';
+    } else if (r > 0 && r < 8) {
+      nextGoal = `⚖️ Mantén ${w} kg y busca consolidar +1 o +2 repeticiones (meta: 8 reps) antes de subir el peso.`;
+      status = 'consolidating_reps';
+    } else {
+      nextGoal = `Registra tus repeticiones con ${w} kg para calcular la doble progresión.`;
+      status = 'pending_reps';
+    }
+
+    overloadAudits.push({
+      exerciseName: exName,
+      lastWeightKg: w,
+      lastReps: r,
+      date: data.date,
+      nextGoal,
+      status
+    });
+  }
+
+  const totalCals = (loggedFoods || []).reduce((a, c) => a + (Number(c.calories) || 0), 0);
+  const totalProt = (loggedFoods || []).reduce((a, c) => a + (Number(c.protein) || 0), 0);
+  const proteinTarget = targetProtein || 195;
+  const isProteinSufficient = totalProt >= (proteinTarget * 0.85);
+
+  const fatLossDiagnostic = {
+    metabolicCardioAdvice: '🔥 Finisher Post-Pesas de 10 min: Caminata en cinta con inclinación al 10-12% (4.5 km/h) o Stairmaster en Zona 2 (60-70% FC máx). Oxida los ácidos grasos libres liberados durante las pesas sin interferir con la hipertrofia.',
+    calorieAdjustmentAdvice: totalCals > (targetCalories + 300)
+      ? '⚠️ Superávit elevado: Recorta 200 kcal de carbohidratos en días de descanso para acelerar la quema de grasa sin tocar la proteína.'
+      : '✅ Balance calórico favorable: Mantén tu superávit leve (+200 kcal) en días de entrenamiento pesado y calorías de mantenimiento en descanso.',
+    proteinStatus: isProteinSufficient
+      ? `✅ Proteína óptima (${totalProt}g / ${proteinTarget}g): Músculo protegido contra el catabolismo celular.`
+      : `⚠️ Proteína baja (${totalProt}g / ${proteinTarget}g): Prioriza pechuga, pavo, quesillo o tarwi para evitar perder masa magra.`,
+    neatStepsRecommendation: '🚶‍♂️ NEAT Diario: Apunta a 8,000 - 10,000 pasos diarios (gasto pasivo de 250-350 kcal sin estrés para el sistema nervioso central).'
+  };
+
+  const topDeficitGroup = shortGroups.sort((a, b) => b.deficitSets - a.deficitSets)[0] || groupsList[0];
+  const topOverload = overloadAudits.find((o) => o.status === 'ready_to_increase') || overloadAudits[0];
+
+  const threeKeyAdjustments = [
+    {
+      id: 'ajuste-musculo',
+      pillar: 'Hipertrofia & Volumen',
+      icon: '🎯',
+      title: topDeficitGroup && topDeficitGroup.deficitSets > 0
+        ? `Reforzar ${topDeficitGroup.name} (+${topDeficitGroup.deficitSets} series)`
+        : 'Volumen Muscular Equilibrado',
+      detail: topDeficitGroup && topDeficitGroup.deficitSets > 0
+        ? `Esta semana tu volumen de ${topDeficitGroup.name} se quedó corto (${topDeficitGroup.completedSets} de ${topDeficitGroup.optimalMin} series necesarias). Suma 3-4 series en tu próxima visita al gimnasio.`
+        : 'Has cumplido el volumen mínimo de todos los grupos musculares. Mantén la calidad de cada repetición.',
+      actionPill: topDeficitGroup && topDeficitGroup.deficitSets > 0 ? `+${topDeficitGroup.deficitSets} series` : 'Al día'
+    },
+    {
+      id: 'ajuste-sobrecarga',
+      pillar: 'Fuerza & Sobrecarga',
+      icon: '⚖️',
+      title: topOverload
+        ? `Subir carga en ${topOverload.exerciseName}`
+        : 'Registrar Sobrecarga en Máquinas',
+      detail: topOverload
+        ? topOverload.nextGoal
+        : 'Anota tus kilos y repeticiones en cada máquina para que el sistema detecte cuándo estás listo para subir de peso.',
+      actionPill: topOverload ? 'Subir peso' : 'Anotar peso'
+    },
+    {
+      id: 'ajuste-grasa',
+      pillar: 'Quema de Grasa & Cardio',
+      icon: '🔥',
+      title: 'Finisher Zona 2 Post-Pesas (10 min)',
+      detail: 'No hagas cardio antes de las pesas (fatiga glucógeno). Haz 10 minutos de caminata inclinada (inclinación 10-12%, velocidad 4.5 km/h) inmediatamente al terminar las pesas. Es el protocolo más efectivo para quemar grasa preservando musculatura.',
+      actionPill: '10 min Zona 2'
+    }
+  ];
+
+  const muscleScore = Math.round(groupsList.reduce((acc, g) => acc + g.progressPercent, 0) / groupsList.length);
+  const overloadScore = overloadAudits.length > 0 ? Math.min(100, overloadAudits.length * 20) : 50;
+  const recompositionScore = Math.round(muscleScore * 0.6 + overloadScore * 0.4);
+
+  return {
+    recompositionScore,
+    groupsList,
+    shortGroups,
+    overloadAudits,
+    fatLossDiagnostic,
+    threeKeyAdjustments
+  };
+}
+
+
 
 

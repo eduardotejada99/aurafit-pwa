@@ -5,6 +5,7 @@ import {
   getHybridWorkoutPrescription,
   analyzeWeeklyWorkoutBalance,
   calculateSystemicPillars,
+  calculateRecompositionDiagnostic,
   FAMILY_PROFILES
 } from '../src/lib/fitness-data.js';
 
@@ -119,4 +120,62 @@ describe('AuraFit Systemic Pillars & Dynamic Workout Control', () => {
 
     assert.ok(parejaPillars.synergies.some((s) => s.text.toLowerCase().includes('lumbar') || s.text.toLowerCase().includes('columna')));
   });
+
+  it('should calculate intelligent recomposition diagnostic identifying muscle groups that fell short and prescribing fat loss finisher', () => {
+    const weeklyLogs = {
+      '2026-10-19': { date: '2026-10-19', split: 'legs', title: 'Piernas Pesado', done: true, minutes: 90 }
+    };
+    const exerciseLogs = {
+      'Prensa de Piernas Inclinada a 45°': { weightKg: 160, reps: 10, date: '2026-10-19' },
+      'Press de Banca Plano con Barra': { weightKg: 70, reps: 6, date: '2026-10-20' }
+    };
+
+    const diagnostic = calculateRecompositionDiagnostic({
+      profile: FAMILY_PROFILES.andres,
+      weeklyLogs,
+      completedExercises: ['Prensa de Piernas Inclinada a 45°', 'Sentadilla Hack'],
+      exerciseLogs,
+      loggedFoods: [
+        { name: 'Pechuga de Pollo', calories: 350, protein: 60 },
+        { name: 'Arroz', calories: 260, protein: 5 }
+      ],
+      targetCalories: 2150,
+      targetProtein: 195
+    });
+
+    assert.ok(diagnostic);
+    assert.ok(diagnostic.recompositionScore > 0 && diagnostic.recompositionScore <= 100);
+    assert.ok(diagnostic.groupsList.length === 6, 'Should track 6 primary muscle groups');
+
+    // Piernas should have completed sets counted
+    const piernas = diagnostic.groupsList.find((g) => g.key === 'piernas');
+    assert.ok(piernas.completedSets > 0);
+
+    // Espalda should be flagged as short since no back exercises were performed
+    const espalda = diagnostic.groupsList.find((g) => g.key === 'espalda');
+    assert.ok(espalda.deficitSets > 0);
+    assert.ok(diagnostic.shortGroups.some((g) => g.key === 'espalda'));
+
+    // Overload checks:
+    // Prensa (10 reps >= 8) -> ready to increase
+    const prensaOverload = diagnostic.overloadAudits.find((o) => o.exerciseName.includes('Prensa'));
+    assert.equal(prensaOverload.status, 'ready_to_increase');
+    assert.ok(prensaOverload.nextGoal.includes('+2.5 kg'));
+
+    // Banca (6 reps < 8) -> consolidate reps
+    const bancaOverload = diagnostic.overloadAudits.find((o) => o.exerciseName.includes('Banca'));
+    assert.equal(bancaOverload.status, 'consolidating_reps');
+    assert.ok(bancaOverload.nextGoal.includes('Mantén'));
+
+    // Fat loss advice must include Zone 2 finisher
+    assert.ok(diagnostic.fatLossDiagnostic.metabolicCardioAdvice.includes('Zona 2'));
+    assert.ok(diagnostic.fatLossDiagnostic.metabolicCardioAdvice.includes('10 min'));
+
+    // Three key adjustments
+    assert.equal(diagnostic.threeKeyAdjustments.length, 3);
+    assert.ok(diagnostic.threeKeyAdjustments[0].title);
+    assert.ok(diagnostic.threeKeyAdjustments[1].title);
+    assert.ok(diagnostic.threeKeyAdjustments[2].title.includes('Zona 2'));
+  });
 });
+
