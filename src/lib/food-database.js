@@ -681,6 +681,22 @@ export const CURATED_PERUVIAN_FOODS = [
     isSnack: false,
     isUltraProcessed: false,
     icon: '🍵'
+  },
+  {
+    id: 'peru-carne-molida-res',
+    name: 'Carne Molida Especial de Res (Magra / Casera)',
+    brand: 'Natural / Casero',
+    servingDesc: '1 porción estándar (150g)',
+    grams: 150,
+    calories: 322,
+    protein: 31.5,
+    carbs: 0.0,
+    fat: 21.0,
+    fiber: 0,
+    category: 'proteina',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥩'
   }
 ];
 
@@ -1062,8 +1078,187 @@ function extractLeadingCount(subStr, defaultCount = 1) {
 }
 
 /**
+ * Nutritional Density Reference Table (per 100g)
+ * Enables high-precision, gram-aware natural language food logging
+ * (e.g., "30 gr carne molida con 50 gr de lenteja", "120g pechuga con 80g arroz").
+ */
+export const NUTRITIONAL_DENSITY_TABLE = {
+  carne_molida: {
+    names: ['carne molida', 'carne picada', 'molida de res', 'carne de res molida', 'carne molida de res', 'molida'],
+    displayName: 'Carne Molida Especial de Res',
+    icon: '🥩',
+    category: 'proteina',
+    brand: 'Natural / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 215, protein: 21.0, carbs: 0.0, fat: 14.0, fiber: 0 }
+  },
+  carne_res: {
+    names: ['carne de res', 'bisteck', 'bistec', 'carne', 'lomo de res', 'lomo fino', 'carne sancochada'],
+    displayName: 'Carne / Bistec de Res',
+    icon: '🥩',
+    category: 'proteina',
+    brand: 'Natural / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 180, protein: 26.0, carbs: 0.0, fat: 8.0, fiber: 0 }
+  },
+  pechuga_pollo: {
+    names: ['pechuga de pollo', 'pechuga', 'pollo a la plancha', 'filete de pollo', 'pollo cocido', 'pollo deshilachado', 'pollo'],
+    displayName: 'Pechuga de Pollo a la Plancha / Cocida',
+    icon: '🍗',
+    category: 'proteina',
+    brand: 'Natural / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 165, protein: 31.0, carbs: 0.0, fat: 3.6, fiber: 0 }
+  },
+  lentejas: {
+    names: ['lenteja', 'lentejas', 'lentejita', 'lentejitas', 'menestra de lentejas', 'lentejas guisadas', 'lentejas cocidas'],
+    displayName: 'Lentejas Cocidas / Guisadas',
+    icon: '🫘',
+    category: 'carbohidrato',
+    brand: 'Menestra Casera / Balanza',
+    defaultGrams: 150,
+    per100g: { calories: 114, protein: 8.0, carbs: 18.7, fat: 1.0, fiber: 5.0 }
+  },
+  frijoles: {
+    names: ['frejol', 'frejoles', 'frijol', 'frijoles', 'menestra', 'frijol canario'],
+    displayName: 'Frejoles Canario Cocidos',
+    icon: '🫘',
+    category: 'carbohidrato',
+    brand: 'Menestra Casera',
+    defaultGrams: 150,
+    per100g: { calories: 120, protein: 8.5, carbs: 21.0, fat: 0.8, fiber: 6.0 }
+  },
+  garbanzos: {
+    names: ['garbanzo', 'garbanzos'],
+    displayName: 'Garbanzos Cocidos',
+    icon: '🫘',
+    category: 'carbohidrato',
+    brand: 'Menestra Casera',
+    defaultGrams: 150,
+    per100g: { calories: 164, protein: 8.9, carbs: 27.4, fat: 2.6, fiber: 7.6 }
+  },
+  arroz: {
+    names: ['arroz blanco', 'arroz', 'arroz cocido', 'arrocito'],
+    displayName: 'Arroz Blanco Cocido',
+    icon: '🍚',
+    category: 'carbohidrato',
+    brand: 'Costeño / Casero',
+    defaultGrams: 180,
+    per100g: { calories: 130, protein: 2.7, carbs: 28.2, fat: 0.3, fiber: 0.4 }
+  },
+  avena: {
+    names: ['avena', 'avena en hojuelas', 'quaker', 'avena cruda', 'avena cocida'],
+    displayName: 'Avena en Hojuelas',
+    icon: '🌾',
+    category: 'carbohidrato',
+    brand: '3 Ositos / Quaker',
+    defaultGrams: 50,
+    per100g: { calories: 380, protein: 13.5, carbs: 66.0, fat: 7.0, fiber: 10.4 }
+  },
+  papa: {
+    names: ['papa sancochada', 'papa amarilla', 'papa', 'papas', 'papa hervida', 'papa canchan', 'papa canchán'],
+    displayName: 'Papa Sancochada Amarilla / Canchán',
+    icon: '🥔',
+    category: 'carbohidrato',
+    brand: 'Tubérculo Natural',
+    defaultGrams: 150,
+    per100g: { calories: 87, protein: 2.0, carbs: 19.5, fat: 0.1, fiber: 1.8 }
+  },
+  camote: {
+    names: ['camote', 'camote sancochado', 'camote al horno', 'batata'],
+    displayName: 'Camote Dulce Sancochado',
+    icon: '🍠',
+    category: 'carbohidrato',
+    brand: 'Tubérculo Natural',
+    defaultGrams: 130,
+    per100g: { calories: 90, protein: 1.6, carbs: 21.0, fat: 0.2, fiber: 2.5 }
+  },
+  palta: {
+    names: ['palta', 'aguacate', 'palta fuerte', 'palta hass'],
+    displayName: 'Palta Fuerte / Hass',
+    icon: '🥑',
+    category: 'grasa_saludable',
+    brand: 'Natural',
+    defaultGrams: 80,
+    per100g: { calories: 160, protein: 2.0, carbs: 4.0, fat: 15.0, fiber: 6.7 }
+  },
+  atun: {
+    names: ['atun', 'atún', 'atun en lata', 'atun al agua'],
+    displayName: 'Atún en Lata al Agua',
+    icon: '🐟',
+    category: 'proteina',
+    brand: 'Campomar / Florida',
+    defaultGrams: 120,
+    per100g: { calories: 110, protein: 24.2, carbs: 0.0, fat: 1.0, fiber: 0 }
+  },
+  queso: {
+    names: ['queso fresco', 'quesillo', 'queso andino', 'queso'],
+    displayName: 'Queso Fresco Casero',
+    icon: '🧀',
+    category: 'proteina',
+    brand: 'Lácteo Andino',
+    defaultGrams: 80,
+    per100g: { calories: 210, protein: 16.0, carbs: 3.5, fat: 15.0, fiber: 0 }
+  },
+  claras: {
+    names: ['claras de huevo', 'clara de huevo', 'claras'],
+    displayName: 'Claras de Huevo Pasteurizadas / Cocidas',
+    icon: '🍳',
+    category: 'proteina',
+    brand: 'Natural / Casero',
+    defaultGrams: 100,
+    per100g: { calories: 52, protein: 11.0, carbs: 0.7, fat: 0.2, fiber: 0 }
+  },
+  pan: {
+    names: ['pan frances', 'pan francés', 'pan integral', 'pan'],
+    displayName: 'Pan Francés / Integral',
+    icon: '🥖',
+    category: 'carbohidrato',
+    brand: 'Panadería Tradicional',
+    defaultGrams: 40,
+    per100g: { calories: 265, protein: 9.0, carbs: 49.0, fat: 3.2, fiber: 2.7 }
+  }
+};
+
+function findDensityItem(foodPart) {
+  let bestMatch = null;
+  let maxLen = 0;
+  for (const [key, def] of Object.entries(NUTRITIONAL_DENSITY_TABLE)) {
+    for (const name of def.names) {
+      if (foodPart.includes(name) && name.length > maxLen) {
+        maxLen = name.length;
+        bestMatch = { key, def };
+      }
+    }
+  }
+  return bestMatch;
+}
+
+function createDensityFoodItem(key, def, grams) {
+  const factor = grams / 100;
+  return {
+    id: `parsed-${key}-${grams}g-${Math.random().toString(36).substr(2, 5)}`,
+    name: `${def.displayName} (${grams}g)`,
+    brand: def.brand,
+    servingDesc: `${grams}g pesados`,
+    grams: Math.round(grams),
+    calories: Math.round(grams * (def.per100g.calories / 100)),
+    protein: parseFloat((factor * def.per100g.protein).toFixed(1)),
+    carbs: parseFloat((factor * def.per100g.carbs).toFixed(1)),
+    fat: parseFloat((factor * def.per100g.fat).toFixed(1)),
+    fiber: parseFloat((factor * def.per100g.fiber).toFixed(1)),
+    icon: def.icon,
+    category: def.category,
+    isSnack: false,
+    isUltraProcessed: false
+  };
+}
+
+/**
  * Natural Language Food Parser
- * Recognizes multi-ingredient sentences, unit counts, and typos:
+ * Recognizes multi-ingredient sentences, unit counts, exact grams, and typos:
+ * - "30 gr carne molida con 50 gr de lenteja"
+ * - "120g de pechuga con 100g de arroz"
  * - "3 huevos fritos con jna cucharada de mantequilla"
  * - "4 huevos"
  * - "6 huevos cocidos con 2 panes"
@@ -1075,6 +1270,77 @@ export function parseNaturalLanguageFood(text = '') {
   const lower = text.toLowerCase().trim();
   const detectedItems = [];
   const processedKeys = new Set();
+
+  // 00. Gram-Aware Multi-Clause Parser
+  // Catches exact weighted inputs: "30 gr carne molida con 50 gr de lenteja", "120g pechuga con 100g arroz"
+  const hasGramsSpec = /\b\d+(?:\.\d+)?\s*(?:g|gr|grs|gramos)\b/i.test(lower);
+  if (hasGramsSpec) {
+    const clauses = lower
+      .split(/\s*(?:,|\+|;|\be\b|\bcon\b|\by\b|\bmás\b|\bmas\b|\bplus\b|\n)\s*/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    for (const clause of clauses) {
+      // Leading grams: e.g. "30 gr carne molida", "50g de lenteja"
+      const matchGramLeading = clause.match(/^(\d+(?:\.\d+)?)\s*(?:g|gr|grs|gramos)\s*(?:de\s*)?(.+)$/i);
+      if (matchGramLeading) {
+        const grams = parseFloat(matchGramLeading[1]);
+        const foodPart = matchGramLeading[2].trim();
+        const match = findDensityItem(foodPart);
+        if (match && grams > 0) {
+          detectedItems.push(createDensityFoodItem(match.key, match.def, grams));
+          processedKeys.add(match.key);
+          continue;
+        }
+      }
+
+      // Trailing grams: e.g. "carne molida 30 gr", "lentejas 50g"
+      const matchGramTrailing = clause.match(/^(.+?)\s+(\d+(?:\.\d+)?)\s*(?:g|gr|grs|gramos)$/i);
+      if (matchGramTrailing) {
+        const foodPart = matchGramTrailing[1].trim();
+        const grams = parseFloat(matchGramTrailing[2]);
+        const match = findDensityItem(foodPart);
+        if (match && grams > 0) {
+          detectedItems.push(createDensityFoodItem(match.key, match.def, grams));
+          processedKeys.add(match.key);
+          continue;
+        }
+      }
+
+      // Embedded eggs in multi-item sentence e.g. "2 huevos con 100g de avena"
+      if (clause.includes('huevo') && !clause.includes('claras de huevo') && !clause.includes('solo claras')) {
+        const eggRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s*(?:de\s*)?)?huevos?/i;
+        const match = clause.match(eggRegex);
+        const count = match && match[1] ? extractLeadingCount(match[1], 2) : 2;
+        const isFried = clause.includes('frito') || clause.includes('fritos') || clause.includes('sarten');
+        const isScrambled = clause.includes('revuelto') || clause.includes('revueltos');
+        const prep = isFried ? 'Fritos' : isScrambled ? 'Revueltos' : 'Cocidos';
+
+        detectedItems.push({
+          id: `parsed-huevo-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          name: `${count} Huevo${count > 1 ? 's' : ''} Entero${count > 1 ? 's' : ''} ${prep}`,
+          brand: 'Natural / Casero',
+          servingDesc: `${count} unidad${count > 1 ? 'es' : ''} (${Math.round(count * 50)}g)`,
+          grams: Math.round(count * 50),
+          calories: Math.round(count * 72.5),
+          protein: parseFloat((count * 6.5).toFixed(1)),
+          carbs: parseFloat((count * 0.55).toFixed(1)),
+          fat: parseFloat((count * 5.0).toFixed(1)),
+          fiber: 0,
+          icon: isFried || isScrambled ? '🍳' : '🥚',
+          category: 'proteina',
+          isSnack: false,
+          isUltraProcessed: false
+        });
+        processedKeys.add('huevo');
+        continue;
+      }
+    }
+
+    if (detectedItems.length > 0) {
+      return detectedItems;
+    }
+  }
 
   // 0. Menús Peruanos & Combos Criollos
   if (
@@ -1377,6 +1643,11 @@ export function parseNaturalLanguageFood(text = '') {
       key: 'papa_seca',
       keywords: ['papa seca', 'sopa de papa seca'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'entrada-sopa-papa-seca')
+    },
+    {
+      key: 'carne_molida',
+      keywords: ['carne molida', 'carne picada', 'molida de res', 'carne de res molida', 'carne molida de res'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-carne-molida-res')
     }
   ];
 

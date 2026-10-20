@@ -214,4 +214,45 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.equal(custom.fat, 14.0);
     assert.ok(custom.breakdown.includes('Sopa de Papa Seca'));
   });
+
+  it('should parse gram-aware multi-clause queries proportionally and accurately', () => {
+    // 1. User screenshot query: "30 gr carne molida con 50 gr de lenteja"
+    const parsedUserQuery = parseNaturalLanguageFood('30 gr carne molida con 50 gr de lenteja');
+    assert.equal(parsedUserQuery.length, 2, 'Must detect both carne molida and lentejas');
+
+    const carne = parsedUserQuery[0];
+    assert.ok(carne.name.includes('Carne Molida'));
+    assert.ok(carne.name.includes('30g'));
+    assert.equal(carne.grams, 30);
+    assert.equal(carne.calories, 65); // 30g * 2.15 = 64.5 -> 65 kcal
+    assert.equal(carne.protein, 6.3); // 30g * 0.21 = 6.3g
+    assert.equal(carne.carbs, 0.0);
+    assert.equal(carne.fat, 4.2); // 30g * 0.14 = 4.2g
+
+    const lentejas = parsedUserQuery[1];
+    assert.ok(lentejas.name.includes('Lentejas'));
+    assert.ok(lentejas.name.includes('50g'));
+    assert.equal(lentejas.grams, 50);
+    assert.equal(lentejas.calories, 57); // 50g * 1.14 = 57 kcal
+    assert.equal(lentejas.protein, 4.0); // 50g * 0.08 = 4.0g
+    assert.equal(lentejas.carbs, 9.3); // 50g * 0.187 = 9.35 -> 9.3g
+    assert.equal(lentejas.fat, 0.5);
+
+    // Total combination
+    const totalCalories = carne.calories + lentejas.calories;
+    const totalProtein = carne.protein + lentejas.protein;
+    assert.equal(totalCalories, 122);
+    assert.equal(parseFloat(totalProtein.toFixed(1)), 10.3);
+
+    // 2. Another common combo: "120g de pechuga con 100g de arroz"
+    const parsedChickenRice = parseNaturalLanguageFood('120g de pechuga con 100g de arroz');
+    assert.equal(parsedChickenRice.length, 2);
+    assert.ok(parsedChickenRice[0].name.includes('Pechuga'));
+    assert.equal(parsedChickenRice[0].grams, 120);
+    assert.equal(parsedChickenRice[0].calories, 198); // 120 * 1.65 = 198
+    assert.ok(parsedChickenRice[1].name.includes('Arroz'));
+    assert.equal(parsedChickenRice[1].grams, 100);
+    assert.equal(parsedChickenRice[1].calories, 130);
+  });
 });
+
