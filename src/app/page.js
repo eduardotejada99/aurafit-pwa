@@ -390,6 +390,9 @@ export default function HomePage() {
   const [selectedLastreKg, setSelectedLastreKg] = useState(10); // Lastre activo recomendado para intermedio
   const [showSubstitutesFor, setShowSubstitutesFor] = useState(null); // exercise name or null
   const [completedExercises, setCompletedExercises] = useState([]); // array of exercise identifiers
+  const [exerciseLogs, setExerciseLogs] = useState({}); // { [exName]: { weightKg, reps, date, hasDropSet, dropWeightKg, dropReps } }
+  const [exerciseInputs, setExerciseInputs] = useState({}); // { [exKey]: { weight: '', reps: '', dropWeight: '', dropReps: '', showDropSet: false } }
+  const [exerciseFilterMode, setExerciseFilterMode] = useState('all'); // 'all' | 'pending' | 'completed'
   const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
 
@@ -1056,6 +1059,30 @@ export default function HomePage() {
 
       const savedMissed = localStorage.getItem(`aurafit_missed_day_${profileKey}`);
       setIsMissedDay(savedMissed === todayKey);
+
+      // Completed exercises for today & profile (persisted so checks NEVER disappear!)
+      const savedCompleted = localStorage.getItem(`aurafit_completed_exercises_${profileKey}_${todayKey}`);
+      if (savedCompleted) {
+        try {
+          setCompletedExercises(JSON.parse(savedCompleted));
+        } catch (e) {
+          setCompletedExercises([]);
+        }
+      } else {
+        setCompletedExercises([]);
+      }
+
+      // Exercise performance logs (weights, reps, dropsets) for current profile
+      const savedExLogs = localStorage.getItem(`aurafit_exercise_logs_${profileKey}`);
+      if (savedExLogs) {
+        try {
+          setExerciseLogs(JSON.parse(savedExLogs));
+        } catch (e) {
+          setExerciseLogs({});
+        }
+      } else {
+        setExerciseLogs({});
+      }
 
       // Dynamic Streak from activity history
       const savedActivity = localStorage.getItem(`aurafit_activity_days_${profileKey}`);
@@ -2051,6 +2078,68 @@ export default function HomePage() {
       showToast(next ? '🏋️‍♂️ ¡Entrenamiento del día registrado y contabilizado en la semana!' : '🏋️‍♂️ Registro de entrenamiento actualizado.');
       return next;
     });
+  };
+
+  const handleToggleExercise = (exKey) => {
+    setCompletedExercises((prev) => {
+      const isDone = prev.includes(exKey);
+      const next = isDone ? prev.filter((k) => k !== exKey) : [...prev, exKey];
+      const todayKey = getLocalDateKey();
+      try {
+        localStorage.setItem(`aurafit_completed_exercises_${activeProfileId}_${todayKey}`, JSON.stringify(next));
+        queueCloudSync(`aurafit_completed_exercises_${activeProfileId}`, { date: todayKey, completed: next }, activeProfileId);
+      } catch (e) {}
+      if (!isDone) recordActivityToday();
+      showToast(!isDone ? '✓ Ejercicio completado y guardado.' : 'Ejercicio marcado como pendiente.');
+      return next;
+    });
+  };
+
+  const handleUpdateExerciseInput = (exKey, field, value) => {
+    setExerciseInputs((prev) => ({
+      ...prev,
+      [exKey]: {
+        ...(prev[exKey] || {}),
+        [field]: value
+      }
+    }));
+  };
+
+  const handleLogExercisePerformance = (exName, weight, reps, hasDropSet = false, dropWeight = null, dropReps = null) => {
+    const cleanWeight = parseFloat(weight);
+    const cleanReps = parseInt(reps, 10);
+    if (!cleanWeight || !cleanReps) {
+      showToast('⚠️ Ingresa el peso (kg) y repeticiones realizadas.');
+      return;
+    }
+    const todayKey = getLocalDateKey();
+    const entry = {
+      date: todayKey,
+      weightKg: cleanWeight,
+      reps: cleanReps,
+      hasDropSet: Boolean(hasDropSet),
+      dropWeightKg: dropWeight ? parseFloat(dropWeight) : null,
+      dropReps: dropReps ? parseInt(dropReps, 10) : null
+    };
+
+    setExerciseLogs((prev) => {
+      const updated = { ...prev, [exName]: entry };
+      try {
+        localStorage.setItem(`aurafit_exercise_logs_${activeProfileId}`, JSON.stringify(updated));
+        queueCloudSync(`aurafit_exercise_logs_${activeProfileId}`, updated, activeProfileId);
+      } catch (e) {}
+      return updated;
+    });
+
+    recordActivityToday();
+
+    if (cleanReps >= 8 && cleanWeight >= 100) {
+      showToast(`🎯 ¡Techo de 8 reps alcanzado con ${cleanWeight}kg! Siguiente sesión: prueba ${cleanWeight + 2.5}kg × 6 reps.`);
+    } else if (cleanReps >= 8) {
+      showToast(`🎯 ¡Meta de reps cumplida! Siguiente sesión: sube +2.5kg a +5kg.`);
+    } else {
+      showToast(`✓ Serie registrada: ${cleanWeight}kg × ${cleanReps} reps${hasDropSet ? ' + Drop Set' : ''}.`);
+    }
   };
 
   const handleSelectSplit = (splitId) => {
@@ -4732,29 +4821,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* PAREJA SPECIAL LUMBAR SAFETY BANNER */}
-            {currentProfile.id === 'pareja' && (
-              <div style={{
-                background: 'rgba(236, 72, 153, 0.08)',
-                border: '1.5px solid rgba(236, 72, 153, 0.35)',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-start'
-              }}>
-                <span style={{ fontSize: '24px' }}>🛡️</span>
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 900, color: '#DB2777' }}>
-                    Blindaje Lumbar Activo: Cero Compresión Axial
-                  </h4>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.45 }}>
-                    Rutina diseñada con soporte completo de espalda (prensa inclinada, sentadilla búlgara con mancuernas a los lados y estabilización McGill Big 3). Glúteos y femoral al máximo sin tocar la columna.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* HORMONAL CYCLE TRAINING ADAPTATION BANNER */}
             {activeCycleInfo && (currentProfile.gender === 'female' || activeCycleConfig?.enabled) && (
               <div
@@ -5377,125 +5443,62 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Banner Específico para Tania: Blindaje Lumbar Activo (Cero Hip Thrust) */}
-            {currentProfile.id === 'pareja' && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.08))',
-                border: '1.5px solid rgba(16, 185, 129, 0.35)',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: '22px' }}>🛡️</span>
-                    <div>
-                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
-                        Blindaje Lumbar Activo (Tania)
-                      </strong>
-                      <span style={{ fontSize: '11px', color: 'var(--fitia-green)', fontWeight: 800 }}>
-                        🚫 CERO Hip Thrust · Cero Carga Axial en Columna
-                      </span>
-                    </div>
-                  </div>
-                  <span style={{
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    color: 'var(--fitia-green)',
-                    padding: '3px 8px',
-                    borderRadius: '8px',
-                    fontSize: '10.5px',
-                    fontWeight: 900
-                  }}>
-                    LUMBAR SAFE
-                  </span>
+            {/* Contextual Focus Chips (Clean & Non-Redundant) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {currentProfile.id === 'pareja' && (
+                <div className="workout-compact-chip green">
+                  <span>🛡️ <strong>Blindaje Lumbar Activo:</strong> Sin carga axial ni Hip Thrust</span>
+                  <span style={{ fontSize: '10px', background: 'rgba(16,185,129,0.18)', padding: '2px 7px', borderRadius: '6px' }}>LUMBAR SAFE</span>
                 </div>
+              )}
+              {(hybridPrescription.selectedSplit === 'legs' || hybridPrescription.selectedSplit === 'piernas' || hybridPrescription.selectedSplit === 'glutes') && (
+                <div className="workout-compact-chip blue">
+                  <span>🦵 <strong>Tren Inferior:</strong> Máquinas Guiadas, Sobrecarga Progresiva & Drop Sets</span>
+                  <span style={{ fontSize: '10px', background: 'rgba(59,130,246,0.18)', padding: '2px 7px', borderRadius: '6px' }}>MÁQUINAS</span>
+                </div>
+              )}
+              {(hybridPrescription.selectedSplit === 'push' || hybridPrescription.selectedSplit === 'pull' || hybridPrescription.selectedSplit === 'full_upper') && (
+                <div className="workout-compact-chip orange">
+                  <span>⚡ <strong>Tren Superior Híbrido:</strong> Calistenia con Lastre & Pesas Libres</span>
+                  <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.18)', padding: '2px 7px', borderRadius: '6px' }}>HÍBRIDO</span>
+                </div>
+              )}
+            </div>
 
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  <strong>Contraindicación médica aplicada:</strong> El Hip Thrust en banco y pesos muertos están 100% excluidos para evitar cizalla en L4-L5/S1. Tus glúteos se estimulan con <strong>puentes en suelo con banda elástica</strong>, <strong>patadas en cuadrupedia</strong> y <strong>protocolo McGill Big 3</strong> (Bird-Dog + Planchas laterales).
-                </div>
-              </div>
-            )}
-            {/* Banner Específico: 100% Máquinas de Gimnasio en Piernas (Cero Híbrido) */}
-            {(hybridPrescription.selectedSplit === 'legs' || hybridPrescription.selectedSplit === 'piernas' || hybridPrescription.selectedSplit === 'glutes') && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.08))',
-                border: '1.5px solid rgba(59, 130, 246, 0.4)',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: '22px' }}>🦵</span>
-                    <div>
-                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
-                        Entrenamiento de Piernas: 100% Máquinas de Gimnasio
-                      </strong>
-                      <span style={{ fontSize: '11px', color: '#2563EB', fontWeight: 800 }}>
-                        ⚙️ Cero Híbrido en Piernas · Hipertrofia & Aislamiento Puro
-                      </span>
-                    </div>
-                  </div>
-                  <span style={{
-                    background: 'rgba(59, 130, 246, 0.2)',
-                    color: '#2563EB',
-                    padding: '3px 8px',
-                    borderRadius: '8px',
-                    fontSize: '10.5px',
-                    fontWeight: 900
-                  }}>
-                    100% MÁQUINAS
-                  </span>
-                </div>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  <strong>Regla biomecánica aplicada:</strong> En piernas todo se realiza en máquinas guiadas (Prensa 45°, Hack Squat, Sillón de Extensiones, Curl Femoral sentado y Máquina de Aductores). Cero calistenia y cero inestabilidad libre para máxima sobrecarga muscular en estiramiento sin fatiga lumbar ni balanceos. En el <strong>tren superior sí se mantiene el sistema híbrido</strong> (calistenia de élite + pesas).
-                </div>
-              </div>
-            )}
+            {/* Barra de Filtro de Ejercicios */}
+            {(() => {
+              const allExercisesList = (hybridPrescription.blocks || []).flatMap((b) => b.exercises || []);
+              const completedCount = allExercisesList.filter((ex) => {
+                return completedExercises.some((k) => k.includes(ex.name) || k === ex.name);
+              }).length;
+              const pendingCount = Math.max(0, allExercisesList.length - completedCount);
 
-            {/* Banner Específico: Tren Superior Híbrido (Calistenia + Sobrecarga Pesada) */}
-            {(hybridPrescription.selectedSplit === 'push' || hybridPrescription.selectedSplit === 'pull' || hybridPrescription.selectedSplit === 'full_upper') && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.08))',
-                border: '1.5px solid rgba(245, 158, 11, 0.35)',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: '22px' }}>⚡</span>
-                    <div>
-                      <strong style={{ fontSize: '13.5px', color: 'var(--text-main)', display: 'block' }}>
-                        Tren Superior Híbrido: Calistenia de Élite + Sobrecarga Pesada
-                      </strong>
-                      <span style={{ fontSize: '11px', color: 'var(--fitia-orange)', fontWeight: 800 }}>
-                        🤸‍♂️ Dejan Stipke Synergy · Barras, Lastre & Pesas Libres
-                      </span>
-                    </div>
-                  </div>
-                  <span style={{
-                    background: 'rgba(245, 158, 11, 0.2)',
-                    color: 'var(--fitia-orange)',
-                    padding: '3px 8px',
-                    borderRadius: '8px',
-                    fontSize: '10.5px',
-                    fontWeight: 900
-                  }}>
-                    HÍBRIDO SUPERIOR
-                  </span>
+              return (
+                <div className="exercise-filter-bar">
+                  <button
+                    type="button"
+                    className={`exercise-filter-tab ${exerciseFilterMode === 'all' ? 'active' : ''}`}
+                    onClick={() => setExerciseFilterMode('all')}
+                  >
+                    Todos ({allExercisesList.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`exercise-filter-tab ${exerciseFilterMode === 'pending' ? 'active' : ''}`}
+                    onClick={() => setExerciseFilterMode('pending')}
+                  >
+                    Pendientes ({pendingCount})
+                  </button>
+                  <button
+                    type="button"
+                    className={`exercise-filter-tab ${exerciseFilterMode === 'completed' ? 'active' : ''}`}
+                    onClick={() => setExerciseFilterMode('completed')}
+                  >
+                    Completados ({completedCount})
+                  </button>
                 </div>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  En tren superior se fusiona la sobrecarga pesada con barras, mancuernas y poleas, junto con el dominio de habilidades calisténicas de alto nivel (Dominadas lastradas, Fondos pesados, Handstand y Front Lever).
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 4. MODULAR WORKOUT BLOCKS (DEJAN STIPKE SYSTEM) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -5514,8 +5517,13 @@ export default function HomePage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {(block.exercises || []).map((ex, eIdx) => {
                       const exKey = `${bIdx}-${eIdx}-${ex.name}`;
-                      const isDone = completedExercises.includes(exKey);
+                      const isDone = completedExercises.includes(exKey) || completedExercises.includes(ex.name);
                       const isSubOpen = showSubstitutesFor === exKey;
+                      const loggedPerformance = exerciseLogs[ex.name];
+                      const inputs = exerciseInputs[exKey] || {};
+
+                      if (exerciseFilterMode === 'pending' && isDone) return null;
+                      if (exerciseFilterMode === 'completed' && !isDone) return null;
 
                       return (
                         <div
@@ -5527,13 +5535,7 @@ export default function HomePage() {
                             <button
                               type="button"
                               className={`exercise-check-circle ${isDone ? 'checked' : ''}`}
-                              onClick={() => {
-                                if (isDone) {
-                                  setCompletedExercises(completedExercises.filter((k) => k !== exKey));
-                                } else {
-                                  setCompletedExercises([...completedExercises, exKey]);
-                                }
-                              }}
+                              onClick={() => handleToggleExercise(exKey)}
                               title={isDone ? 'Marcar como pendiente' : 'Marcar como completado'}
                             >
                               {isDone ? '✓' : ''}
@@ -5566,7 +5568,95 @@ export default function HomePage() {
                             </div>
                           )}
 
-                          {/* Row 4: Quick Actions (Timer & Substitute Toggle) */}
+                          {/* Row 4: Registro de Sobrecarga Progresiva & Doble Progresión */}
+                          <div className="exercise-log-panel">
+                            <div className="exercise-log-inputs">
+                              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                                ⚖️ Anotar:
+                              </span>
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                placeholder={loggedPerformance?.weightKg ? `${loggedPerformance.weightKg} kg` : 'Kg'}
+                                value={inputs.weight ?? ''}
+                                onChange={(e) => handleUpdateExerciseInput(exKey, 'weight', e.target.value)}
+                                className="exercise-log-input"
+                              />
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>×</span>
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                placeholder={loggedPerformance?.reps ? `${loggedPerformance.reps} reps` : 'Reps'}
+                                value={inputs.reps ?? ''}
+                                onChange={(e) => handleUpdateExerciseInput(exKey, 'reps', e.target.value)}
+                                className="exercise-log-input"
+                              />
+                              <button
+                                type="button"
+                                className="exercise-log-btn"
+                                onClick={() => {
+                                  const w = inputs.weight || (loggedPerformance?.weightKg ? String(loggedPerformance.weightKg) : '');
+                                  const r = inputs.reps || (loggedPerformance?.reps ? String(loggedPerformance.reps) : '');
+                                  handleLogExercisePerformance(ex.name, w, r, inputs.showDropSet, inputs.dropWeight, inputs.dropReps);
+                                }}
+                              >
+                                Guardar
+                              </button>
+                            </div>
+
+                            {/* Historial & Doble Progresión Inteligente */}
+                            {loggedPerformance && (
+                              <div className="exercise-last-log">
+                                <span>Último registro: <strong>{loggedPerformance.weightKg} kg × {loggedPerformance.reps} reps</strong></span>
+                                {loggedPerformance.reps >= 8 ? (
+                                  <span className="progression-badge">
+                                    🎯 Techo alcanzado. Siguiente sesión: sube +2.5 kg a +5 kg
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                    (Mantén peso y busca 8-10 reps)
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Drop Set Panel (Técnica de Fatiga Total) */}
+                            {inputs.showDropSet && (
+                              <div className="dropset-box">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: '#7E22CE', marginBottom: '2px' }}>
+                                  <span>⚡</span>
+                                  <span>Drop Set (Fatiga Muscular):</span>
+                                </div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', lineHeight: 1.35 }}>
+                                  {ex.dropSetTip || 'Al terminar tu serie, reduce 20-30% de peso sin descanso y saca repeticiones al fallo técnico.'}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#7E22CE' }}>Drop Set:</span>
+                                  <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="Kg drop"
+                                    value={inputs.dropWeight ?? ''}
+                                    onChange={(e) => handleUpdateExerciseInput(exKey, 'dropWeight', e.target.value)}
+                                    className="exercise-log-input"
+                                    style={{ width: '70px', borderColor: 'rgba(147, 51, 234, 0.4)' }}
+                                  />
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>×</span>
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    placeholder="Reps"
+                                    value={inputs.dropReps ?? ''}
+                                    onChange={(e) => handleUpdateExerciseInput(exKey, 'dropReps', e.target.value)}
+                                    className="exercise-log-input"
+                                    style={{ width: '70px', borderColor: 'rgba(147, 51, 234, 0.4)' }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Row 5: Quick Actions (Timer, Technique, Substitute & Drop Set) */}
                           <div className="exercise-actions-row">
                             {ex.restSeconds > 0 && (
                               <button
@@ -5581,6 +5671,16 @@ export default function HomePage() {
                                 <span>Descanso {ex.restSeconds}s</span>
                               </button>
                             )}
+
+                            {/* Drop Set Trigger */}
+                            <button
+                              type="button"
+                              className={`exercise-action-pill dropset ${inputs.showDropSet ? 'active' : ''}`}
+                              onClick={() => handleUpdateExerciseInput(exKey, 'showDropSet', !inputs.showDropSet)}
+                            >
+                              <span>⚡</span>
+                              <span>{inputs.showDropSet ? 'Ocultar Drop Set' : 'Drop Set / Fatiga'}</span>
+                            </button>
 
                             {ex.note && (
                               <button
@@ -5604,18 +5704,23 @@ export default function HomePage() {
                                       icon: '💡',
                                       text: ex.note
                                     },
+                                    ...(ex.dropSetTip ? [{
+                                      heading: 'Técnica de Fatiga (Drop Set)',
+                                      icon: '⚡',
+                                      text: ex.dropSetTip
+                                    }] : []),
                                     ...(ex.substitute ? [{
                                       heading: 'Sustituto Libre en Gimnasio o en Casa',
                                       icon: '🔄',
                                       text: ex.substitute,
-                                      tip: 'Ideal para realizar con mancuernas, barras libres o sin máquinas si el gimnasio está lleno.'
+                                      tip: 'Ideal si la máquina principal está ocupada.'
                                     }] : [])
                                   ],
                                   actionText: '✓ Entendido / Cerrar Guía'
                                 })}
                               >
                                 <span>📖</span>
-                                <span>Ver Técnica</span>
+                                <span>Técnica</span>
                               </button>
                             )}
 
@@ -5626,7 +5731,7 @@ export default function HomePage() {
                                 onClick={() => setShowSubstitutesFor(isSubOpen ? null : exKey)}
                               >
                                 <span>🔄</span>
-                                <span>{isSubOpen ? 'Ocultar Sustituto' : 'Ver Sustituto Libre'}</span>
+                                <span>{isSubOpen ? 'Ocultar Sustituto' : 'Sustituto'}</span>
                               </button>
                             )}
                           </div>
@@ -5636,12 +5741,9 @@ export default function HomePage() {
                             <div className="substitute-box">
                               <div style={{ fontWeight: 800, marginBottom: '2px', color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <span>🔄</span>
-                                <span>Sustituto Libre si la máquina está ocupada:</span>
+                                <span>Sustituto si la máquina está ocupada:</span>
                               </div>
                               <div>{ex.substitute}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                ✨ Perfecto para adaptarse a cualquier gimnasio comercial con mancuernas o barras libres.
-                              </div>
                             </div>
                           )}
                         </div>

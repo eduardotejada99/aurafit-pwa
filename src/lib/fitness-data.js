@@ -2609,26 +2609,30 @@ export const HYBRID_ATHLETE_SYSTEM = {
         equipment: 'machine',
         blocks: [
           {
-            name: 'Bloque 1: Hipertrofia Pesada en Máquinas: Cuádriceps & Aductores (100% Máquinas)',
+            name: 'Bloque 1: Fuerza Pesada & Cuádriceps (100% Máquinas)',
             icon: '🏋️‍♂️',
             exercises: [
               {
-                name: 'Prensa de Piernas Inclinada a 45° (Leg Press 45°)',
+                name: 'Sentadilla Hack / Guiada con Barra en Máquina (Squat / Hack Machine)',
                 sets: 4,
-                reps: '8 - 12 reps (pausa 2s en máxima profundidad)',
-                restSeconds: 120,
+                reps: '6 - 8 reps pesadas (100kg con cinturón / 80kg libre)',
+                restSeconds: 150,
                 equipment: 'machine',
-                substitute: 'Prensa Horizontal Guiada con Pies Medios',
-                note: '100% Máquina: pies al ancho de hombros, cadera pegada al asiento. Pausa isométrica de 2s en el estiramiento profundo.'
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: baja de inmediato 20-30% de peso sin descanso y saca 8-10 reps al fallo técnico.',
+                substitute: 'Prensa Inclinada pesada a 6-8 reps con pausa profunda',
+                note: 'Bracing 360° contra el cinturón. Desciende en 3 segundos y sube con aceleración sin despegar talones.'
               },
               {
-                name: 'Sentadilla Hack en Máquina (Hack Squat Machine)',
+                name: 'Prensa de Piernas Inclinada a 45° (Leg Press 45°)',
                 sets: 4,
-                reps: '8 - 10 reps profundas',
+                reps: '8 - 12 reps pesadas (6 a 8 discos de 20kg)',
                 restSeconds: 120,
                 equipment: 'machine',
-                substitute: 'Prensa Inclinada unilateral o Máquina V-Squat guiada',
-                note: '100% Máquina: espalda totalmente respaldada, recorrido profundo sin despegue de talones para quemar los vastos.'
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set final: retira 2 discos de 20kg y saca reps al fallo técnico con 1s de pausa abajo.',
+                substitute: 'Prensa Horizontal Guiada con Pies Medios',
+                note: 'Pies al ancho de hombros, cadera y lumbar selladas al asiento. Pausa de 1s en máxima profundidad.'
               },
               {
                 name: 'Sillón de Extensión de Cuádriceps en Máquina (Leg Extension)',
@@ -2636,22 +2640,26 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '12 - 15 reps (contracción 1-2s arriba)',
                 restSeconds: 75,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: baja 2 placas de inmediato y saca 8-10 reps lentas al fallo muscular.',
                 substitute: 'Extensiones de pierna unilaterales en máquina',
-                note: '100% Máquina: aislamiento estricto del recto femoral en posición acortada con pico de contracción.'
+                note: 'Pico de contracción arriba apretando cuádriceps y bajada lenta en 3 segundos.'
               },
               {
                 name: 'Máquina de Aductores de Cadera Sentada (Seated Adductor Machine)',
                 sets: 3,
-                reps: '12 - 15 reps controladas',
+                reps: '12 - 15 reps pesadas',
                 restSeconds: 60,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: reduce 2 placas y saca 10 reps parciales en estiramiento.',
                 substitute: 'Aductores en polea baja con tobillera',
-                note: '100% Máquina: hipertrofia del aductor mayor para grosor total del muslo y estabilidad de rodilla.'
+                note: 'Pausa de 2 segundos en el cierre completo para hipertrofia del aductor mayor.'
               }
             ]
           },
           {
-            name: 'Bloque 2: Isquiotibiales & Pantorrillas en Máquinas (Aislamiento Completo · Cero Calistenia)',
+            name: 'Bloque 2: Isquiotibiales & Pantorrillas en Máquinas (Aislamiento Puro)',
             icon: '🦵',
             exercises: [
               {
@@ -2660,8 +2668,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '10 - 12 reps (bajada lenta en 3s)',
                 restSeconds: 90,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: reduce 25% del peso y realiza 6-8 reps lentas con bajada excéntrica controlada.',
                 substitute: 'Curl femoral acostado en máquina con pausa',
-                note: '100% Máquina: Nippard Protocol con torso inclinado hacia adelante para máximo estiramiento de isquiotibiales.'
+                note: 'Torso inclinado hacia adelante con muslos firmes para estirar los isquiotibiales.'
               },
               {
                 name: 'Elevación de Pantorrillas en Máquina Smith o Prensa (Calf Raise Machine)',
@@ -2669,8 +2679,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '12 - 15 reps (pausa 3s en máximo estiramiento abajo)',
                 restSeconds: 60,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: 10 reps con pausa profunda de 2s + 10 reps rítmicas al fallo.',
                 substitute: 'Elevación de talones en máquina de sóleo sentado',
-                note: '100% Máquina: pausa profunda para eliminar el rebote elástico del tendón de Aquiles y reclutar el gastrocnemio.'
+                note: 'Pausa profunda abajo para anular el rebote elástico del tendón de Aquiles.'
               },
               {
                 name: 'Máquina de Abductores de Cadera (Seated Abductor Machine)',
@@ -2678,8 +2690,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '15 reps con pausa 2s abierta',
                 restSeconds: 60,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: baja 2 placas y haz 12 reps con 2s de pausa abierta.',
                 substitute: 'Abducciones en polea baja con tobillera',
-                note: '100% Máquina: glúteo medio y estabilizadores pélvicos sin carga en columna.'
+                note: 'Glúteo medio y estabilizadores pélvicos con respaldo firme.'
               }
             ]
           },
@@ -3215,8 +3229,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '10 - 12 reps controladas',
                 restSeconds: 90,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set final: reduce 25% del peso y continúa al fallo con la espalda pegada al respaldo.',
                 substitute: 'Prensa Horizontal Guiada con Pies Medios',
-                note: '100% Máquina: pies a media altura, cadera y lumbar completamente selladas contra el respaldo. Cero cizalla o arqueo en columna.'
+                note: 'Pies a media altura, cadera y lumbar pegadas al respaldo. Cero flexión en columna.'
               },
               {
                 name: 'Sentadilla Hack Guiada con Respaldo Acolchado (Hack Squat Machine)',
@@ -3224,8 +3240,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '8 - 10 reps profundas y controladas',
                 restSeconds: 90,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: baja 20% de peso y mantén 3 segundos de descenso excéntrico.',
                 substitute: 'Prensa Inclinada a 1 pierna con soporte lumbar total',
-                note: '100% Máquina: espalda completamente apoyada en el respaldo de la máquina Hack; máxima activación de cuádriceps sin carga en discos vertebrales.'
+                note: 'Espalda apoyada en el respaldo de la máquina Hack para proteger la columna y activar cuádriceps.'
               },
               {
                 name: 'Extensiones de Cuádriceps en Máquina con Pausa 2s Arriba (Leg Extension)',
@@ -3233,8 +3251,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '12 - 15 reps',
                 restSeconds: 60,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: baja 2 placas de inmediato y saca 8-10 reps lentas al fallo.',
                 substitute: 'Extensiones de cuádriceps unilaterales en máquina',
-                note: '100% Máquina: aislamiento puro de cuádriceps sin involucrar la columna ni fatiga lumbar.'
+                note: 'Aislamiento de cuádriceps con 2 segundos de pausa arriba en máxima contracción.'
               },
               {
                 name: 'Curl Femoral Sentado en Máquina (Seated Leg Curl - Nippard Protocol)',
@@ -3242,8 +3262,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '12 reps con bajada lenta en 3s',
                 restSeconds: 75,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: reduce 2 placas y saca repeticiones controladas.',
                 substitute: 'Curl femoral acostada en máquina guiada',
-                note: '100% Máquina: mayor hipertrofia de isquiotibiales por estiramiento de cadera, con soporte de muslos que elimina tensión en espalda baja.'
+                note: 'Sujeción firme de muslos que anula cualquier tensión en la espalda baja.'
               },
               {
                 name: 'Máquina de Aductores de Cadera Sentada (Adductor Machine)',
@@ -3251,8 +3273,10 @@ export const HYBRID_ATHLETE_SYSTEM = {
                 reps: '12 - 15 reps con pausa 2s cerrada',
                 restSeconds: 60,
                 equipment: 'machine',
+                hasDropSetOption: true,
+                dropSetTip: 'Drop Set: reduce 2 placas y saca 10 reps con pausa en el centro.',
                 substitute: 'Aductores en polea baja con tobillera',
-                note: '100% Máquina: fortalecimiento del aductor mayor y estabilidad pélvica con respaldo cómodo.'
+                note: 'Aductor mayor y estabilidad pélvica con respaldo cómodo y seguro.'
               }
             ]
           },

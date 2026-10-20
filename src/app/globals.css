@@ -2867,6 +2867,155 @@ button:active, .touchable:active {
   margin-top: 4px;
 }
 
+/* Workout Compact Header Chips (Clean & Non-Redundant) */
+.workout-compact-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.workout-compact-chip.green {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--fitia-green);
+}
+
+.workout-compact-chip.blue {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #2563EB;
+}
+
+.workout-compact-chip.orange {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--fitia-orange);
+}
+
+/* Exercise Filter Bar */
+.exercise-filter-bar {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-card-subtle);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.exercise-filter-tab {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.exercise-filter-tab.active {
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Progressive Overload & Logging Row */
+.exercise-log-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 9px 11px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.exercise-log-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.exercise-log-input {
+  width: 78px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.exercise-log-btn {
+  background: var(--fitia-green);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.exercise-log-btn:active {
+  transform: scale(0.96);
+}
+
+.exercise-last-log {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.progression-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* Drop Set Styles */
+.exercise-action-pill.dropset {
+  color: #9333EA;
+  border-color: rgba(147, 51, 234, 0.3);
+}
+
+.exercise-action-pill.dropset.active {
+  background: rgba(147, 51, 234, 0.15);
+  border-color: #9333EA;
+  color: #7E22CE;
+}
+
+.dropset-box {
+  background: rgba(147, 51, 234, 0.06);
+  border: 1px dashed rgba(147, 51, 234, 0.4);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-main);
+  margin-top: 4px;
+}
+
 .skill-tree-container {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);

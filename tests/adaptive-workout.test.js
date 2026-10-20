@@ -330,5 +330,29 @@ describe('AuraFit Adaptive Workout Engine', () => {
     const coreRx = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'core' });
     assert.ok(coreRx.exercises.some(e => e.name.toLowerCase().includes('toes to bar') || e.name.toLowerCase().includes('l-sit')), 'Core must have calisthenics skills');
   });
+
+  it('should include drop set options and heavy progression for legs in both profiles', () => {
+    const andresLegs = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.andres, selectedSplit: 'legs' });
+    const taniaPiernas = getHybridWorkoutPrescription({ profile: FAMILY_PROFILES.pareja, selectedSplit: 'piernas' });
+
+    // Verify Andrés heavy squat / hack reference
+    const squatEx = andresLegs.exercises.find(e => e.name.toLowerCase().includes('hack') || e.name.toLowerCase().includes('sentadilla'));
+    assert.ok(squatEx, 'Andres must have Squat/Hack progression');
+    assert.ok(squatEx.reps.includes('100kg') || (squatEx.note && squatEx.note.includes('100kg')), 'Squat must include 100kg reference');
+
+    // Verify Leg Press 6x20kg reference
+    const pressEx = andresLegs.exercises.find(e => e.name.toLowerCase().includes('prensa'));
+    assert.ok(pressEx, 'Andres must have Leg Press');
+    assert.ok(pressEx.reps.includes('6 a 8 discos') || pressEx.reps.includes('discos de 20kg') || (pressEx.note && pressEx.note.includes('discos')), 'Press must include 6 discos reference');
+
+    // Verify Drop Set options exist on isolation exercises
+    const extEx = andresLegs.exercises.find(e => e.name.toLowerCase().includes('extensi'));
+    assert.ok(extEx.hasDropSetOption, 'Leg extension must offer drop set option');
+    assert.ok(extEx.dropSetTip, 'Leg extension must have drop set tip');
+
+    const curlEx = taniaPiernas.exercises.find(e => e.name.toLowerCase().includes('curl femoral'));
+    assert.ok(curlEx.hasDropSetOption, 'Tania leg curl must offer drop set option');
+    assert.ok(curlEx.dropSetTip, 'Tania leg curl must have drop set tip');
+  });
 });
 
