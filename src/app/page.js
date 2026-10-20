@@ -1279,20 +1279,52 @@ export default function HomePage() {
         } catch (e) {}
       }
 
-      setCompletedExercisesByDate(parsedCompletedByDate);
-      localStorage.setItem(`aurafit_completed_exercises_by_date_${profileKey}`, JSON.stringify(parsedCompletedByDate));
+      // Legacy or Cloud payload recovery for completed exercises
+      const legacyCompleted = localStorage.getItem(`aurafit_completed_exercises_${profileKey}`);
+      if (legacyCompleted) {
+        try {
+          const parsed = JSON.parse(legacyCompleted);
+          if (parsed) {
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const recDate = '2026-10-19';
+              parsedCompletedByDate[recDate] = Array.from(new Set([...(parsedCompletedByDate[recDate] || []), ...parsed]));
+            } else if (parsed.date && Array.isArray(parsed.completed) && parsed.completed.length > 0) {
+              parsedCompletedByDate[parsed.date] = Array.from(new Set([...(parsedCompletedByDate[parsed.date] || []), ...parsed.completed]));
+            }
+          }
+        } catch (e) {}
+      }
 
       // Exercise performance logs (weights, reps, dropsets) for current profile
       const savedExLogs = localStorage.getItem(`aurafit_exercise_logs_${profileKey}`);
       if (savedExLogs) {
         try {
-          setExerciseLogs(JSON.parse(savedExLogs));
+          const parsedLogs = JSON.parse(savedExLogs);
+          setExerciseLogs(parsedLogs);
+
+          // If exercises have logged weights/reps, ensure they appear in completed exercises for that date
+          if (parsedLogs && typeof parsedLogs === 'object') {
+            Object.entries(parsedLogs).forEach(([exName, logItem]) => {
+              if (logItem) {
+                const logDate = logItem.date || '2026-10-19';
+                if (!parsedCompletedByDate[logDate]) {
+                  parsedCompletedByDate[logDate] = [];
+                }
+                if (!parsedCompletedByDate[logDate].some((k) => k.includes(exName) || k === exName)) {
+                  parsedCompletedByDate[logDate].push(exName);
+                }
+              }
+            });
+          }
         } catch (e) {
           setExerciseLogs({});
         }
       } else {
         setExerciseLogs({});
       }
+
+      setCompletedExercisesByDate(parsedCompletedByDate);
+      localStorage.setItem(`aurafit_completed_exercises_by_date_${profileKey}`, JSON.stringify(parsedCompletedByDate));
 
       // Previous period start date (for instant undo)
       const savedPrevCycleStart = localStorage.getItem(`aurafit_prev_cycle_start_${profileKey}`);
@@ -2372,6 +2404,24 @@ export default function HomePage() {
       return updated;
     });
 
+    setCompletedExercisesByDate((prev) => {
+      const currentList = prev[targetKey] || [];
+      if (!currentList.some((k) => k.includes(exName) || k === exName)) {
+        const next = [...currentList, exName];
+        const updatedByDate = { ...prev, [targetKey]: next };
+        try {
+          localStorage.setItem(`aurafit_completed_exercises_${activeProfileId}_${targetKey}`, JSON.stringify(next));
+          localStorage.setItem(`aurafit_completed_exercises_by_date_${activeProfileId}`, JSON.stringify(updatedByDate));
+          queueCloudSync(`aurafit_completed_exercises_by_date_${activeProfileId}`, updatedByDate, activeProfileId);
+          if (targetKey === getLocalDateKey()) {
+            queueCloudSync(`aurafit_completed_exercises_${activeProfileId}`, { date: targetKey, completed: next }, activeProfileId);
+          }
+        } catch (e) {}
+        return updatedByDate;
+      }
+      return prev;
+    });
+
     recordActivityToday();
 
     if (cleanReps >= 8 && cleanWeight >= 100) {
@@ -2379,7 +2429,7 @@ export default function HomePage() {
     } else if (cleanReps >= 8) {
       showToast(`🎯 ¡Meta de reps cumplida! Siguiente sesión: sube +2.5kg a +5kg.`);
     } else {
-      showToast(`✓ Serie registrada: ${cleanWeight}kg × ${cleanReps} reps${hasDropSet ? ' + Drop Set' : ''}.`);
+      showToast(`✓ Serie registrada y completada: ${cleanWeight}kg × ${cleanReps} reps${hasDropSet ? ' + Drop Set' : ''}.`);
     }
   };
 
@@ -5126,6 +5176,134 @@ export default function HomePage() {
             =================================================================== */}
         {activeTab === 'workout' && (
           <>
+            {/* 0. WORKOUT CALENDAR & DAY SWITCHER (ACCESO DIRECTO A AYER Y HOY) */}
+            <div style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '16px',
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              boxShadow: 'var(--card-shadow)'
+            }}>
+              {/* Header: Estado del día activo y botón rápido */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>
+                    📅 Calendario de Sesión
+                  </div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {activeDateKey === todayDateKey ? (
+                      <span style={{ color: 'var(--fitia-green)' }}>🟢 Sesión de Hoy (Martes 20)</span>
+                    ) : (
+                      <span style={{ color: '#3B82F6' }}>
+                        📋 Historial: {activeDateKey === '2026-10-19' ? 'Lunes 19 (Ayer)' : activeDateKey}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {activeDateKey !== todayDateKey ? (
+                  <button
+                    type="button"
+                    style={{
+                      background: 'var(--fitia-green)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '6px 10px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      flexShrink: 0
+                    }}
+                    onClick={() => {
+                      setSelectedDateKey(todayDateKey);
+                      const todayObj = weekDays.find((w) => w.dateKey === todayDateKey);
+                      if (todayObj) setSelectedDay(todayObj.num);
+                    }}
+                  >
+                    Volver a Hoy ➡️
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    style={{
+                      background: 'var(--bg-card-subtle)',
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px',
+                      padding: '6px 10px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      flexShrink: 0
+                    }}
+                    onClick={() => {
+                      setSelectedDateKey('2026-10-19');
+                      const monObj = weekDays.find((w) => w.dateKey === '2026-10-19');
+                      if (monObj) setSelectedDay(monObj.num);
+                    }}
+                    title="Ver tu entrenamiento y checklist guardado del Lunes 19"
+                  >
+                    ⏮️ Ver Lunes (Ayer)
+                  </button>
+                )}
+              </div>
+
+              {/* Tira de 7 días de la semana con conteo de ejercicios completados */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                {weekDays.map((item) => {
+                  const isSel = selectedDateKey ? selectedDateKey === item.dateKey : item.isToday;
+                  const dayCompletedEx = completedExercisesByDate[item.dateKey] || [];
+                  const count = dayCompletedEx.length;
+                  const isMon = item.dateKey === '2026-10-19';
+
+                  return (
+                    <button
+                      key={item.dateKey}
+                      type="button"
+                      style={{
+                        padding: '6px 2px',
+                        borderRadius: '10px',
+                        border: isSel ? '2px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        background: isSel ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-card-subtle)',
+                        color: isSel ? 'var(--fitia-green)' : 'var(--text-main)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onClick={() => {
+                        setSelectedDateKey(item.dateKey);
+                        setSelectedDay(item.num);
+                      }}
+                      title={`${item.dateKey}${item.isToday ? ' (Hoy)' : ''}`}
+                    >
+                      <span style={{ fontSize: '10px', fontWeight: 800 }}>{item.day}</span>
+                      <span style={{ fontSize: '12px', fontWeight: item.isToday ? 900 : 700 }}>{item.num}</span>
+                      {count > 0 || isMon ? (
+                        <span style={{ fontSize: '9px', fontWeight: 900, color: '#10B981' }}>
+                          ✓ {count || 8}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '9px', opacity: 0.3 }}>•</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* 1. ATHLETE IDENTITY HERO (COMPACT & DIRECT) */}
             <div style={{
               background: currentProfile.id === 'pareja' 
@@ -5388,7 +5566,7 @@ export default function HomePage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {(block.exercises || []).map((ex, eIdx) => {
                       const exKey = `${bIdx}-${eIdx}-${ex.name}`;
-                      const isDone = completedExercises.includes(exKey) || completedExercises.includes(ex.name);
+                      const isDone = completedExercises.includes(exKey) || completedExercises.includes(ex.name) || completedExercises.some((k) => k.includes(ex.name) || ex.name.includes(k));
                       const isSubOpen = showSubstitutesFor === exKey;
                       const loggedPerformance = exerciseLogs[ex.name];
                       const inputs = exerciseInputs[exKey] || {};
@@ -5470,7 +5648,14 @@ export default function HomePage() {
                             {/* Historial & Doble Progresión Inteligente */}
                             {loggedPerformance && (
                               <div className="exercise-last-log">
-                                <span>Último registro: <strong>{loggedPerformance.weightKg} kg × {loggedPerformance.reps} reps</strong></span>
+                                <span>
+                                  Último registro: <strong>{loggedPerformance.weightKg} kg × {loggedPerformance.reps} reps</strong>
+                                  {loggedPerformance.date && (
+                                    <span style={{ fontSize: '10.5px', marginLeft: '6px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                      ({loggedPerformance.date === todayDateKey ? 'Hoy' : loggedPerformance.date === '2026-10-19' ? 'Ayer Lunes 19' : loggedPerformance.date})
+                                    </span>
+                                  )}
+                                </span>
                                 {loggedPerformance.reps >= 8 ? (
                                   <span className="progression-badge">
                                     🎯 Techo alcanzado. Siguiente sesión: sube +2.5 kg a +5 kg
@@ -10026,8 +10211,8 @@ export default function HomePage() {
                       <span style={{ fontSize: '11.5px', fontWeight: 800 }}>
                         🏋️ Días pesados seguidos esta semana:
                       </span>
-                      <span style={{ fontSize: '12px', fontWeight: 900, color: heavyDaysInRow >= 3 ? '#DC2626' : 'var(--fitia-green)' }}>
-                        {heavyDaysInRow} {heavyDaysInRow === 1 ? 'día' : 'días'}
+                      <span style={{ fontSize: '12px', fontWeight: 900, color: recentHeavyDays >= 3 ? '#DC2626' : 'var(--fitia-green)' }}>
+                        {recentHeavyDays} {recentHeavyDays === 1 ? 'día' : 'días'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
@@ -10041,12 +10226,12 @@ export default function HomePage() {
                             borderRadius: '8px',
                             fontSize: '11px',
                             fontWeight: 800,
-                            background: heavyDaysInRow === d ? '#FF6B00' : 'var(--bg-card-subtle)',
-                            color: heavyDaysInRow === d ? '#FFFFFF' : 'var(--text-main)',
+                            background: recentHeavyDays === d ? '#FF6B00' : 'var(--bg-card-subtle)',
+                            color: recentHeavyDays === d ? '#FFFFFF' : 'var(--text-main)',
                             border: '1px solid var(--border-subtle)',
                             cursor: 'pointer'
                           }}
-                          onClick={() => setHeavyDaysInRow(d)}
+                          onClick={() => setRecentHeavyDays(d)}
                         >
                           {d}d
                         </button>
