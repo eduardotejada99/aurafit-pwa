@@ -381,6 +381,24 @@ export default function HomePage() {
   const [workoutDurationMode, setWorkoutDurationMode] = useState('full'); // 'full' (2h) | 'express' (45m)
   const [recentHeavyDays, setRecentHeavyDays] = useState(0); // 0, 1, 2+ consecutive heavy days
   const [selectedSkillTab, setSelectedSkillTab] = useState('handstand'); // 'handstand', 'front_lever', 'muscle_up', 'planche'
+  const [isSkillTreeExpanded, setIsSkillTreeExpanded] = useState(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('aurafit_skills_expanded') === 'true';
+      }
+    } catch (e) {}
+    return false; // Por defecto guardado para que no sobrecargue el entrenamiento del día
+  });
+
+  const handleToggleSkillTree = (forceVal) => {
+    setIsSkillTreeExpanded((prev) => {
+      const nextVal = typeof forceVal === 'boolean' ? forceVal : !prev;
+      try {
+        localStorage.setItem('aurafit_skills_expanded', String(nextVal));
+      } catch (e) {}
+      return nextVal;
+    });
+  };
   const [activeSkillLevels, setActiveSkillLevels] = useState({
     handstand: 1,
     front_lever: 1,
@@ -5039,6 +5057,30 @@ export default function HomePage() {
                   <span>Fase {activeCycleInfo.phaseName} (Día {activeCycleInfo.cycleDay})</span>
                 </button>
               )}
+
+              {/* Botón rápido para alternar o saltar a Técnicas */}
+              <button
+                type="button"
+                className={`workout-toolbar-pill ${isSkillTreeExpanded ? 'snc' : ''}`}
+                onClick={() => {
+                  const next = !isSkillTreeExpanded;
+                  handleToggleSkillTree(next);
+                  if (next) {
+                    showToast('🤸 Técnicas desplegadas');
+                    setTimeout(() => {
+                      const el = document.getElementById('skill-tree-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  } else {
+                    showToast('🔒 Técnicas guardadas');
+                  }
+                }}
+                title="Desplegar o guardar árbol de técnicas y habilidades"
+              >
+                <span>🤸</span>
+                <span>Técnicas: {isSkillTreeExpanded ? 'Desplegadas' : 'Guardadas'}</span>
+                <span style={{ fontSize: '10px' }}>{isSkillTreeExpanded ? '▲' : '▼'}</span>
+              </button>
             </div>
 
             {/* Pastilla contextual elegante de 1 sola línea */}
@@ -5344,210 +5386,321 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* 5. CALISTHENICS & PROFILE SKILL TREE */}
+            {/* 5. CALISTHENICS & PROFILE SKILL TREE (DESPLEGABLE / MOVIBLE / GUARDADO) */}
             {(() => {
               const profileSkillTree = hybridPrescription.skillTree || {};
               const skillKeys = Object.keys(profileSkillTree);
+              if (skillKeys.length === 0) return null;
+
               const effectiveSkillTab = profileSkillTree[selectedSkillTab]
                 ? selectedSkillTab
                 : (skillKeys[0] || 'handstand');
               const currentSkill = profileSkillTree[effectiveSkillTab];
+              const activeLvl = activeSkillLevels[effectiveSkillTab] || 1;
 
               return (
-                <div className="skill-tree-container">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h3 style={{ fontSize: '16px', fontWeight: 900 }}>
-                        {currentProfile.id === 'pareja'
-                          ? '🍑 Árbol de Blindaje Lumbar & Glúteos'
-                          : currentProfile.id === 'hermana'
-                          ? '🌸 Ruta de Vitalidad & Movilidad Amable'
-                          : '🤸‍♂️ Árbol de Habilidades de Calistenia'}
-                      </h3>
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {currentProfile.id === 'pareja'
-                          ? 'Activación de glúteos en colchoneta (CERO Hip Thrust), protocolo McGill Big 3 y postura descompresiva'
-                          : currentProfile.id === 'hermana'
-                          ? 'Pasos gentiles de bienestar, paseos relajantes y hábitos reconfortantes sin fatiga ni sobrecarga'
-                          : 'Progresiones nivel por nivel para novatos hasta atletas avanzados'}
+                <div id="skill-tree-section" className="skill-tree-container" style={{ transition: 'all 0.25s ease' }}>
+                  {/* Header con botón para Desplegar / Guardar */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '18px' }}>
+                          {currentProfile.id === 'pareja' ? '🍑' : currentProfile.id === 'hermana' ? '🌸' : '🤸'}
+                        </span>
+                        <h3 style={{ fontSize: '15px', fontWeight: 900, margin: 0 }}>
+                          {currentProfile.id === 'pareja'
+                            ? 'Técnicas de Blindaje & Glúteo'
+                            : currentProfile.id === 'hermana'
+                            ? 'Técnicas de Movilidad & Calma'
+                            : 'Técnicas de Calistenia'}
+                        </h3>
+                      </div>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {isSkillTreeExpanded
+                          ? 'Entrenando técnica hoy · Progresiones nivel por nivel'
+                          : 'Opcional · Toca o desliza para elegir qué técnica aprender'}
                       </p>
                     </div>
-                    <span style={{ fontSize: '20px' }}>
-                      {currentProfile.id === 'pareja' ? '🛡️' : currentProfile.id === 'hermana' ? '🌿' : '⚡'}
-                    </span>
+
+                    {/* Botón de control: Desplegar o Guardar */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSkillTree()}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '999px',
+                        border: isSkillTreeExpanded ? '1px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                        background: isSkillTreeExpanded ? 'var(--fitia-green-soft)' : 'var(--bg-card-subtle)',
+                        color: isSkillTreeExpanded ? 'var(--fitia-green)' : 'var(--text-main)',
+                        fontSize: '11px',
+                        fontWeight: 900,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={isSkillTreeExpanded ? 'Ocultar niveles para enfocarte solo en tu entrenamiento' : 'Desplegar niveles para entrenar técnicas'}
+                    >
+                      <span>{isSkillTreeExpanded ? '🔒 Guardar' : '📖 Desplegar'}</span>
+                      <span style={{ fontSize: '10px' }}>{isSkillTreeExpanded ? '▲' : '▼'}</span>
+                    </button>
                   </div>
 
-                  {/* Skill Tabs */}
-                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {/* CAROUSEL HORIZONTAL MOVIBLE ("que vaya moviéndose") */}
+                  <div
+                    className="skill-moving-carousel"
+                    style={{
+                      display: 'flex',
+                      gap: '8px',
+                      overflowX: 'auto',
+                      padding: '4px 2px 8px 2px',
+                      scrollSnapType: 'x mandatory',
+                      WebkitOverflowScrolling: 'touch',
+                      scrollbarWidth: 'none'
+                    }}
+                  >
                     {skillKeys.map((sKey) => {
                       const skill = profileSkillTree[sKey];
                       const isSel = effectiveSkillTab === sKey;
+                      const lvlNum = activeSkillLevels[sKey] || 1;
+                      const lvlObj = (skill.levels || []).find((l) => l.level === lvlNum) || skill.levels?.[0];
+
                       return (
-                        <button
+                        <div
                           key={sKey}
-                          type="button"
-                          className="skill-pill-btn"
-                          style={{
-                            background: isSel ? 'var(--fitia-green)' : 'var(--bg-card-subtle)',
-                            color: isSel ? '#FFFFFF' : 'var(--text-main)',
-                            border: '1px solid var(--border-subtle)'
+                          onClick={() => {
+                            setSelectedSkillTab(sKey);
+                            if (!isSkillTreeExpanded) {
+                              handleToggleSkillTree(true);
+                              showToast(`🤸 ${skill.name}: desplegado para practicar`);
+                            }
                           }}
-                          onClick={() => setSelectedSkillTab(sKey)}
+                          style={{
+                            flex: '0 0 160px',
+                            scrollSnapAlign: 'start',
+                            background: isSel ? 'var(--bg-card)' : 'var(--bg-card-subtle)',
+                            border: isSel ? '2px solid var(--fitia-green)' : '1px solid var(--border-subtle)',
+                            borderRadius: '14px',
+                            padding: '10px 12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                            position: 'relative',
+                            transition: 'all 0.15s ease',
+                            boxShadow: isSel ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
+                          }}
                         >
-                          <span>{skill.icon}</span>
-                          <span>{skill.name.split(' (')[0]}</span>
-                        </button>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '20px' }}>{skill.icon}</span>
+                            <span style={{
+                              fontSize: '9.5px',
+                              fontWeight: 900,
+                              background: isSel ? 'var(--fitia-green)' : 'rgba(0,0,0,0.06)',
+                              color: isSel ? '#FFFFFF' : 'var(--text-muted)',
+                              padding: '2px 6px',
+                              borderRadius: '999px'
+                            }}>
+                              Lvl {lvlNum}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {skill.name.split(' (')[0]}
+                          </div>
+
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {lvlObj?.title ? lvlObj.title.replace(/^Nivel \d+:\s*/, '') : skill.targetMuscle}
+                          </div>
+
+                          <div style={{
+                            marginTop: '4px',
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            color: isSel && isSkillTreeExpanded ? 'var(--fitia-green)' : '#3B82F6',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}>
+                            <span>{isSel && isSkillTreeExpanded ? '✓ En pantalla' : 'Aprender →'}</span>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
 
-                  {/* Selected Skill Details & Progressive Levels */}
-                  {currentSkill && (() => {
-                    const activeLvl = activeSkillLevels[effectiveSkillTab] || 1;
-
-                    return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{
-                          background: 'var(--bg-card-subtle)',
-                          padding: '12px 14px',
-                          borderRadius: '12px',
-                          border: '1px solid var(--border-subtle)'
-                        }}>
+                  {/* VISTA DESPLEGADA (SOLO SI isSkillTreeExpanded ES TRUE) */}
+                  {isSkillTreeExpanded && currentSkill && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px', animation: 'fadeIn 0.2s ease-out' }}>
+                      {/* Tarjeta de Resumen de la Técnica Seleccionada */}
+                      <div style={{
+                        background: 'var(--bg-card-subtle)',
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-subtle)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ fontSize: '13px', fontWeight: 900 }}>
                             {currentSkill.icon} {currentSkill.name}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--fitia-green)' }}>
                             🎯 Enfoque: {currentSkill.targetMuscle}
-                          </div>
-                          <div style={{ fontSize: '12px', marginTop: '4px', lineHeight: 1.4 }}>
-                            {currentSkill.description}
-                          </div>
+                          </span>
                         </div>
-
-                        {/* Level Cards */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {currentSkill.levels.map((lvl) => {
-                            const isCurrentLevel = activeLvl === lvl.level;
-                            const badgeBg = lvl.difficulty === 'Novato' || lvl.difficulty === 'Amable' ? '#10B981' : lvl.difficulty === 'Intermedio' || lvl.difficulty === 'Vital' ? '#3B82F6' : lvl.difficulty === 'Avanzado' || lvl.difficulty === 'Bienestar Pleno' ? '#8B5CF6' : '#EC4899';
-
-                            return (
-                              <div
-                                key={lvl.level}
-                                className={`skill-level-card ${isCurrentLevel ? 'active-level' : ''}`}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '13px', fontWeight: 900 }}>
-                                    {lvl.title}
-                                  </span>
-                                  <span style={{
-                                    fontSize: '10px',
-                                    fontWeight: 900,
-                                    background: badgeBg,
-                                    color: '#FFFFFF',
-                                    padding: '2px 8px',
-                                    borderRadius: '999px'
-                                  }}>
-                                    {lvl.difficulty}
-                                  </span>
-                                </div>
-
-                                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
-                                  🎯 Objetivo: {lvl.target} {lvl.restSeconds > 0 ? `· Descanso: ${lvl.restSeconds}s` : ''}
-                                </div>
-
-                                <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                                  <strong>Clave:</strong> {lvl.cues}
-                                </div>
-
-                                {lvl.commonMistake && (
-                                  <div style={{ fontSize: '11px', color: '#DC2626', background: 'rgba(239, 68, 68, 0.08)', padding: '6px 10px', borderRadius: '8px' }}>
-                                    ⚠️ <strong>A tener en cuenta:</strong> {lvl.commonMistake}
-                                  </div>
-                                )}
-
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
-                                  <button
-                                    type="button"
-                                    style={{
-                                      padding: '6px 12px',
-                                      borderRadius: '8px',
-                                      fontSize: '11px',
-                                      fontWeight: 800,
-                                      background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
-                                      color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
-                                      border: '1px solid var(--border-subtle)',
-                                      cursor: 'pointer'
-                                    }}
-                                    onClick={() => setActiveSkillLevels({
-                                      ...activeSkillLevels,
-                                      [effectiveSkillTab]: lvl.level
-                                    })}
-                                  >
-                                    {isCurrentLevel ? '✓ Mi Nivel Actual' : 'Practicar este Nivel'}
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    style={{
-                                      padding: '6px 12px',
-                                      borderRadius: '8px',
-                                      fontSize: '11px',
-                                      fontWeight: 800,
-                                      background: 'rgba(59, 130, 246, 0.1)',
-                                      border: '1px solid rgba(59, 130, 246, 0.25)',
-                                      color: '#2563EB',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                    onClick={() => setDetailReaderModal({
-                                      title: lvl.title,
-                                      subtitle: `${currentSkill.name} · ${lvl.difficulty}`,
-                                      icon: currentSkill.icon,
-                                      badge: lvl.difficulty,
-                                      badgeBg: badgeBg,
-                                      badgeColor: '#FFFFFF',
-                                      sections: [
-                                        {
-                                          heading: 'Objetivo y Parámetros del Nivel',
-                                          icon: '🎯',
-                                          text: `${lvl.target} ${lvl.restSeconds > 0 ? `· Descanso sugerido: ${lvl.restSeconds} segundos.` : ''}`
-                                        },
-                                        {
-                                          heading: 'Instrucciones de Técnica y Postura',
-                                          icon: '💡',
-                                          text: lvl.cues
-                                        },
-                                        ...(lvl.commonMistake ? [{
-                                          heading: 'Errores Comunes y Prevención de Fatiga / Molestia',
-                                          icon: '⚠️',
-                                          alert: lvl.commonMistake
-                                        }] : []),
-                                        ...(currentProfile.id === 'hermana' ? [{
-                                          heading: 'Enfoque Amable & Adaptativo',
-                                          icon: '🌸',
-                                          tip: 'Respira con calma por la nariz, realiza los movimientos con total suavidad y disfruta de la reconexión energética sin exigencias extremas.'
-                                        }] : [])
-                                      ],
-                                      actionText: isCurrentLevel ? 'Cerrar Guía' : 'Fijar como Mi Nivel Actual',
-                                      onAction: isCurrentLevel ? null : () => setActiveSkillLevels({
-                                        ...activeSkillLevels,
-                                        [effectiveSkillTab]: lvl.level
-                                      })
-                                    })}
-                                  >
-                                    <span>📖</span>
-                                    <span>Ver Guía Completa</span>
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
+                        <div style={{ fontSize: '12px', marginTop: '4px', lineHeight: 1.4, color: 'var(--text-muted)' }}>
+                          {currentSkill.description}
                         </div>
                       </div>
-                    );
-                  })()}
+
+                      {/* Lista de Niveles Progresivos */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {currentSkill.levels.map((lvl) => {
+                          const isCurrentLevel = activeLvl === lvl.level;
+                          const badgeBg = lvl.difficulty === 'Novato' || lvl.difficulty === 'Amable' ? '#10B981' : lvl.difficulty === 'Intermedio' || lvl.difficulty === 'Vital' ? '#3B82F6' : lvl.difficulty === 'Avanzado' || lvl.difficulty === 'Bienestar Pleno' ? '#8B5CF6' : '#EC4899';
+
+                          return (
+                            <div
+                              key={lvl.level}
+                              className={`skill-level-card ${isCurrentLevel ? 'active-level' : ''}`}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 900 }}>
+                                  {lvl.title}
+                                </span>
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 900,
+                                  background: badgeBg,
+                                  color: '#FFFFFF',
+                                  padding: '2px 8px',
+                                  borderRadius: '999px'
+                                }}>
+                                  {lvl.difficulty}
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--fitia-orange)' }}>
+                                🎯 Objetivo: {lvl.target} {lvl.restSeconds > 0 ? `· Descanso: ${lvl.restSeconds}s` : ''}
+                              </div>
+
+                              <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.45, background: 'var(--bg-card)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                <strong>Clave:</strong> {lvl.cues}
+                              </div>
+
+                              {lvl.commonMistake && (
+                                <div style={{ fontSize: '11px', color: '#DC2626', background: 'rgba(239, 68, 68, 0.08)', padding: '6px 10px', borderRadius: '8px' }}>
+                                  ⚠️ <strong>A tener en cuenta:</strong> {lvl.commonMistake}
+                                </div>
+                              )}
+
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
+                                <button
+                                  type="button"
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                    background: isCurrentLevel ? 'var(--fitia-green)' : 'var(--bg-card)',
+                                    color: isCurrentLevel ? '#FFFFFF' : 'var(--text-muted)',
+                                    border: '1px solid var(--border-subtle)',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => setActiveSkillLevels({
+                                    ...activeSkillLevels,
+                                    [effectiveSkillTab]: lvl.level
+                                  })}
+                                >
+                                  {isCurrentLevel ? '✓ Mi Nivel Actual' : 'Practicar este Nivel'}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.25)',
+                                    color: '#2563EB',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                  onClick={() => setDetailReaderModal({
+                                    title: lvl.title,
+                                    subtitle: `${currentSkill.name} · ${lvl.difficulty}`,
+                                    icon: currentSkill.icon,
+                                    badge: lvl.difficulty,
+                                    badgeBg: badgeBg,
+                                    badgeColor: '#FFFFFF',
+                                    sections: [
+                                      {
+                                        heading: 'Objetivo y Parámetros del Nivel',
+                                        icon: '🎯',
+                                        text: `${lvl.target} ${lvl.restSeconds > 0 ? `· Descanso sugerido: ${lvl.restSeconds} segundos.` : ''}`
+                                      },
+                                      {
+                                        heading: 'Instrucciones de Técnica y Postura',
+                                        icon: '💡',
+                                        text: lvl.cues
+                                      },
+                                      ...(lvl.commonMistake ? [{
+                                        heading: 'Errores Comunes y Prevención de Fatiga / Molestia',
+                                        icon: '⚠️',
+                                        alert: lvl.commonMistake
+                                      }] : []),
+                                      ...(currentProfile.id === 'hermana' ? [{
+                                        heading: 'Enfoque Amable & Adaptativo',
+                                        icon: '🌸',
+                                        tip: 'Respira con calma por la nariz, realiza los movimientos con total suavidad y disfruta de la reconexión energética sin exigencias extremas.'
+                                      }] : [])
+                                    ],
+                                    actionText: isCurrentLevel ? 'Cerrar Guía' : 'Fijar como Mi Nivel Actual',
+                                    onAction: isCurrentLevel ? null : () => setActiveSkillLevels({
+                                      ...activeSkillLevels,
+                                      [effectiveSkillTab]: lvl.level
+                                    })
+                                  })}
+                                >
+                                  <span>📖</span>
+                                  <span>Ver Guía Completa</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Botón para guardar y ocultar */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSkillTree(false)}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'var(--bg-card-subtle)',
+                          color: 'var(--text-muted)',
+                          fontSize: '11.5px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span>🔒</span>
+                        <span>Guardar y Ocultar Técnicas (Volver al Entrenamiento)</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })()}

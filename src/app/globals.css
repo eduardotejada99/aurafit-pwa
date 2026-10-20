@@ -3853,6 +3853,30 @@ button:active, .touchable:active {
   transform: translateY(-1px);
 }
 
+/* Moving Skill Carousel & Collapsible Tree */
+.skill-moving-carousel {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.skill-moving-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.skill-moving-carousel > div {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.skill-moving-carousel > div:hover {
+  border-color: var(--fitia-green) !important;
+  transform: translateY(-2px);
+}
+
+.skill-moving-carousel > div:active {
+  transform: scale(0.97);
+}
+
+
 
 
 
