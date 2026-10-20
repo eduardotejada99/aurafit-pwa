@@ -1643,34 +1643,39 @@ export default function HomePage() {
     };
   }, [targets, consumedTotals, currentProfile]);
 
-  // Food Search API Debounce
+  // Food Search API Debounce with 0ms instant local fallback
   useEffect(() => {
     let active = true;
-    if (!foodSearchQuery.trim()) {
+    const query = foodSearchQuery.trim();
+    if (!query) {
       setFoodSearchResults(CURATED_PERUVIAN_FOODS);
       setIsSearchingFood(false);
       return;
     }
 
+    // Instant local filtering (accent-tolerant) for zero-latency Peruvian food search
+    const norm = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const qNorm = norm(query);
+    const instantLocal = CURATED_PERUVIAN_FOODS.filter((f) => {
+      const n = norm(f.name);
+      const s = norm(f.shortName);
+      const b = norm(f.brand);
+      const c = norm(f.category);
+      const d = norm(f.breakdown || f.servingDesc);
+      return n.includes(qNorm) || s.includes(qNorm) || b.includes(qNorm) || c.includes(qNorm) || d.includes(qNorm);
+    });
+    setFoodSearchResults(instantLocal);
+
     setIsSearchingFood(true);
     const timer = setTimeout(() => {
-      fetch(`/api/food-search?q=${encodeURIComponent(foodSearchQuery.trim())}`)
+      fetch(`/api/food-search?q=${encodeURIComponent(query)}`)
         .then((r) => r.json())
         .then((data) => {
-          if (active && data.results) {
+          if (active && data.results && data.results.length > 0) {
             setFoodSearchResults(data.results);
           }
         })
-        .catch(() => {
-          if (active) {
-            const q = foodSearchQuery.toLowerCase();
-            setFoodSearchResults(
-              CURATED_PERUVIAN_FOODS.filter(
-                (f) => f.name.toLowerCase().includes(q) || f.brand.toLowerCase().includes(q)
-              )
-            );
-          }
-        })
+        .catch(() => {})
         .finally(() => {
           if (active) setIsSearchingFood(false);
         });

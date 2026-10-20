@@ -18,14 +18,17 @@ export async function GET(request) {
       });
     }
 
-    const queryLower = query.toLowerCase();
+    const normalize = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const queryNorm = normalize(query);
 
-    // 1. Search local curated database
+    // 1. Search local curated database (accent-tolerant, multi-field)
     const localMatches = CURATED_PERUVIAN_FOODS.filter((food) => {
-      const nameMatch = food.name.toLowerCase().includes(queryLower);
-      const brandMatch = food.brand.toLowerCase().includes(queryLower);
-      const catMatch = food.category.toLowerCase().includes(queryLower);
-      return nameMatch || brandMatch || catMatch;
+      const nameMatch = normalize(food.name).includes(queryNorm);
+      const shortMatch = normalize(food.shortName).includes(queryNorm);
+      const brandMatch = normalize(food.brand).includes(queryNorm);
+      const catMatch = normalize(food.category).includes(queryNorm);
+      const descMatch = normalize(food.breakdown || food.servingDesc).includes(queryNorm);
+      return nameMatch || shortMatch || brandMatch || catMatch || descMatch;
     }).map((item) => ({
       ...item,
       source: 'Verificado Fitia / Perú'

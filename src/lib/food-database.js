@@ -697,6 +697,186 @@ export const CURATED_PERUVIAN_FOODS = [
     isSnack: false,
     isUltraProcessed: false,
     icon: '🥩'
+  },
+  {
+    id: 'peru-sopa-moron',
+    name: 'Sopa de Morón Casera (Caldo Andino con Carne y Verduras)',
+    shortName: 'Sopa de Morón',
+    brand: 'Tradición Andina / Casera',
+    servingDesc: '1 plato hondo generoso (350g)',
+    grams: 350,
+    calories: 260,
+    protein: 15.0,
+    carbs: 38.0,
+    fat: 5.5,
+    fiber: 6.0,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥣',
+    breakdown: 'Trigo o cebada morón partido hervido a fuego lento con carne de res/pollo, apio, poro, zanahoria, zapallo, habas y papita'
+  },
+  {
+    id: 'peru-sopa-moron-entrada',
+    name: 'Sopa de Morón del Menú (Entrada Criolla Andina)',
+    shortName: 'Sopa de Morón (Entrada)',
+    brand: 'Menú del Día Peruano',
+    servingDesc: '1 tazón estándar de entrada (250g)',
+    grams: 250,
+    calories: 165,
+    protein: 8.5,
+    carbs: 25.0,
+    fat: 3.2,
+    fiber: 4.2,
+    category: 'menu_peruano',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥣',
+    breakdown: 'Caldo caliente de morón partido con verduras picadas y hierbas andinas'
+  },
+  {
+    id: 'peru-moron-cocido-guarnicion',
+    name: 'Morón Cocido / Trigo Morón Graneado (Guarnición)',
+    shortName: 'Morón Graneado / Cocido',
+    brand: 'Tradición Andina / Casera',
+    servingDesc: '1 porción / taza (150g)',
+    grams: 150,
+    calories: 185,
+    protein: 6.0,
+    carbs: 38.0,
+    fat: 1.2,
+    fiber: 5.8,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🌾',
+    breakdown: 'Grano de morón cocido o graneado rico en fibra andina y energía de liberación lenta'
+  },
+  {
+    id: 'peru-caldo-gallina',
+    name: 'Caldo de Gallina Criollo Completo (con Fideo, Huevo y Presa)',
+    shortName: 'Caldo de Gallina Completo',
+    brand: 'Tradicional Criollo',
+    servingDesc: '1 tazón grande (450g)',
+    grams: 450,
+    calories: 460,
+    protein: 42.0,
+    carbs: 44.0,
+    fat: 12.0,
+    fiber: 2.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Caldo concentrado de gallina con fideos spaghetti, 1 huevo duro entero, kion y presa de pechuga/muslo'
+  },
+  {
+    id: 'peru-shambar',
+    name: 'Shambar Tradicional Norteño (Trigo Morón, Menestras y Carne)',
+    shortName: 'Shambar Norteño',
+    brand: 'Tradición Trujillana / Norteña',
+    servingDesc: '1 plato hondo tradicional (400g)',
+    grams: 400,
+    calories: 440,
+    protein: 28.0,
+    carbs: 56.0,
+    fat: 11.5,
+    fiber: 10.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Sopa andino-norteña con trigo morón, frijol bayo, garbanzo, habas secas, pellejito de chancho, carne y hierbabuena'
+  },
+  {
+    id: 'peru-caldo-verde',
+    name: 'Caldo Verde / Sopa Verde Cajamarquina (Hierbas, Papa y Quesillo)',
+    shortName: 'Caldo Verde Cajamarquino',
+    brand: 'Tradición Cajamarquina',
+    servingDesc: '1 plato hondo (300g)',
+    grams: 300,
+    calories: 210,
+    protein: 14.0,
+    carbs: 18.0,
+    fat: 9.0,
+    fiber: 3.5,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🥣',
+    breakdown: 'Caldo caliente con concentrado de paico, ruda, perejil, papa amarilla sancochada, huevo y quesillo cajamarquino'
+  },
+  {
+    id: 'peru-patasca',
+    name: 'Patasca / Caldo de Mote Andino Tradicional',
+    shortName: 'Patasca Andina',
+    brand: 'Tradición Andina',
+    servingDesc: '1 plato hondo (400g)',
+    grams: 400,
+    calories: 390,
+    protein: 29.0,
+    carbs: 42.0,
+    fat: 11.0,
+    fiber: 6.5,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Caldo andino festivo de maíz mote reventado con mondongo, carne de res/carnero y hierbabuena'
+  },
+  {
+    id: 'peru-menestron',
+    name: 'Menestrón Criollo Peruano (Carne, Fideo Canuto y Albahaca)',
+    shortName: 'Menestrón Criollo',
+    brand: 'Tradicional Criollo',
+    servingDesc: '1 plato hondo (400g)',
+    grams: 400,
+    calories: 430,
+    protein: 26.0,
+    carbs: 52.0,
+    fat: 13.0,
+    fiber: 7.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Sopa criolla espesa con fideos canuto, salsa de albahaca y espinaca, carne de res, choclo, frejol verde, yuca y queso fresco'
+  },
+  {
+    id: 'peru-aguadito-pollo',
+    name: 'Aguadito de Pollo Criollo al Culantro con Arroz',
+    shortName: 'Aguadito de Pollo',
+    brand: 'Tradicional Criollo',
+    servingDesc: '1 plato hondo (350g)',
+    grams: 350,
+    calories: 320,
+    protein: 24.0,
+    carbs: 38.0,
+    fat: 7.5,
+    fiber: 3.0,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍲',
+    breakdown: 'Sopa criolla de arroz verde con culantro, arvejitas, choclo, zanahoria y trozos de pollo'
+  },
+  {
+    id: 'peru-seco-res-frejoles',
+    name: 'Seco de Res a la Norteña con Frijoles Canario y Arroz',
+    shortName: 'Seco de Res con Frijoles',
+    brand: 'Tradición Norteña / Criolla',
+    servingDesc: '1 plato completo (420g)',
+    grams: 420,
+    calories: 670,
+    protein: 44.0,
+    carbs: 68.0,
+    fat: 22.0,
+    fiber: 9.5,
+    category: 'plato_fuerte',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍛',
+    breakdown: 'Carne de res guisada en chicha de jora y culantro, acompañada de frijol canario y arroz blanco'
   }
 ];
 
@@ -1217,16 +1397,62 @@ export const NUTRITIONAL_DENSITY_TABLE = {
     brand: 'Panadería Tradicional',
     defaultGrams: 40,
     per100g: { calories: 265, protein: 9.0, carbs: 49.0, fat: 3.2, fiber: 2.7 }
+  },
+  moron: {
+    names: ['sopa de moron', 'sopa de morón', 'trigo moron', 'trigo morón', 'cebada moron', 'cebada morón', 'moron partido', 'morón partido', 'moron', 'morón'],
+    displayName: 'Sopa de Morón Andina / Trigo Morón',
+    icon: '🥣',
+    category: 'menu_peruano',
+    brand: 'Tradición Andina / Casera',
+    defaultGrams: 300,
+    per100g: { calories: 75, protein: 4.3, carbs: 11.0, fat: 1.6, fiber: 1.7 }
+  },
+  caldo_gallina: {
+    names: ['caldo de gallina', 'sopa de gallina'],
+    displayName: 'Caldo de Gallina Criollo',
+    icon: '🍲',
+    category: 'plato_fuerte',
+    brand: 'Tradicional Criollo',
+    defaultGrams: 400,
+    per100g: { calories: 102, protein: 9.3, carbs: 9.8, fat: 2.7, fiber: 0.5 }
+  },
+  shambar: {
+    names: ['shambar', 'chambar', 'shámbar'],
+    displayName: 'Shambar Tradicional Norteño',
+    icon: '🍲',
+    category: 'plato_fuerte',
+    brand: 'Tradición Trujillana',
+    defaultGrams: 400,
+    per100g: { calories: 110, protein: 7.0, carbs: 14.0, fat: 2.9, fiber: 2.5 }
+  },
+  caldo_verde: {
+    names: ['caldo verde', 'sopa verde', 'caldo verde cajamarquino'],
+    displayName: 'Caldo Verde Cajamarquino',
+    icon: '🥣',
+    category: 'plato_fuerte',
+    brand: 'Tradición Cajamarquina',
+    defaultGrams: 300,
+    per100g: { calories: 70, protein: 4.7, carbs: 6.0, fat: 3.0, fiber: 1.2 }
   }
 };
 
+export function normalizeSearchText(str = '') {
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 function findDensityItem(foodPart) {
+  const normFoodPart = normalizeSearchText(foodPart);
   let bestMatch = null;
   let maxLen = 0;
   for (const [key, def] of Object.entries(NUTRITIONAL_DENSITY_TABLE)) {
     for (const name of def.names) {
-      if (foodPart.includes(name) && name.length > maxLen) {
-        maxLen = name.length;
+      const normName = normalizeSearchText(name);
+      if ((foodPart.includes(name) || normFoodPart.includes(normName)) && normName.length > maxLen) {
+        maxLen = normName.length;
         bestMatch = { key, def };
       }
     }
@@ -1648,13 +1874,60 @@ export function parseNaturalLanguageFood(text = '') {
       key: 'carne_molida',
       keywords: ['carne molida', 'carne picada', 'molida de res', 'carne de res molida', 'carne molida de res'],
       item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-carne-molida-res')
+    },
+    {
+      key: 'moron',
+      keywords: ['moron', 'morón', 'sopa de moron', 'sopa de morón', 'trigo moron', 'trigo morón', 'cebada moron', 'moron partido'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-sopa-moron')
+    },
+    {
+      key: 'caldo_gallina',
+      keywords: ['caldo de gallina', 'sopa de gallina'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-caldo-gallina')
+    },
+    {
+      key: 'shambar',
+      keywords: ['shambar', 'chambar', 'shámbar'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-shambar')
+    },
+    {
+      key: 'caldo_verde',
+      keywords: ['caldo verde', 'sopa verde', 'caldo verde cajamarquino'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-caldo-verde')
+    },
+    {
+      key: 'patasca',
+      keywords: ['patasca', 'caldo de mote', 'sopa de mote'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-patasca')
+    },
+    {
+      key: 'menestron',
+      keywords: ['menestron', 'menestrón'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-menestron')
+    },
+    {
+      key: 'aguadito',
+      keywords: ['aguadito', 'aguadito de pollo'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-aguadito-pollo')
+    },
+    {
+      key: 'seco_res',
+      keywords: ['seco de res', 'seco con frejoles', 'seco con frijoles'],
+      item: CURATED_PERUVIAN_FOODS.find((f) => f.id === 'peru-seco-res-frejoles')
     }
   ];
 
+  const normLower = normalizeSearchText(lower);
   for (const p of additionalPatterns) {
-    if (!processedKeys.has(p.key) && p.keywords.some((kw) => lower.includes(kw))) {
-      if (p.item) detectedItems.push(p.item);
-      processedKeys.add(p.key);
+    if (!processedKeys.has(p.key)) {
+      const isMatch = p.keywords.some((kw) => {
+        const normKw = normalizeSearchText(kw);
+        return lower.includes(kw) || normLower.includes(normKw);
+      });
+      if (isMatch) {
+        if (p.item) detectedItems.push(p.item);
+        processedKeys.add(p.key);
+      }
     }
   }
 

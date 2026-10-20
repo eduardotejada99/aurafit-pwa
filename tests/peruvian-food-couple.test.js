@@ -25,6 +25,14 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.ok(ids.includes('peru-papa-huancaina'), 'Should contain papa a la huancaina');
     assert.ok(ids.includes('peru-pan-chicharron'), 'Should contain pan con chicharron');
     assert.ok(ids.includes('peru-emoliente-andino'), 'Should contain emoliente');
+    assert.ok(ids.includes('peru-sopa-moron'), 'Should contain sopa de moron');
+    assert.ok(ids.includes('peru-sopa-moron-entrada'), 'Should contain sopa de moron entrada');
+    assert.ok(ids.includes('peru-moron-cocido-guarnicion'), 'Should contain moron cocido');
+    assert.ok(ids.includes('peru-caldo-gallina'), 'Should contain caldo de gallina');
+    assert.ok(ids.includes('peru-shambar'), 'Should contain shambar');
+    assert.ok(ids.includes('peru-caldo-verde'), 'Should contain caldo verde cajamarquino');
+    assert.ok(ids.includes('peru-patasca'), 'Should contain patasca andina');
+    assert.ok(ids.includes('peru-menestron'), 'Should contain menestron criollo');
   });
 
   it('should parse natural language queries for green juice and Peruvian specialties', () => {
@@ -47,6 +55,19 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     const parsedHuancaina = parseNaturalLanguageFood('1 porcion de papa a la huancaina');
     assert.ok(parsedHuancaina.length > 0, 'Should parse huancaina');
     assert.ok(parsedHuancaina[0].name.toLowerCase().includes('huanca'));
+
+    // 5. Sopa de Morón (accent tolerant & user query 'acabo de comer moron')
+    const parsedMoron = parseNaturalLanguageFood('acabo de comer moron');
+    assert.ok(parsedMoron.length > 0, 'Should parse moron without accent');
+    assert.ok(parsedMoron[0].name.toLowerCase().includes('morón') || parsedMoron[0].name.toLowerCase().includes('moron'));
+    assert.equal(parsedMoron[0].calories, 260);
+    assert.equal(parsedMoron[0].protein, 15.0);
+
+    // 6. Sopa de Morón with grams
+    const parsedMoronGrams = parseNaturalLanguageFood('300g moron');
+    assert.ok(parsedMoronGrams.length > 0, 'Should parse 300g moron');
+    assert.equal(parsedMoronGrams[0].grams, 300);
+    assert.equal(parsedMoronGrams[0].calories, 225); // 3 * 75 kcal
   });
 
   it('should correctly calculate couple mode split (60% Andrés, 40% Pareja) for meals', () => {
