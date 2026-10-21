@@ -281,6 +281,24 @@ export const CURATED_PERUVIAN_FOODS = [
     icon: '🥖'
   },
   {
+    id: 'fit-pan-masa-madre',
+    name: 'Pan de Masa Madre Artesanal (Sourdough / Fermentación Lenta)',
+    brand: 'Panadería Artesanal',
+    shortName: 'Pan de Masa Madre',
+    servingDesc: '1 rebanada mediana (50g)',
+    grams: 50,
+    calories: 130,
+    protein: 4.5,
+    carbs: 25.0,
+    fat: 1.0,
+    fiber: 2.2,
+    category: 'carbohidrato',
+    isSnack: false,
+    isUltraProcessed: false,
+    icon: '🍞',
+    breakdown: 'Harina de trigo de fuerza, agua, sal marina y masa madre viva. Fermentación prolongada de 24-48h con bajo índice glucémico y alta digestibilidad.'
+  },
+  {
     id: 'fit-atun-agua',
     name: 'Atún en Lata al Agua (Campomar / Florida)',
     brand: 'Campomar',
@@ -1914,6 +1932,15 @@ export const NUTRITIONAL_DENSITY_TABLE = {
     defaultGrams: 40,
     per100g: { calories: 265, protein: 9.0, carbs: 49.0, fat: 3.2, fiber: 2.7 }
   },
+  pan_masa_madre: {
+    names: ['pan de masa madre', 'pan masa madre', 'masa madre', 'sourdough', 'hogaza de masa madre'],
+    displayName: 'Pan de Masa Madre Artesanal (Sourdough)',
+    icon: '🍞',
+    category: 'carbohidrato',
+    brand: 'Panadería Artesanal',
+    defaultGrams: 50,
+    per100g: { calories: 260, protein: 9.0, carbs: 50.0, fat: 2.0, fiber: 4.4 }
+  },
   moron: {
     names: ['sopa de moron', 'sopa de morón', 'trigo moron', 'trigo morón', 'cebada moron', 'cebada morón', 'moron partido', 'morón partido', 'moron', 'morón'],
     displayName: 'Sopa de Morón Andina / Trigo Morón',
@@ -2398,29 +2425,51 @@ export function parseNaturalLanguageFood(text = '') {
     processedKeys.add('aceite');
   }
 
-  // 5. Panes
-  if (lower.includes('pan') && !lower.includes('pancake') && !lower.includes('panqueque')) {
-    const breadRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro)\s*)?pan(?:es)?/i;
-    const match = lower.match(breadRegex);
+  // 5. Panes (Francés, Integral, Masa Madre / Sourdough)
+  if ((lower.includes('pan') || lower.includes('masa madre') || lower.includes('sourdough')) && !lower.includes('pancake') && !lower.includes('panqueque')) {
+    const isMasaMadre = lower.includes('masa madre') || lower.includes('sourdough');
+    const countRegex = /(?:(\d+|un|uno|una|jna|dos|tres|cuatro|cinco)\s*(?:rebanadas?|tajadas?|rodajas?|panes?|pan|unidades?)?\s*(?:de\s*)?)?(?:pan(?:es)?|masa madre|sourdough)/i;
+    const match = lower.match(countRegex);
     const count = match && match[1] ? extractLeadingCount(match[1], 1) : 1;
 
-    detectedItems.push({
-      id: `parsed-pan-${Date.now()}`,
-      name: `${count} Pan${count > 1 ? 'es' : ''} Francés / Integral`,
-      brand: 'Panadería',
-      servingDesc: `${count} unidad${count > 1 ? 'es' : ''} (${count * 40}g)`,
-      grams: count * 40,
-      calories: Math.round(count * 110),
-      protein: parseFloat((count * 3.5).toFixed(1)),
-      carbs: parseFloat((count * 22.0).toFixed(1)),
-      fat: parseFloat((count * 1.0).toFixed(1)),
-      fiber: parseFloat((count * 1.2).toFixed(1)),
-      icon: '🥖',
-      category: 'carbohidrato',
-      isSnack: false,
-      isUltraProcessed: false
-    });
-    processedKeys.add('pan');
+    if (isMasaMadre) {
+      detectedItems.push({
+        id: `parsed-pan-masa-madre-${Date.now()}`,
+        name: `${count} Rebanada${count > 1 ? 's' : ''} de Pan de Masa Madre Artesanal`,
+        brand: 'Panadería Artesanal / Sourdough',
+        servingDesc: `${count} rebanada${count > 1 ? 's' : ''} (${count * 50}g)`,
+        grams: count * 50,
+        calories: Math.round(count * 130),
+        protein: parseFloat((count * 4.5).toFixed(1)),
+        carbs: parseFloat((count * 25.0).toFixed(1)),
+        fat: parseFloat((count * 1.0).toFixed(1)),
+        fiber: parseFloat((count * 2.2).toFixed(1)),
+        icon: '🍞',
+        category: 'carbohidrato',
+        isSnack: false,
+        isUltraProcessed: false
+      });
+      processedKeys.add('pan_masa_madre');
+      processedKeys.add('pan');
+    } else {
+      detectedItems.push({
+        id: `parsed-pan-${Date.now()}`,
+        name: `${count} Pan${count > 1 ? 'es' : ''} Francés / Integral`,
+        brand: 'Panadería',
+        servingDesc: `${count} unidad${count > 1 ? 'es' : ''} (${count * 40}g)`,
+        grams: count * 40,
+        calories: Math.round(count * 110),
+        protein: parseFloat((count * 3.5).toFixed(1)),
+        carbs: parseFloat((count * 22.0).toFixed(1)),
+        fat: parseFloat((count * 1.0).toFixed(1)),
+        fiber: parseFloat((count * 1.2).toFixed(1)),
+        icon: '🥖',
+        category: 'carbohidrato',
+        isSnack: false,
+        isUltraProcessed: false
+      });
+      processedKeys.add('pan');
+    }
   }
 
   // 6. Curated items matches (Chifles, Kekitos, Pechuga, Arroz, etc.)

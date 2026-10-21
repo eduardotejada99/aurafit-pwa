@@ -352,5 +352,38 @@ describe('AuraFit Peruvian Foods & Couple Mode Engine', () => {
     assert.equal(parsedChickenRice[1].grams, 100);
     assert.equal(parsedChickenRice[1].calories, 130);
   });
+
+  it('should include pan de masa madre in curated foods and parse natural language slices and grams accurately', () => {
+    // 1. Verify existence in curated foods
+    const masaMadreCurated = CURATED_PERUVIAN_FOODS.find((f) => f.id === 'fit-pan-masa-madre');
+    assert.ok(masaMadreCurated, 'Pan de masa madre should exist in CURATED_PERUVIAN_FOODS');
+    assert.equal(masaMadreCurated.calories, 130);
+    assert.equal(masaMadreCurated.protein, 4.5);
+    assert.equal(masaMadreCurated.carbs, 25.0);
+    assert.equal(masaMadreCurated.grams, 50);
+
+    // 2. Natural language parsing: "pan de masa madre"
+    const parsedSingle = parseNaturalLanguageFood('pan de masa madre');
+    assert.equal(parsedSingle.length, 1);
+    assert.ok(parsedSingle[0].name.includes('Masa Madre'));
+    assert.equal(parsedSingle[0].calories, 130);
+    assert.equal(parsedSingle[0].protein, 4.5);
+
+    // 3. Multi-slice parsing: "2 rebanadas de pan de masa madre"
+    const parsedDouble = parseNaturalLanguageFood('2 rebanadas de pan de masa madre');
+    assert.equal(parsedDouble.length, 1);
+    assert.ok(parsedDouble[0].name.includes('2 Rebanadas'));
+    assert.equal(parsedDouble[0].calories, 260);
+    assert.equal(parsedDouble[0].protein, 9.0);
+    assert.equal(parsedDouble[0].carbs, 50.0);
+
+    // 4. Multi-item combo: "2 huevos con 2 rebanadas de masa madre"
+    const combo = parseNaturalLanguageFood('2 huevos con 2 rebanadas de masa madre');
+    assert.equal(combo.length, 2);
+    assert.ok(combo[0].name.includes('Huevos'));
+    assert.ok(combo[1].name.includes('Masa Madre'));
+    assert.equal(combo[0].calories + combo[1].calories, 405); // 145 + 260
+  });
 });
+
 

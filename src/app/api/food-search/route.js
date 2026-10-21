@@ -20,6 +20,7 @@ export async function GET(request) {
 
     const normalize = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     const queryNorm = normalize(query);
+    const queryLower = (query || '').toLowerCase().trim();
 
     // 1. Search local curated database (accent-tolerant, multi-field)
     const localMatches = CURATED_PERUVIAN_FOODS.filter((food) => {
